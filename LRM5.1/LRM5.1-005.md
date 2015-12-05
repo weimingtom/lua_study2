@@ -107,7 +107,7 @@ At the end of each garbage-collection cycle, the finalizers for userdata are cal
 
 A weak table is a table whose elements are weak references. A weak reference is ignored by the garbage collector. In other words, if the only references to an object are weak references, then the garbage collector will collect this object.   
 
-弱表是元素为弱引用的表。弱引用被垃圾收集器忽略**（注：这里的忽略是指即使它的引用数大于0仍然可以回收它，不是指永远不回收）**。换言之，如果指向一个对象的唯一引用是弱引用，那么垃圾回收器将回收这个对象。  
+弱表是元素为弱引用的表。弱引用被垃圾收集器忽略**（注：这里的忽略是指即使弱引用所指向的对象的所有引用数大于0仍然可以回收它，不是指永远不回收；或者理解为垃圾收集器回收弱引用指向的对象时不考虑弱引用数）**。换言之，如果指向一个对象的唯一引用是弱引用，那么垃圾回收器将回收这个对象。  
 
 A weak table can have weak keys, weak values, or both. A table with weak keys allows the collection of its keys, but prevents the collection of its values. A table with both weak keys and weak values allows the collection of both keys and values. In any case, if either the key or the value is collected, the whole pair is removed from the table. The weakness of a table is controlled by the __mode field of its metatable. If the __mode field is a string containing the character 'k', the keys in the table are weak. If __mode contains 'v', the values in the table are weak.   
 
