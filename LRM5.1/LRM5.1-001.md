@@ -1,4 +1,4 @@
-﻿# 【翻译】(LRM5.1-1)简介(1)、词法约定(2.1)、值与类型(2.2)、变量(2.3)  
+﻿## 【翻译】(LRM5.1-1)简介(1)、词法约定(2.1)、值与类型(2.2)、变量(2.3)  
 
 See also:  
 http://www.lua.org/manual/5.1/manual.html  
@@ -8,9 +8,9 @@ http://www.lua.org/manual/5.1/manual.html
 
 -----------------------------------------
 
-# Lua 5.1 Reference Manual  
+## Lua 5.1 Reference Manual  
 
-# Lua 5.1参考手册  
+## Lua 5.1参考手册  
 
 by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes  
 
