@@ -593,4 +593,4 @@ end
 http://www.codingnow.com/2000/download/lua_manual.html  
 
 2. hshqcn  
-http://hshqcn.iteye.com/blog/284901  
+hshqcn  

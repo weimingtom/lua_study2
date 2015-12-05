@@ -250,4 +250,4 @@ where _env is the environment of the running function. (See §2.8 for a complete
 http://www.codingnow.com/2000/download/lua_manual.html  
 
 2. hshqcn  
-http://hshqcn.iteye.com/blog/284901  
+hshqcn  

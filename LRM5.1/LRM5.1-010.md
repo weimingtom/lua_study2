@@ -410,6 +410,4 @@ xpcall以保护模式调用函数f，使用err作为错误处理器。在f中的
 1. Lua 5.1 参考手册 （云风译）
 http://www.codingnow.com/2000/download/lua_manual.html
 2. hshqcn
-http://hshqcn.iteye.com/blog/284901
-
-（TODO：待修改）
+hshqcn  

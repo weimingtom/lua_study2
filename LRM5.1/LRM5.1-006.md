@@ -141,6 +141,5 @@ Inside a C function you can throw an error by calling lua_error.
 1. Lua 5.1 参考手册 （云风译）
 http://www.codingnow.com/2000/download/lua_manual.html
 2. hshqcn
-http://hshqcn.iteye.com/blog/284901
+hshqcn  
 
-（TODO：待修改）
