@@ -1,10 +1,10 @@
-﻿【翻译】(LRM5.1-10)标准库的基础函数(5.1)
+﻿【翻译】(LRM5.1-10)标准库的基础函数(5.1)  
 
 See also:
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
 
 原文见
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
 
 -----------------------------------------
 
