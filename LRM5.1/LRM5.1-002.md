@@ -18,7 +18,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license.   
 
-版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地（注：免费）可用  
+版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地**（注：免费）**可用  
 
 -----------------------------------------  
 
@@ -32,7 +32,7 @@ Lua支持一个大多数都很常规的语句集合，类似于在Pascal或C中�
 
 ## 2.4.1 - Chunks  
 
-## 2.4.1 - chunk块（注：隐式块）  
+## 2.4.1 - chunk块**（注：隐式块）**  
 
 The unit of execution of Lua is called a chunk. A chunk is simply a sequence of statements, which are executed sequentially. Each statement can be optionally followed by a semicolon:   
 
@@ -50,7 +50,7 @@ Lua把一个块处理成一个带可变数目参数的匿名函数体（见§2.5
 
 A chunk can be stored in a file or in a string inside the host program. To execute a chunk, Lua first pre-compiles the chunk into instructions for a virtual machine, and then it executes the compiled code with an interpreter for the virtual machine.   
 
-块可以存储在一个文件中或在宿主程序内的字符串中。要执行块，Lua首先会把块预编译成一种虚拟机的指令，然后用带虚拟机的解析器执行编译好的编码（注：即字节码）。  
+块可以存储在一个文件中或在宿主程序内的字符串中。要执行块，Lua首先会把块预编译成一种虚拟机的指令，然后用带虚拟机的解析器执行编译好的编码**（注：即字节码）**。  
 
 Chunks can also be pre-compiled into binary form; see program luac for details. Programs in source and compiled forms are interchangeable; Lua automatically detects the file type and acts accordingly.   
 
@@ -58,7 +58,7 @@ Chunks can also be pre-compiled into binary form; see program luac for details. 
 
 ## 2.4.2 - Blocks  
 
-## 2.4.2 - block块（注：显式块）  
+## 2.4.2 - block块**（注：显式块）**  
 
 A block is a list of statements; syntactically, a block is the same as a chunk:   
 
@@ -94,7 +94,7 @@ Expressions are discussed in §2.5.
 
 Before the assignment, the list of values is adjusted to the length of the list of variables. If there are more values than needed, the excess values are thrown away. If there are fewer values than needed, the list is extended with as many nil's as needed. If the list of expressions ends with a function call, then all values returned by that call enter the list of values, before the adjustment (except when the call is enclosed in parentheses; see §2.5).   
 
-在赋值前，值列表根据变量列表（注：即左值列表）大小调整长度。如果值个数超过所需个数，超出个数的值被丢弃。如果值个数少于所需个数，列表会用所需个数的nil扩充。如果表达式列表以函数调用结束，那么该调用返回的所有值在调整前进入值列表（除非该调用被括号括起，见§2.5）。  
+在赋值前，值列表根据变量列表**（注：即左值列表）**大小调整长度。如果值个数超过所需个数，超出个数的值被丢弃。如果值个数少于所需个数，列表会用所需个数的nil扩充。如果表达式列表以函数调用结束，那么该调用返回的所有值在调整前进入值列表（除非该调用被括号括起，见§2.5）。  
 
 The assignment statement first evaluates all its expressions and only then are the assignments performed. Thus the code   
 
@@ -151,7 +151,7 @@ Lua还有for语句，有两种（见§2.4.5）。
 
 The condition expression of a control structure can return any value. Both false and nil are considered false. All values different from nil and false are considered true (in particular, the number 0 and the empty string are also true).   
 
-控制结构的条件表达式可以返回任何值。false和nil都被视是false。所有不同于nil和false的值被视为true（特别的，数字0和空字符串也是true）。（注：在C的条件表达式中0被视为false，但在Lua中被视为true）  
+控制结构的条件表达式可以返回任何值。false和nil都被视是false。所有不同于nil和false的值被视为true（特别的，数字0和空字符串也是true）。**（注：在C的条件表达式中0被视为false，但在Lua中被视为true）**    
 
 In the repeat–until loop, the inner block does not end at the until keyword, but only after the condition. So, the condition can refer to local variables declared inside the loop block.   
 
