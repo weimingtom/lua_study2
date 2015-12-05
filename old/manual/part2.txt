@@ -1,0 +1,1229 @@
+
+
+2.5.6 - Precedence
+Operator precedence in Lua follows the table below, from lower to higher priority: 
+
+     or
+     and
+     <     >     <=    >=    ~=    ==
+     ..
+     +     -
+     *     /     %
+     not   #     - (unary)
+     ^
+
+As usual, you can use parentheses to change the precedences of an expression. The concatenation ('..') and exponentiation ('^') operators are right associative. All other binary operators are left associative. 
+
+
+
+2.5.6 - 优先级
+Lua运算符的优先级从低到高如下表所示：
+or
+and
+<     >     <=    >=    ~=    ==
+..
++     -
+*     /     %
+not   #     - (一元)
+^
+通常你可以使用括号来改变表达式的优先级。
+连接('..')和指数('^')操作符为右结合。
+其他所有的二元运算符为左结合。
+
+
+
+
+
+
+
+
+
+2.5.7 - Table Constructors
+Table constructors are expressions that create tables. Every time a constructor is evaluated, a new table is created. A constructor can be used to create an empty table or to create a table and initialize some of its fields. The general syntax for constructors is 
+
+	tableconstructor ::= `{′ [fieldlist] `}′
+	fieldlist ::= field {fieldsep field} [fieldsep]
+	field ::= `[′ exp `]′ `=′ exp | Name `=′ exp | exp
+	fieldsep ::= `,′ | `;′
+
+Each field of the form [exp1] = exp2 adds to the new table an entry with key exp1 and value exp2. A field of the form name = exp is equivalent to ["name"] = exp. Finally, fields of the form exp are equivalent to [i] = exp, where i are consecutive numerical integers, starting with 1. Fields in the other formats do not affect this counting. For example, 
+
+     a = { [f(1)] = g; "x", "y"; x = 1, f(x), [30] = 23; 45 }
+
+is equivalent to 
+
+     do
+       local t = {}
+       t[f(1)] = g
+       t[1] = "x"         -- 1st exp
+       t[2] = "y"         -- 2nd exp
+       t.x = 1            -- t["x"] = 1
+       t[3] = f(x)        -- 3rd exp
+       t[30] = 23
+       t[4] = 45          -- 4th exp
+       a = t
+     end
+
+If the last field in the list has the form exp and the expression is a function call or a vararg expression, then all values returned by this expression enter the list consecutively (see §2.5.8). To avoid this, enclose the function call or the vararg expression in parentheses (see §2.5). 
+
+The field list can have an optional trailing separator, as a convenience for machine-generated code. 
+
+
+
+2.5.7 - 表构造式 
+表构造式是创建表的表达式。
+每次构造式计算时创建一个新表。
+构造式可以用于创建一个空表或者创建一个表并初始化它的一些字段。
+关于构造式的一般语法是
+tableconstructor ::= '{' [fieldlist] '}'
+fieldlist ::= field {fieldsep field} [fieldsep]
+field ::= '[' exp ']' '=' exp | Name '=' exp | exp
+fieldsep ::= ',' | ';'
+每个以[exp1] = exp2形式的字段以键exp1和值exp2添加到新表中的一个条目中。
+以name = exp的形式的字段等效于["name"] = exp。
+最后，exp形式的字段等效于[i] = exp，其中i是连续累加整数，以1开始。
+其它形式的字段不会影响这个计数。
+例如，
+a = { [f(1)] = g; "x", "y"; x = 1, f(x), [30] = 23; 45 }
+等效于
+do
+   local t = {}
+   t[f(1)] = g
+   t[1] = "x"         -- 第1个表达式
+   t[2] = "y"         -- 第2个表达式
+   t.x = 1            -- t["x"] = 1
+   t[3] = f(x)        -- 第3个表达式
+   t[30] = 23
+   t[4] = 45          -- 第4个表达式
+   a = t
+end
+如果列表最后一个字段的形式exp和表达式是一个函数调用或一个变长参数表达式，
+则这个表达式返回的所有值连续地加入到列表中（见§2.5.8）。
+要避免这种情况，请用括号括起函数调用或变长参数表达式（见§2.5）。
+字段列表可以有一个可选的结尾分隔符，方便机器生成代码。 
+
+
+
+
+
+
+
+
+
+2.5.8 - Function Calls
+A function call in Lua has the following syntax: 
+
+	functioncall ::= prefixexp args
+
+In a function call, first prefixexp and args are evaluated. If the value of prefixexp has type function, then this function is called with the given arguments. Otherwise, the prefixexp "call" metamethod is called, having as first parameter the value of prefixexp, followed by the original call arguments (see §2.8). 
+
+The form 
+
+	functioncall ::= prefixexp `:′ Name args
+
+can be used to call "methods". A call v:name(args) is syntactic sugar for v.name(v,args), except that v is evaluated only once. 
+
+Arguments have the following syntax: 
+
+	args ::= `(′ [explist] `)′
+	args ::= tableconstructor
+	args ::= String
+
+All argument expressions are evaluated before the call. A call of the form f{fields} is syntactic sugar for f({fields}); that is, the argument list is a single new table. A call of the form f'string' (or f"string" or f[[string]]) is syntactic sugar for f('string'); that is, the argument list is a single literal string. 
+
+As an exception to the free-format syntax of Lua, you cannot put a line break before the '(' in a function call. This restriction avoids some ambiguities in the language. If you write 
+
+     a = f
+     (g).x(a)
+
+Lua would see that as a single statement, a = f(g).x(a). So, if you want two statements, you must add a semi-colon between them. If you actually want to call f, you must remove the line break before (g). 
+
+A call of the form return functioncall is called a tail call. Lua implements proper tail calls (or proper tail recursion): in a tail call, the called function reuses the stack entry of the calling function. Therefore, there is no limit on the number of nested tail calls that a program can execute. However, a tail call erases any debug information about the calling function. Note that a tail call only happens with a particular syntax, where the return has one single function call as argument; this syntax makes the calling function return exactly the returns of the called function. So, none of the following examples are tail calls: 
+
+     return (f(x))        -- results adjusted to 1
+     return 2 * f(x)
+     return x, f(x)       -- additional results
+     f(x); return         -- results discarded
+     return x or f(x)     -- results adjusted to 1
+
+2.5.8 - 函数调用 
+一个Lua函数调用的语法如下：
+functioncall ::= prefixexp args
+在一个函数调用中，prefixexp和args首先被计算。
+如果prefixexp的值是函数类型，那么这个函数使用给定的参数进行调用。
+否则，prefixexp的"call"元方法被调用，第一个参数是prefixexp的值，然后是原本的调用参数（见§2.8）。
+形式
+functioncall ::= prefixexp ':' Name args
+可以用来调用“方法”。
+调用v:name(args)是v.name(v,args)的语法糖，除了v仅被计算一次。
+参数的语法如下：
+args ::= '(' [explist] ')'
+args ::= tableconstructor
+args ::= String
+所有参数表达式在调用前计算。
+调用形式f{fields}是f({fields})的语法糖；其中参数表是一个单一的新表。
+调用形式f'string'（或f"string"或f[[string]]）是f('string')的语法糖；其中参数表式一个单一的字符串字面值。
+作为Lua自由格式语法的例外，你不能在函数调用的'('前插入换行。
+这个限制避免语言的一些歧义。如果你写
+a = f
+(g).x(a)
+Lua会把它视为一个单一语句a = f(g).x(a)。
+所以，如果你希望是两个语句，你必须在它们之间添加分号。
+如果你真的想调用f，你必须删除(g)前的换行。
+调用形式return functioncall被称为尾调用。
+Lua实现合适的尾调用（或者说尾递归）：在一个尾调用中，被调用的函数重用调用方函数的堆栈入口。
+因此，一个程序可以执行的嵌套尾调用数目没有限制。
+然而，尾调用清除任何关于调用方函数的调试信息。
+注意尾调用只出现在特定语法，其中return只以一个单一函数调用作为参数（注：这里return关键字被看成是函数调用）；
+这种语法使调用方函数准确地返回被调用函数的返回值。
+所以，下面的例子都不是尾调用：
+return (f(x))        -- 结果调整为一个
+return 2 * f(x)
+return x, f(x)       -- 额外的结果
+f(x); return         -- 结果被丢弃
+return x or f(x)     -- 结果调整为一个
+
+
+
+
+2.5.9 - Function Definitions
+The syntax for function definition is 
+
+	function ::= function funcbody
+	funcbody ::= `(′ [parlist] `)′ block end
+
+The following syntactic sugar simplifies function definitions: 
+
+	stat ::= function funcname funcbody
+	stat ::= local function Name funcbody
+	funcname ::= Name {`.′ Name} [`:′ Name]
+
+The statement 
+
+     function f () body end
+
+translates to 
+
+     f = function () body end
+
+The statement 
+
+     function t.a.b.c.f () body end
+
+translates to 
+
+     t.a.b.c.f = function () body end
+
+The statement 
+
+     local function f () body end
+
+translates to 
+
+     local f; f = function () body end
+
+not to 
+
+     local f = function () body end
+
+(This only makes a difference when the body of the function contains references to f.) 
+
+A function definition is an executable expression, whose value has type function. When Lua pre-compiles a chunk, all its function bodies are pre-compiled too. Then, whenever Lua executes the function definition, the function is instantiated (or closed). This function instance (or closure) is the final value of the expression. Different instances of the same function can refer to different external local variables and can have different environment tables. 
+
+Parameters act as local variables that are initialized with the argument values: 
+
+	parlist ::= namelist [`,′ `...′] | `...′
+
+When a function is called, the list of arguments is adjusted to the length of the list of parameters, unless the function is a variadic or vararg function, which is indicated by three dots ('...') at the end of its parameter list. A vararg function does not adjust its argument list; instead, it collects all extra arguments and supplies them to the function through a vararg expression, which is also written as three dots. The value of this expression is a list of all actual extra arguments, similar to a function with multiple results. If a vararg expression is used inside another expression or in the middle of a list of expressions, then its return list is adjusted to one element. If the expression is used as the last element of a list of expressions, then no adjustment is made (unless that last expression is enclosed in parentheses). 
+
+As an example, consider the following definitions: 
+
+     function f(a, b) end
+     function g(a, b, ...) end
+     function r() return 1,2,3 end
+
+Then, we have the following mapping from arguments to parameters and to the vararg expression: 
+
+     CALL            PARAMETERS
+     
+     f(3)             a=3, b=nil
+     f(3, 4)          a=3, b=4
+     f(3, 4, 5)       a=3, b=4
+     f(r(), 10)       a=1, b=10
+     f(r())           a=1, b=2
+     
+     g(3)             a=3, b=nil, ... -->  (nothing)
+     g(3, 4)          a=3, b=4,   ... -->  (nothing)
+     g(3, 4, 5, 8)    a=3, b=4,   ... -->  5  8
+     g(5, r())        a=5, b=1,   ... -->  2  3
+
+Results are returned using the return statement (see §2.4.4). If control reaches the end of a function without encountering a return statement, then the function returns with no results. 
+
+The colon syntax is used for defining methods, that is, functions that have an implicit extra parameter self. Thus, the statement 
+
+     function t.a.b.c:f (params) body end
+
+is syntactic sugar for 
+
+     t.a.b.c.f = function (self, params) body end
+
+
+
+
+
+
+
+2.5.9 - 函数定义 
+函数定义的语法是
+function ::= function funcbody
+funcbody ::= '(' [parlist] ')' block end
+下面的语法糖简化函数定义：
+stat ::= function funcname funcbody
+stat ::= local function Name funcbody
+funcname ::= Name {'.' Name} [':' Name]
+语句
+function f () body end
+翻译为
+f = function () body end
+语句
+function t.a.b.c.f () body end
+翻译为
+t.a.b.c.f = function () body end
+语句
+local function f () body end
+翻译为
+local f; f = function () body end
+而不是
+local f = function () body end
+（仅当函数体中包含有f的引用时这两种写法才会产生区别）
+一个函数定义是一个可执行的表达式，其值拥有function类型。
+当Lua预编译chunk块时，它的所有函数体都会被预编译。
+然后，每当执行Lua的函数定义时，函数会被实例化（或被关闭（注：这里的关闭可能是指闭包定义））。
+这个函数的实例（或闭包）是表达式的最终值。
+相同函数的不同实例可以引用不同的外部局部变量和拥有不同的环境表。（注：可能指upvalue）
+作为局部变量性质工作的参数使用参数值进行初始化：
+parlist ::= namelist [',' '...'] | '...'
+当一个函数被调用时，实参列表被调整为形参列表的长度，
+除非该函数是一个可变参数或在其参数列表结尾用三点('...')表示的变长参数函数。
+一个变长参数函数不调整其参数列表，相反它收集所有额外参数和并且把它们通过变长参数表达式传递给函数，它们也被写成三点运算符。
+这个表达式的值是所有额外实参的列表，类似于一个具有多个结果的函数。
+如果一个变长参数表达式是在另一个表达式或在一个表达式列表中使用，那么它的返回列表被调整为一个元素。
+如果表达式是作为一个表达式列表的最后一个元素使用，则不进行调整（除非最后一个表达式是用括号括起）。 
+例如考虑以下定义：
+function f(a, b) end
+function g(a, b, ...) end
+function r() return 1,2,3 end
+然后我们拥有以下实参（argument）到形参（parameter）的映射以及到变长参数表达式的映射。
+调用            形参
+f(3)             a=3, b=nil
+f(3, 4)          a=3, b=4
+f(3, 4, 5)       a=3, b=4
+f(r(), 10)       a=1, b=10
+f(r())           a=1, b=2
+g(3)             a=3, b=nil, ... -->  (无对象)
+g(3, 4)          a=3, b=4,   ... -->  (无对象)
+g(3, 4, 5, 8)    a=3, b=4,   ... -->  5  8
+g(5, r())        a=5, b=1,   ... -->  2  3
+使用return语句返回结果（见§2.4.4）。
+如果控制没有遇到一个return语句，就到达函数的结束处，那么函数不以任何值返回。
+冒号语法用于定义方法，即函数有一个隐含的额外参数self。
+因此，语句
+function t.a.b.c:f (params) body end
+是下面写法的语法糖
+t.a.b.c.f = function (self, params) body end
+
+
+
+
+
+
+
+
+
+
+2.6 - Visibility Rules
+Lua is a lexically scoped language. The scope of variables begins at the first statement after their declaration and lasts until the end of the innermost block that includes the declaration. Consider the following example: 
+
+     x = 10                -- global variable
+     do                    -- new block
+       local x = x         -- new 'x', with value 10
+       print(x)            --> 10
+       x = x+1
+       do                  -- another block
+         local x = x+1     -- another 'x'
+         print(x)          --> 12
+       end
+       print(x)            --> 11
+     end
+     print(x)              --> 10  (the global one)
+
+Notice that, in a declaration like local x = x, the new x being declared is not in scope yet, and so the second x refers to the outside variable. 
+
+Because of the lexical scoping rules, local variables can be freely accessed by functions defined inside their scope. A local variable used by an inner function is called an upvalue, or external local variable, inside the inner function. 
+
+Notice that each execution of a local statement defines new local variables. Consider the following example: 
+
+     a = {}
+     local x = 20
+     for i=1,10 do
+       local y = 0
+       a[i] = function () y=y+1; return x+y end
+     end
+
+The loop creates ten closures (that is, ten instances of the anonymous function). Each of these closures uses a different y variable, while all of them share the same x. 
+
+
+
+
+2.6 - 可见性规则 
+Lua是一个词法上拥有作用域限制的语言。
+变量的作用域，开始于其声明后的第一个语句，直到包含声明的最内层block块的结束。
+考虑下面的例子：
+x = 10                -- 全局变量
+do                    -- 新的block块
+	local x = x       -- 新变量'x', 值为10
+	print(x)          --> 10
+	x = x+1
+	do                -- 另一个block块
+		local x = x+1 -- 另一个变量 'x'
+		print(x)      --> 12
+	end
+	print(x)          --> 11
+end
+print(x)              --> 10  (那个全局变量x)
+注意在像local x = x这样的声明中，被定义的新的x还不是在作用域内，所以第二个x引用的是外部变量。
+因为词法上的作用域规则，局部变量可以被定义在它作用域内的函数自由访问。
+一个被内部函数使用的局部变量称为upvalue，或者称为内部函数内的外部（注：导入）局部变量。
+注意，每一个local语句的执行定义新的局部变量。
+考虑下面的例子：
+a = {}
+local x = 20
+for i=1,10 do
+	local y = 0
+	a[i] = function () y=y+1; return x+y end
+end
+循环创建了10个闭包（即10个匿名函数实例）。
+这个闭包每个都使用（注：引用）不同的y变量，但都共享（注：引用）相同的x。
+
+
+
+
+
+
+2.7 - Error Handling
+Because Lua is an embedded extension language, all Lua actions start from C code in the host program calling a function from the Lua library (see lua_pcall). Whenever an error occurs during Lua compilation or execution, control returns to C, which can take appropriate measures (such as printing an error message). 
+
+Lua code can explicitly generate an error by calling the error function. If you need to catch errors in Lua, you can use the pcall function. 
+
+
+2.7 - 错误处理 
+因为Lua是一个嵌入的扩展语言，Lua的所有操作在宿主程序调用Lua库函数（见lua_pcall）的C代码处开始工作。
+每当在Lua编译或执行期间发生错误，控制将返回到C，进行适当的处理（如打印错误消息）。
+Lua代码可以显式地通过调用error函数产生错误。
+如果你需要在Lua代码中捕获错误，你可以使用pcall函数。
+
+
+
+
+
+
+
+
+
+
+
+
+2.8 - Metatables
+Every value in Lua can have a metatable. This metatable is an ordinary Lua table that defines the behavior of the original value under certain special operations. You can change several aspects of the behavior of operations over a value by setting specific fields in its metatable. For instance, when a non-numeric value is the operand of an addition, Lua checks for a function in the field "__add" in its metatable. If it finds one, Lua calls this function to perform the addition. 
+
+
+
+2.8 - 元表 
+每个Lua值都可以有一个元表。
+这个元表是一个普通的Lua表，定义某些特定操作下原始值的行为。
+你可以通过把元表的特定字段设置为一个值来改变操作行为的某些角度（注：切面，相位）
+例如，当非数值的值是加法的操作数，Lua用它的元表的"__add"字段的函数检查。
+如果找到，Lua调用这个函数来执行加法。
+
+
+
+
+
+We call the keys in a metatable events and the values metamethods. In the previous example, the event is "add" and the metamethod is the function that performs the addition. 
+
+You can query the metatable of any value through the getmetatable function. 
+
+You can replace the metatable of tables through the setmetatable function. You cannot change the metatable of other types from Lua (except by using the debug library); you must use the C API for that. 
+
+
+
+我们调用在元表事件中和在值的元方法中的键。
+在前一个例子中，事件是"add"而元方法是执行加法的函数。
+你可以通过getmetatable函数查询任意值的元表。
+你可以通过setmetatable函数替换表的元表。
+你不可以在Lua中改变其它类型的元表（除非使用debug库）；你必须使用C API来完成。
+
+
+
+
+
+Tables and full userdata have individual metatables (although multiple tables and userdata can share their metatables). Values of all other types share one single metatable per type; that is, there is one single metatable for all numbers, one for all strings, etc. 
+
+表和完全userdata拥有各自的元表（虽然多重表和userdata可以共享它们的元表）。
+其它所有类型的值对每个类型共享一个单独的元表；即所有数有一个单一元表，所有字符串有一个单一元表，等等。
+
+
+
+
+
+
+
+A metatable controls how an object behaves in arithmetic operations, order comparisons, concatenation, length operation, and indexing. A metatable also can define a function to be called when a userdata is garbage collected. For each of these operations Lua associates a specific key called an event. When Lua performs one of these operations over a value, it checks whether this value has a metatable with the corresponding event. If so, the value associated with that key (the metamethod) controls how Lua will perform the operation. 
+
+
+元表控制一个对象在算术操作，书序比较，连接，长度操作和索引时的行为方式。
+元表还能定义一个函数，当一个userdata被垃圾回收时调用它。
+Lua把每个操作关联到一个特定的键，称为事件。
+当Lua用一个值来执行这些操作时，它会检查这个值是否有相应事件的元表。
+如果有，关联那个键的值（元方法）控制Lua执行该操作的方式。
+
+
+
+
+
+
+
+
+Metatables control the operations listed next. Each operation is identified by its corresponding name. The key for each operation is a string with its name prefixed by two underscores, '__'; for instance, the key for operation "add" is the string "__add". The semantics of these operations is better explained by a Lua function describing how the interpreter executes the operation. 
+
+元表控制下面列举的操作。
+每个操作通过它相应的名字来标识。
+每个操作的键是一个带有双下划线'__'前缀的名称的字符串。
+例如，"add"操作的键是字符串"__add"。
+通过一个描述解释器如何执行操作的Lua函数可以更好地解释这些操作的语义。
+
+
+
+
+
+
+
+The code shown here in Lua is only illustrative; the real behavior is hard coded in the interpreter and it is much more efficient than this simulation. All functions used in these descriptions (rawget, tonumber, etc.) are described in §5.1. In particular, to retrieve the metamethod of a given object, we use the expression 
+
+     metatable(obj)[event]
+
+This should be read as 
+
+     rawget(getmetatable(obj) or {}, event)
+
+That is, the access to a metamethod does not invoke other metamethods, and the access to objects with no metatables does not fail (it simply results in nil). 
+
+这里展示的Lua代码只是为了说明；真实的行为时被硬编码进解释器使之比这个模拟更为有效。
+这些描述中使用的所有函数（rawget，tonumber，等等）在§5.1中描述。
+特别地，为了获得给定对象的元方法，我们使用表达式
+metatable(obj)[event]
+这个表达式可以读成
+rawget(getmetatable(obj) or {}, event)
+即对一个元方法的访问不会调用其它元方法，而对不带元表的对象的访问不会失败（只是简单地返回nil）。
+
+
+
+
+
+
+
+
+
+
+
+"add": the + operation. 
+The function getbinhandler below defines how Lua chooses a handler for a binary operation. First, Lua tries the first operand. If its type does not define a handler for the operation, then Lua tries the second operand. 
+
+     function getbinhandler (op1, op2, event)
+       return metatable(op1)[event] or metatable(op2)[event]
+     end
+
+By using this function, the behavior of the op1 + op2 is 
+
+     function add_event (op1, op2)
+       local o1, o2 = tonumber(op1), tonumber(op2)
+       if o1 and o2 then  -- both operands are numeric?
+         return o1 + o2   -- '+' here is the primitive 'add'
+       else  -- at least one of the operands is not numeric
+         local h = getbinhandler(op1, op2, "__add")
+         if h then
+           -- call the handler with both operands
+           return (h(op1, op2))
+         else  -- no handler available: default behavior
+           error(···)
+         end
+       end
+     end
+
+
+"add": +操纵。 
+下面的函数getbinhandler定义Lua如何为一个二元操作选择处理句柄。
+首先，Lua尝试第一个操作数。
+如果它的类型没有定义一个操作的处理句柄，那么Lua尝试第二操作数。 
+function getbinhandler (op1, op2, event)
+	return metatable(op1)[event] or metatable(op2)[event]
+end
+通过使用这个函数，op1 + op2的行为如下 
+function add_event (op1, op2)
+	local o1, o2 = tonumber(op1), tonumber(op2)
+	if o1 and o2 then  -- 操作数都是数值吗？
+		return o1 + o2   -- 这里的'+'是原始的'add'
+	else  -- 至少有一个操作数不是数值
+		local h = getbinhandler(op1, op2, "__add")
+		if h then
+			-- 用两个操作数调用处理句柄
+			return (h(op1, op2))
+		else  -- 没有可用的处理句柄：默认行为
+			error(···)
+		end
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+"sub": the - operation. Behavior similar to the "add" operation. 
+"mul": the * operation. Behavior similar to the "add" operation. 
+"div": the / operation. Behavior similar to the "add" operation. 
+"mod": the % operation. Behavior similar to the "add" operation, with the operation o1 - floor(o1/o2)*o2 as the primitive operation. 
+"pow": the ^ (exponentiation) operation. Behavior similar to the "add" operation, with the function pow (from the C math library) as the primitive operation. 
+"unm": the unary - operation. 
+     function unm_event (op)
+       local o = tonumber(op)
+       if o then  -- operand is numeric?
+         return -o  -- '-' here is the primitive 'unm'
+       else  -- the operand is not numeric.
+         -- Try to get a handler from the operand
+         local h = metatable(op).__unm
+         if h then
+           -- call the handler with the operand
+           return (h(op))
+         else  -- no handler available: default behavior
+           error(···)
+         end
+       end
+     end
+
+
+"sub": -操作。行为类似于"add"操作。
+"mul": *操作。行为类似于"add"操作。
+"div": /操作。行为类似于"add"操作。 
+"mod": %操作。行为类似于"add"操作，以操作o1 - floor(o1/o2)*o2作为原始操作。 
+"pow": ^（指数）操作。 行为类似于"add"操作，以函数pow（出自C的数学库）作为原始操作。 
+"unm": 一元-操作. 
+function unm_event (op)
+	local o = tonumber(op)
+	if o then  -- 操作数是数字吗？
+		return -o  -- 这里的'-'是原始的'unm'
+	else  -- 操作数不是数字
+		-- 尝试从操作数中获得一个处理句柄
+		local h = metatable(op).__unm
+		if h then
+		-- 用操作数调用处理句柄
+			return (h(op))
+		else  -- no handler available: default behavior
+			error(···)
+		end
+	end
+end
+
+
+
+
+
+
+
+
+"concat": the .. (concatenation) operation. 
+     function concat_event (op1, op2)
+       if (type(op1) == "string" or type(op1) == "number") and
+          (type(op2) == "string" or type(op2) == "number") then
+         return op1 .. op2  -- primitive string concatenation
+       else
+         local h = getbinhandler(op1, op2, "__concat")
+         if h then
+           return (h(op1, op2))
+         else
+           error(···)
+         end
+       end
+     end
+
+
+
+"concat": .. （连接）操作. 
+function concat_event (op1, op2)
+	if (type(op1) == "string" or type(op1) == "number") and
+		(type(op2) == "string" or type(op2) == "number") then
+		return op1 .. op2  -- 原始字符串连接
+	else
+		local h = getbinhandler(op1, op2, "__concat")
+		if h then
+			return (h(op1, op2))
+		else
+			error(···)
+		end
+	end
+end
+ 
+
+
+
+
+
+
+
+
+
+
+
+"len": the # operation. 
+     function len_event (op)
+       if type(op) == "string" then
+         return strlen(op)         -- primitive string length
+       elseif type(op) == "table" then
+         return #op                -- primitive table length
+       else
+         local h = metatable(op).__len
+         if h then
+           -- call the handler with the operand
+           return (h(op))
+         else  -- no handler available: default behavior
+           error(···)
+         end
+       end
+     end
+
+See §2.5.5 for a description of the length of a table. 
+
+
+
+"len": #操作。 
+function len_event (op)
+	if type(op) == "string" then
+		return strlen(op)         -- 原始字符串长度
+	elseif type(op) == "table" then
+		return #op                -- 原始表长度
+	else
+		local h = metatable(op).__len
+		if h then
+			-- 用操作数调用处理句柄
+			return (h(op))
+		else  -- 没有可用的处理句柄：默认行为
+			error(···)
+		end
+	end
+end
+见§2.5.5关于表长度的描述。
+ 
+
+
+
+
+
+
+
+
+
+"eq": the == operation. The function getcomphandler defines how Lua chooses a metamethod for comparison operators. A metamethod only is selected when both objects being compared have the same type and the same metamethod for the selected operation. 
+     function getcomphandler (op1, op2, event)
+       if type(op1) ~= type(op2) then return nil end
+       local mm1 = metatable(op1)[event]
+       local mm2 = metatable(op2)[event]
+       if mm1 == mm2 then return mm1 else return nil end
+     end
+
+The "eq" event is defined as follows: 
+
+     function eq_event (op1, op2)
+       if type(op1) ~= type(op2) then  -- different types?
+         return false   -- different objects
+       end
+       if op1 == op2 then   -- primitive equal?
+         return true   -- objects are equal
+       end
+       -- try metamethod
+       local h = getcomphandler(op1, op2, "__eq")
+       if h then
+         return (h(op1, op2))
+       else
+         return false
+       end
+     end
+
+a ~= b is equivalent to not (a == b). 
+
+
+"eq": ==操作。
+函数getcomphandler定义Lua如何为比较操作符选择一个元方法。
+当相同类型的对象比较并且选择操作具有相同的元方法时才会选择那个元方法。
+function getcomphandler (op1, op2, event)
+	if type(op1) ~= type(op2) then return nil end
+	local mm1 = metatable(op1)[event]
+	local mm2 = metatable(op2)[event]
+	if mm1 == mm2 then return mm1 else return nil end
+end
+"eq"事件定义如下： 
+function eq_event (op1, op2)
+	if type(op1) ~= type(op2) then  -- 是不同类型吗？
+		return false     -- 不同的对象
+	end
+	if op1 == op2 then   -- 是原始相等吗？
+		return true   	 -- 对象相等
+	end
+	-- 尝试元方法
+	local h = getcomphandler(op1, op2, "__eq")
+	if h then
+		return (h(op1, op2))
+	else
+		return false
+	end
+end
+a ~= b 等效于not (a == b). 
+
+
+
+
+
+
+
+
+
+
+
+"lt": the < operation. 
+     function lt_event (op1, op2)
+       if type(op1) == "number" and type(op2) == "number" then
+         return op1 < op2   -- numeric comparison
+       elseif type(op1) == "string" and type(op2) == "string" then
+         return op1 < op2   -- lexicographic comparison
+       else
+         local h = getcomphandler(op1, op2, "__lt")
+         if h then
+           return (h(op1, op2))
+         else
+           error(···)
+         end
+       end
+     end
+
+a > b is equivalent to b < a. 
+
+
+
+"lt": < 操作。 
+function lt_event (op1, op2)
+	if type(op1) == "number" and type(op2) == "number" then
+		return op1 < op2   -- 数值比较
+	elseif type(op1) == "string" and type(op2) == "string" then
+		return op1 < op2   -- 字典序比较
+	else
+		local h = getcomphandler(op1, op2, "__lt")
+		if h then
+			return (h(op1, op2))
+		else
+			error(···)
+		end
+	end
+end
+
+a > b is equivalent to b < a. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"le": the <= operation. 
+     function le_event (op1, op2)
+       if type(op1) == "number" and type(op2) == "number" then
+         return op1 <= op2   -- numeric comparison
+       elseif type(op1) == "string" and type(op2) == "string" then
+         return op1 <= op2   -- lexicographic comparison
+       else
+         local h = getcomphandler(op1, op2, "__le")
+         if h then
+           return (h(op1, op2))
+         else
+           h = getcomphandler(op1, op2, "__lt")
+           if h then
+             return not h(op2, op1)
+           else
+             error(···)
+           end
+         end
+       end
+     end
+
+a >= b is equivalent to b <= a. Note that, in the absence of a "le" metamethod, Lua tries the "lt", assuming that a <= b is equivalent to not (b < a). 
+
+
+
+"le": <= 操作。
+function le_event (op1, op2)
+	if type(op1) == "number" and type(op2) == "number" then
+		return op1 <= op2   -- 数值比较
+	elseif type(op1) == "string" and type(op2) == "string" then
+		return op1 <= op2   -- 字典序比较
+	else
+		local h = getcomphandler(op1, op2, "__le")
+		if h then
+			return (h(op1, op2))
+		else
+			h = getcomphandler(op1, op2, "__lt")
+			if h then
+				return not h(op2, op1)
+			else
+				error(···)
+			end
+		end
+	end
+end
+
+a >= b 等效于 b <= a. 
+注意，缺少"le"元方法时, Lua尝试"lt", 假设a <= b等效于not (b < a)。
+
+
+
+
+
+
+
+
+
+
+
+
+
+"index": The indexing access table[key]. 
+     function gettable_event (table, key)
+       local h
+       if type(table) == "table" then
+         local v = rawget(table, key)
+         if v ~= nil then return v end
+         h = metatable(table).__index
+         if h == nil then return nil end
+       else
+         h = metatable(table).__index
+         if h == nil then
+           error(···)
+         end
+       end
+       if type(h) == "function" then
+         return (h(table, key))     -- call the handler
+       else return h[key]           -- or repeat operation on it
+       end
+     end
+
+
+
+"index": 当索引访问table[key]时被调用. 
+function gettable_event (table, key)
+	local h
+	if type(table) == "table" then
+		local v = rawget(table, key)
+		if v ~= nil then return v end
+		h = metatable(table).__index
+		if h == nil then return nil end
+	else
+		h = metatable(table).__index
+		if h == nil then
+			error(···)
+		end
+	end
+	if type(h) == "function" then
+		return (h(table, key))     -- 调用处理句柄
+	else return h[key]             -- 或者重复对它操作
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+"newindex": The indexing assignment table[key] = value. 
+     function settable_event (table, key, value)
+       local h
+       if type(table) == "table" then
+         local v = rawget(table, key)
+         if v ~= nil then rawset(table, key, value); return end
+         h = metatable(table).__newindex
+         if h == nil then rawset(table, key, value); return end
+       else
+         h = metatable(table).__newindex
+         if h == nil then
+           error(···)
+         end
+       end
+       if type(h) == "function" then
+         h(table, key,value)           -- call the handler
+       else h[key] = value             -- or repeat operation on it
+       end
+     end
+
+
+"newindex": 当索引赋值table[key] = value执行时调用。 
+function settable_event (table, key, value)
+	local h
+	if type(table) == "table" then
+		local v = rawget(table, key)
+		if v ~= nil then rawset(table, key, value); return end
+		h = metatable(table).__newindex
+		if h == nil then rawset(table, key, value); return end
+	else
+		h = metatable(table).__newindex
+		if h == nil then
+			error(···)
+		end
+	end
+	if type(h) == "function" then
+		h(table, key,value)           -- 调用处理句柄
+	else h[key] = value               -- 或者重复对它操作
+	end
+end
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+"call": called when Lua calls a value. 
+     function function_event (func, ...)
+       if type(func) == "function" then
+         return func(...)   -- primitive call
+       else
+         local h = metatable(func).__call
+         if h then
+           return h(func, ...)
+         else
+           error(···)
+         end
+       end
+     end
+
+
+"call": 当Lua调用一个值时被调用。 
+function function_event (func, ...)
+	if type(func) == "function" then
+		return func(...)   -- 原始调用
+	else
+		local h = metatable(func).__call
+		if h then
+			return h(func, ...)
+		else
+			error(···)
+		end
+	end
+end
+ 
+
+
+
+
+
+
+
+
+
+2.9 - Environments
+Besides metatables, objects of types thread, function, and userdata have another table associated with them, called their environment. Like metatables, environments are regular tables and multiple objects can share the same environment. 
+
+Threads are created sharing the environment of the creating thread. Userdata and C functions are created sharing the environment of the creating C function. Non-nested Lua functions (created by loadfile, loadstring or load) are created sharing the environment of the creating thread. Nested Lua functions are created sharing the environment of the creating Lua function. 
+
+Environments associated with userdata have no meaning for Lua. It is only a convenience feature for programmers to associate a table to a userdata. 
+
+Environments associated with threads are called global environments. They are used as the default environment for threads and non-nested Lua functions created by the thread and can be directly accessed by C code (see §3.3). 
+
+The environment associated with a C function can be directly accessed by C code (see §3.3). It is used as the default environment for other C functions and userdata created by the function. 
+
+Environments associated with Lua functions are used to resolve all accesses to global variables within the function (see §2.3). They are used as the default environment for nested Lua functions created by the function. 
+
+You can change the environment of a Lua function or the running thread by calling setfenv. You can get the environment of a Lua function or the running thread by calling getfenv. To manipulate the environment of other objects (userdata, C functions, other threads) you must use the C API. 
+
+
+
+
+
+2.9 - 环境 
+除了元表以外，线程、函数和userdata（注：用户数据）类型的对象还有另一个与它们相关联的表，称为环境。
+像元表那样，环境是个常规表，多个对象可以共享相同的环境。
+被创建的线程共享创建方线程的环境。
+被创建的userdata和C函数共享创建方C函数的环境。
+被创建的非嵌套Lua函数（有loadfile，loadstring或load创建的函数）共享创建方线程的环境。
+被创建的嵌套的Lua函数共享创建方Lua函数的环境。
+与userdata关联的环境对于Lua代码来说没有意义。
+只是为了对程序员的方便特性而把表关联到userdata。
+关联C函数的环境对于C代码来说是直接可访问的（见§3.3）。
+习惯用作被这个函数所创建的其它C函数和userdata的默认环境。
+Lua函数关联的环境习惯用于解决在函数内部对全局变量的访问问题。（见§2.3）
+它们被用作这个函数所创建的嵌套Lua函数的默认环境。
+你可以通过调用setfenv改变一个Lua函数或者运行中的线程的环境。
+你可以通过调用getfenv获得一个Lua函数或者运行中的线程的环境。
+为了操纵其他对象的环境（userdata，C函数，其他线程），你必须使用C API。 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.10 - Garbage Collection
+Lua performs automatic memory management. This means that you have to worry neither about allocating memory for new objects nor about freeing it when the objects are no longer needed. Lua manages memory automatically by running a garbage collector from time to time to collect all dead objects (that is, objects that are no longer accessible from Lua). All memory used by Lua is subject to automatic management: tables, userdata, functions, threads, strings, etc. 
+
+Lua implements an incremental mark-and-sweep collector. It uses two numbers to control its garbage-collection cycles: the garbage-collector pause and the garbage-collector step multiplier. Both use percentage points as units (so that a value of 100 means an internal value of 1). 
+
+The garbage-collector pause controls how long the collector waits before starting a new cycle. Larger values make the collector less aggressive. Values smaller than 100 mean the collector will not wait to start a new cycle. A value of 200 means that the collector waits for the total memory in use to double before starting a new cycle. 
+
+The step multiplier controls the relative speed of the collector relative to memory allocation. Larger values make the collector more aggressive but also increase the size of each incremental step. Values smaller than 100 make the collector too slow and can result in the collector never finishing a cycle. The default, 200, means that the collector runs at "twice" the speed of memory allocation. 
+
+You can change these numbers by calling lua_gc in C or collectgarbage in Lua. With these functions you can also control the collector directly (e.g., stop and restart it). 
+
+
+
+
+2.10 - 垃圾回收 
+Lua执行自动内存管理。
+这意味着你不必担心新对象的内存分配，也不必担心不再需要的对象如何释放。
+Lua通过间或地运行垃圾回收器自动管理内存来回收所有死亡的对象（即在Lua中不再可以访问的对象）。
+Lua使用的所有内存都属在自动管理下：表，userdata（注：用户数据），函数，线程，字符串，等等。
+Lua实现一个增量标记清除回收器。
+它使用两个数来控制它的垃圾回收周期：垃圾回收器暂停和垃圾回收器步长倍数。
+两者都使用百分点作为单位。
+（所以一个100的值代表内部数值1的意思）
+垃圾回收器暂停控制着回收器在一个新周期前等待的时间长度。
+较大的值使回收器拥有较少的侵入性。
+小于100的值意味着回收器将不会等待开始新的周期中。
+一个200的值意味着回收器等待所有使用中的内存翻一倍后才开始新的周期。
+步长倍数控制回收器相对于内存分配器的相对速度。
+较大的值会使回收器更具侵入性，但同时增加了每次增量步长的大小。
+小于100的值使回收器更慢从而致使回收器永远都不能完成一次周期。
+默认值200意味着回收器以内存分配器“两倍”的速度运行。
+你可以通过在C中调用lua_gc或者在Lua中调用collectgarbage来改变这些值。
+使用这些函数你也可以直接控制回收器（例如停止或重启它）
+
+
+
+
+
+
+
+
+
+
+2.10.1 - Garbage-Collection Metamethods
+Using the C API, you can set garbage-collector metamethods for userdata (see §2.8). These metamethods are also called finalizers. Finalizers allow you to coordinate Lua's garbage collection with external resource management (such as closing files, network or database connections, or freeing your own memory). 
+
+Garbage userdata with a field __gc in their metatables are not collected immediately by the garbage collector. Instead, Lua puts them in a list. After the collection, Lua does the equivalent of the following function for each userdata in that list: 
+
+     function gc_event (udata)
+       local h = metatable(udata).__gc
+       if h then
+         h(udata)
+       end
+     end
+
+At the end of each garbage-collection cycle, the finalizers for userdata are called in reverse order of their creation, among those collected in that cycle. That is, the first finalizer to be called is the one associated with the userdata created last in the program. The userdata itself is freed only in the next garbage-collection cycle. 
+
+
+
+
+
+2.10.1 - 垃圾回收的元方法 
+使用C API，您可以设置userdata的垃圾回收的元方法（见§2.8）。
+这些元方法也被称为回收函数（注：终结函数）。回收函数允许你使用外部资源管理协调Lua的垃圾回收
+（如关闭文件，网络或数据库连接，或者释放你自己的内存）。 
+在元表中带字段__gc的
+垃圾userdata不会马上被垃圾回收器回收。
+相反，Lua把它们放在一个列表中，在回收后，Lua对那个列表中的每一个userdata执行以下函数的等效操作：
+function gc_event (udata)
+	local h = metatable(udata).__gc
+	if h then
+		h(udata)
+	end
+end
+在每个垃圾回收周期的最后，在那个周期回收的那些userdata的回收函数会以它们相反的创建顺序被调用。
+即第一个被调用的回收函数是关联着那个在程序中最后创建的userdata。
+userdata自身只会在下一次垃圾回收周期里被释放。
+
+
+
+
+
+
+
+
+
+
+2.10.2 - Weak Tables
+A weak table is a table whose elements are weak references. A weak reference is ignored by the garbage collector. In other words, if the only references to an object are weak references, then the garbage collector will collect this object. 
+
+A weak table can have weak keys, weak values, or both. A table with weak keys allows the collection of its keys, but prevents the collection of its values. A table with both weak keys and weak values allows the collection of both keys and values. In any case, if either the key or the value is collected, the whole pair is removed from the table. The weakness of a table is controlled by the __mode field of its metatable. If the __mode field is a string containing the character 'k', the keys in the table are weak. If __mode contains 'v', the values in the table are weak. 
+
+After you use a table as a metatable, you should not change the value of its __mode field. Otherwise, the weak behavior of the tables controlled by this metatable is undefined. 
+
+
+
+2.10.2 - 弱表 
+弱表是元素为弱引用的表。
+弱引用被垃圾收集器忽略。（注：这里的忽略不等于不回收）
+换言之，如果指向一个对象的唯一引用时弱引用，那么垃圾回收器将回收这个对象。
+一个表可以有弱键，弱值，或两者都有。
+一个带弱键的表允许其键的回收，但阻止其值的回收。
+拥有弱键和弱值的表允许键和值的回收。
+在任何情况下，如果键或值被回收，整个映射对会从表中删除。
+表的弱引用属性由它的元表__mode字段控制。
+如果__mode字段是包含'k'的字符串，表的键为弱引用。
+如果__mode包含'v'，表的值为弱引用。
+在你使用一个表作为元表后，你不应该改变它的__mode字段的值。
+否则，受这个元表控制的表的弱引用行为是不确定的。
+
+
+
+
+
+
+
+

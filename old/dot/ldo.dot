@@ -1,0 +1,164 @@
+digraph ldo {
+rankdir=LR; //TB
+
+node[fontname="PMingLiu"]
+edge[fontname="PMingLiu"]
+
+"luaD_protectedparser" [color="#ff0000"]
+"f_parser" [color="#ff0000"]
+"luaD_pcall" [color="#ff0000"]
+"lua_yield" [color="#ff0000"]
+"lua_resume" [color="#ff0000"]
+"resume_error" [color="#ff0000"]
+"resume" [color="#ff0000"]
+"luaD_call" [color="#ff0000"]
+"luaD_poscall" [color="#ff0000"]
+"callrethooks" [color="#ff0000"]
+"luaD_precall" [color="#ff0000"]
+"inc_ci" [color="#ff0000"]
+"tryfuncTM" [color="#ff0000"]
+"adjust_varargs" [color="#ff0000"]
+"luaD_callhook" [color="#ff0000"]
+"growCI" [color="#ff0000"]
+"luaD_growstack" [color="#ff0000"]
+"luaD_reallocCI" [color="#ff0000"]
+"luaD_reallocstack" [color="#ff0000"]
+"correctstack" [color="#ff0000"]
+"luaD_rawrunprotected" [color="#ff0000"]
+"luaD_throw" [color="#ff0000"]
+"resetstack" [color="#ff0000"]
+"restore_stack_limit" [color="#ff0000"]
+"luaD_seterrorobj" [color="#ff0000"]
+"restoreci" [color="#ff0000"]
+"saveci" [color="#ff0000"]
+"restorestack" [color="#ff0000"]
+"savestack" [color="#ff0000"]
+"incr_top" [color="#ff0000"]
+"luaD_checkstack" [color="#ff0000"]
+
+
+
+
+"lua_load" -> "luaD_protectedparser"
+
+"luaD_protectedparser"-> "f_parser"
+
+"lua_pcall" -> "luaD_pcall"
+"lua_cpcall" -> "luaD_pcall"
+"luaD_protectedparser" -> "luaD_pcall"
+
+"luaB_yield" -> "lua_yield"
+
+"auxresume" -> "lua_resume"
+
+"lua_resume" -> "resume_error"
+
+"lua_resume" -> "resume"
+
+"lua_call" -> "luaD_call"
+"f_call" -> "luaD_call"
+"f_Ccall" -> "luaD_call"
+"luaG_errormsg" -> "luaD_call"
+"GCTM" -> "luaD_call"
+"callTMres" -> "luaD_call"
+"callTM" -> "luaD_call"
+"luaV_execute" -> "luaD_call"
+
+"luaV_execute" -> "luaD_poscall"
+"resume" -> "luaD_poscall"
+"luaD_precall" -> "luaD_poscall"
+
+"luaD_poscall" -> "callrethooks"
+
+"luaV_execute" -> "luaD_precall"
+"resume" -> "luaD_precall"
+"luaD_call" -> "luaD_precall"
+
+"luaD_precall" -> "inc_ci"
+
+"luaD_precall" -> "tryfuncTM"
+
+"luaD_precall" -> "adjust_varargs"
+
+"traceexec" -> "luaD_callhook"
+"callrethooks" -> "luaD_callhook"
+"luaD_precall" -> "luaD_callhook"
+
+"inc_ci" -> "growCI"
+
+"luaD_checkstack" -> "luaD_growstack"
+
+"checkstacksizes" -> "luaD_reallocCI"
+"inc_ci" -> "luaD_reallocCI"
+"growCI" -> "luaD_reallocCI"
+"restore_stack_limit" -> "luaD_reallocCI"
+
+"luaC_checkGC" -> "luaD_reallocstack"
+"checkstacksizes" -> "luaD_reallocstack"
+"luaD_checkstack" -> "luaD_reallocstack"
+"luaD_growstack" -> "luaD_reallocstack"
+
+"luaD_reallocstack" -> "correctstack"
+
+"lua_close" -> "luaD_rawrunprotected"
+"lua_newstate" -> "luaD_rawrunprotected"
+"luaD_pcall" -> "luaD_rawrunprotected"
+"lua_resume" -> "luaD_rawrunprotected"
+
+"error" -> "luaD_throw"
+"luaM_realloc_" -> "luaD_throw"
+"luaX_lexerror" -> "luaD_throw"
+"luaD_call" -> "luaD_throw"
+"growCI" -> "luaD_throw"
+"luaG_errormsg" -> "luaD_throw"
+
+"luaD_throw" -> "resetstack"
+
+"luaD_pcall" -> "restore_stack_limit"
+"resetstack" -> "restore_stack_limit"
+
+"luaD_pcall" -> "luaD_seterrorobj"
+"lua_resume" -> "luaD_seterrorobj"
+"resetstack" -> "luaD_seterrorobj"
+
+"luaD_pcall" -> "restoreci"
+
+"luaD_pcall" -> "saveci"
+
+"callTMres" -> "restorestack"
+"luaD_pcall" -> "restorestack"
+"callrethooks" -> "restorestack"
+"luaD_precall" -> "restorestack"
+"tryfuncTM" -> "restorestack"
+"luaD_callhook" -> "restorestack"
+"luaG_errormsg" -> "restorestack"
+
+"callTMres" -> "savestack"
+"luaD_protectedparser" -> "savestack"
+"callrethooks" -> "savestack"
+"luaD_precall" -> "savestack"
+"tryfuncTM" -> "savestack"
+"luaD_callhook" -> "savestack"
+"lua_cpcall" -> "savestack"
+"lua_pcall" -> "savestack"
+
+"LoadFunction" -> "incr_top"
+"combine" -> "incr_top"
+"open_func" -> "incr_top"
+"luaO_pushvfstring" -> "incr_top"
+"pushstr" -> "incr_top"
+"f_parser" -> "incr_top"
+"resume_error" -> "incr_top"
+"tryfuncTM" -> "incr_top"
+"luaG_errormsg" -> "incr_top"
+"lua_getinfo" -> "incr_top"
+"collectvalidlines" -> "incr_top"
+
+"luaV_execute" -> "luaD_checkstack"
+"callTM" -> "luaD_checkstack"
+"callTMres" -> "luaD_checkstack"
+"incr_top" -> "luaD_checkstack"
+"luaD_precall" -> "luaD_checkstack"
+"luaD_callhook" -> "luaD_checkstack"
+"lua_checkstack" -> "luaD_checkstack"
+}

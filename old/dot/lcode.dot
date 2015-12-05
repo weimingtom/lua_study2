@@ -1,0 +1,192 @@
+digraph lcode {
+//rankdir=LR; //TB
+
+//node[fontname="PMingLiu"]
+//edge[fontname="PMingLiu"]
+
+
+"luaK_codeAsBx" -> "luaK_codeABx"
+"luaK_storevar" -> "luaK_codeABx"
+"discharge2reg" -> "luaK_codeABx"
+"luaK_dischargevars" -> "luaK_codeABx"
+
+"luaK_setlist" -> "luaK_codeABC"
+"codearith" -> "luaK_codeABC"
+"codenot" -> "luaK_codeABC"
+"luaK_self" -> "luaK_codeABC"
+"luaK_storevar" -> "luaK_codeABC"
+"discharge2reg" -> "luaK_codeABC"
+"code_label" -> "luaK_codeABC"
+"luaK_dischargevars" -> "luaK_codeABC"
+"condjump" -> "luaK_codeABC"
+"luaK_ret" -> "luaK_codeABC"
+"luaK_nil" -> "luaK_codeABC"
+
+"luaK_setlist" -> "luaK_code"
+"luaK_codeABx" -> "luaK_code"
+"luaK_codeABC" -> "luaK_code"
+
+"luaK_posfix" -> "codecomp"
+
+"luaK_posfix" -> "codearith"
+"luaK_prefix" -> "codearith"
+
+"codearith" -> "constfolding"
+
+"luaK_prefix" -> "codenot"
+
+"luaK_infix" -> "luaK_goiffalse"
+
+"luaK_infix" -> "luaK_goiftrue"
+
+"luaK_goiffalse" -> "jumponcond"
+"luaK_goiftrue" -> "jumponcond"
+
+"codenot" -> "invertjump"
+"luaK_goiftrue" -> "invertjump"
+
+"luaK_infix" -> "luaK_exp2RK"
+"codecomp" -> "luaK_exp2RK"
+"codearith" -> "luaK_exp2RK"
+"luaK_indexed" -> "luaK_exp2RK"
+"luaK_self" -> "luaK_exp2RK"
+"luaK_storevar" -> "luaK_exp2RK"
+
+"luaK_posfix" -> "luaK_exp2val"
+"luaK_exp2RK" -> "luaK_exp2val"
+
+"luaK_prefix" -> "luaK_exp2anyreg"
+"luaK_self" -> "luaK_exp2anyreg"
+"luaK_storevar" -> "luaK_exp2anyreg"
+"luaK_exp2RK" -> "luaK_exp2anyreg"
+"luaK_exp2val" -> "luaK_exp2anyreg"
+
+"luaK_posfix" -> "luaK_exp2nextreg"
+"luaK_infix" -> "luaK_exp2nextreg"
+"luaK_exp2anyreg" -> "luaK_exp2nextreg"
+
+"luaK_storevar" -> "exp2reg"
+"luaK_exp2anyreg" -> "exp2reg"
+"luaK_exp2nextreg" -> "exp2reg"
+
+"codenot" -> "discharge2anyreg"
+"jumponcond" -> "discharge2anyreg"
+
+"exp2reg" -> "discharge2reg"
+"discharge2anyreg" -> "discharge2reg"
+
+"exp2reg" -> "code_label"
+
+"luaK_posfix" -> "luaK_dischargevars"
+//"luaK_posfix" -> "luaK_dischargevars"
+"codenot" -> "luaK_dischargevars"
+"luaK_goiffalse" -> "luaK_dischargevars"
+"luaK_goiftrue" -> "luaK_dischargevars"
+"luaK_exp2val" -> "luaK_dischargevars"
+"luaK_exp2anyreg" -> "luaK_dischargevars"
+"luaK_exp2nextreg" -> "luaK_dischargevars"
+"discharge2reg" -> "luaK_dischargevars"
+
+"luaK_dischargevars" -> "luaK_setoneret"
+
+"luaK_setmultret" -> "luaK_setreturns"
+
+"luaK_exp2RK" -> "nilK"
+
+"luaK_exp2RK" -> "boolK"
+
+"luaK_exp2RK" -> "luaK_numberK"
+"discharge2reg" -> "luaK_numberK"
+
+"nilK" -> "addk"
+"boolK" -> "addk"
+"luaK_numberK" -> "addk"
+"luaK_stringK" -> "addk"
+
+"luaK_posfix" -> "freeexp"
+"codecomp" -> "freeexp"
+"codearith" -> "freeexp"
+"codenot" -> "freeexp"
+"jumponcond" -> "freeexp"
+"luaK_self" -> "freeexp"
+"luaK_storevar" -> "freeexp"
+"luaK_exp2nextreg" -> "freeexp"
+
+"luaK_dischargevars" -> "freereg"
+"freeexp" -> "freereg"
+
+"luaK_self" -> "luaK_reserveregs"
+"luaK_exp2nextreg" -> "luaK_reserveregs"
+"discharge2anyreg" -> "luaK_reserveregs"
+"luaK_setreturns" -> "luaK_reserveregs"
+
+"luaK_reserveregs" -> "luaK_checkstack"
+
+"luaK_posfix" -> "luaK_concat"
+//"luaK_posfix" -> "luaK_concat"
+"luaK_goiffalse" -> "luaK_concat"
+"luaK_goiftrue" -> "luaK_concat"
+"exp2reg" -> "luaK_concat"
+"luaK_patchtohere" -> "luaK_concat"
+"luaK_jump" -> "luaK_concat"
+
+"luaK_goiffalse" -> "luaK_patchtohere"
+"luaK_goiftrue" -> "luaK_patchtohere"
+"exp2reg" -> "luaK_patchtohere"
+"luaK_patchlist" -> "luaK_patchtohere"
+
+"luaK_code" -> "dischargejpc"
+
+"exp2reg" -> "patchlistaux"
+"luaK_patchlist" -> "patchlistaux"
+"dischargejpc" -> "patchlistaux"
+
+"codenot" -> "removevalues"
+
+"patchlistaux" -> "patchtestreg"
+"removevalues" -> "patchtestreg"
+
+"exp2reg" -> "need_value"
+
+"invertjump" -> "getjumpcontrol"
+"patchtestreg" -> "getjumpcontrol"
+"need_value" -> "getjumpcontrol"
+
+"luaK_concat" -> "getjump"
+"patchlistaux" -> "getjump"
+"removevalues" -> "getjump"
+"need_value" -> "getjump"
+
+"exp2reg" -> "luaK_getlabel"
+"code_label" -> "luaK_getlabel"
+"luaK_patchtohere" -> "luaK_getlabel"
+
+"luaK_concat" -> "fixjump"
+"patchlistaux" -> "fixjump"
+
+"codecomp" -> "condjump"
+"jumponcond" -> "condjump"
+
+"luaK_goiffalse" -> "luaK_jump"
+"luaK_goiftrue" -> "luaK_jump"
+"exp2reg" -> "luaK_jump"
+"condjump" -> "luaK_jump"
+
+"discharge2reg" -> "luaK_nil"
+
+"luaK_infix" -> "isnumeral"
+"luaK_prefix" -> "isnumeral"
+"constfolding" -> "isnumeral"
+
+"luaK_exp2val" -> "hasjumps"
+"luaK_exp2anyreg" -> "hasjumps"
+"exp2reg" -> "hasjumps"
+
+"luaK_jump" -> "luaK_codeAsBx"
+
+"luaK_posfix" -> "getcode"
+"jumponcond" -> "getcode"
+"discharge2reg" -> "getcode"
+"luaK_setoneret" -> "getcode"
+"luaK_setreturns" -> "getcode"
+}

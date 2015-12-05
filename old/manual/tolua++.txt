@@ -1,0 +1,2918 @@
+tolua++ - Reference Manual
+by Waldemar Celes, Ariel Manzur. 
+
+tolua++ - 参考手册
+作者Waldemar Celes, Ariel Manzur。
+
+--------------------------------------------------------------------------------
+tolua++ is an extended version of tolua, a tool to integrate C/C++ code with Lua. tolua++ includes new features oriented to c++ such as: 
+
+tolua++是tolua的扩展版本，一个把C/C++代码集成到Lua上的工具。
+tolua++包括从c++继承而来的新特性如：
+
+Support for std::string as a basic type (this can be turned off by a command line option). 
+Support for class templates 
+As well as other features and bugfixes. 
+
+支持std::string作为基本类型（可以用命令行选项关闭）
+支持类模板
+还有其它特性和缺陷修复。
+
+tolua is a tool that greatly simplifies the integration of C/C++ code with Lua. Based on a cleaned header file (or extracts from real header files), tolua automatically generates the binding code to access C/C++ features from Lua. Using Lua API and tag method facilities, tolua maps C/C++ constants, external variables, functions, classes, and methods to Lua. 
+
+tolua是一种大大简化了C/C++和Lua代码集成工作的工具。
+在清理好的头文件基础上（或从实际头文件提取出来），tolua自动生成绑定代码在Lua中获得C/C++特性。
+使用Lua API和标记方法工具，tolua把C/C++常量，外部变量，函数，类和方法映射到Lua中。
+
+
+This manual is for tolua++ version 1.0 and is implemented upon Lua 5.0 and based on tolua 5.0. See Compatibility for details on switching from older versions. 
+
+本手册适用于tolua++版本1.0并且在Lua5.0实现，基于tolua 5.0。详见从旧版本转换过来的兼容性。
+
+
+The sections below describe how to use tolua. Please contact us with bug reports, suggestions, and comments. 
+
+以下部分描述如何使用tolua。如果有缺陷报告，建议和意见请联系我们。
+
+Shortcuts: 
+How tolua works 
+How to use tolua 
+Basic Concepts 
+Binding constants 
+Binding external variables 
+Binding functions 
+Binding struct fields 
+Binding classes and methods 
+Binding properties 
+Class Templates 
+Module definition 
+Renaming constants, variables and functions 
+Storing additional fields 
+Additional features 
+Exported utility functions 
+Embedded Lua code 
+Customizing tolua++ 
+Compatibility with older versions 
+Changes since v3 * 
+Changes since v2.* 
+Changes since v1.* 
+Credits 
+Availability 
+
+
+快捷方式： 
+tolua如何工作 
+如何使用tolua 
+基本概念 
+绑定常量 
+绑定外部变量 
+绑定函数 
+绑定结构体字段 
+绑定类和方法 
+绑定属性 
+类模板 
+模块定义 
+重命名常量，变量和方法 
+保存附加字段（域） 
+附加特性 
+导出的工具函数 
+嵌入Lua代码 
+定制tolua++ 
+与其它版本的兼容性 
+从v3 *开始的改变 
+从v2.*开始的改变 
+从v1.*开始的改变 
+鸣谢
+可用性
+
+--------------------------------------------------------------------------------
+
+How tolua works
+To use tolua, we create a package file, a C/C++ cleaned header file, listing the constants, variables, functions, classes, and methods we want to export to the Lua environment. Then tolua parses this file and creates a C/C++ file that automatically binds the C/C++ code to Lua. If we link the created file with our application, the specified C/C++ code can be accessed from Lua.
+A package file can also include regular header files, other package files, or lua files.
+
+tolua如何工作
+要使用tolua，我们要创建一个包文件，一个C/C++清理好的头文件，列出我们想要导出到Lua环境中的常量，变量，函数，类和方法。然后tolua会解析这个文件并创建一个自动把C/C++绑定到Lua的C/C++文件。如果我们把创建出来的文件链接我们的应用程序中，指定的C/C++代码就可以在Lua中访问。
+包文件还可以包括常规头文件，其他包文件，或者lua文件。
+
+
+
+
+Let's start with some examples. If we specify as input the following C-like header file to tolua: 
+
+让我们开始一些例子，如果我们指定下面的类C头文件作为tolua的输入
+
+#define FALSE 0
+#define TRUE 1
+
+enum { 
+ POINT = 100, 
+ LINE, 
+ POLYGON
+}
+Object* createObejct (int type);
+void drawObject (Object* obj, double red, double green, double blue);
+int isSelected (Object* obj);
+
+
+
+A C file that binds such a code to Lua is automatically generated. Therefore, in Lua code, we can access the C code, writing, for instance: 
+
+一个绑定代码到Lua的C文件会自动生成。因此，在Lua代码中，我们可以访问C代码，例如这样写：
+
+...
+myLine = createObject(LINE)
+...
+if isSelected(myLine) == TRUE then
+  drawObject(myLine, 1.0, 0.0, 0.0);
+else
+  drawObject(myLine, 1.0, 1.0, 1.0);
+end
+...
+
+
+
+Also, consider a C++-like header file: 
+还可以考虑类C++头文件：
+
+
+
+
+#define FALSE 0
+#define TRUE 1
+class Shape
+{
+  void draw (void);
+  void draw (double red, double green, double blue);
+  int isSelected (void);
+};
+class Line : public Shape
+{
+ Line (double x1, double y1, double x2, double y2);
+ ~Line (void);
+};
+
+
+
+If this file is used as input to tolua, a C++ file is automatically generated proving access to such a code from Lua. Therefore, it would be valid to write Lua statements like: 
+如果这个文件作为tolua的输入，一个C++文件会自动生成，使得在Lua中可以访问这些代码。因此，类似这样写的Lua代码是合法的：
+
+
+
+...
+myLine = Line:new (0,0,1,1)
+...
+if myLine:isSelected() == TRUE then
+ myLine:draw(1.0,0.0,0.0)
+else
+ myLine:draw()
+end
+...
+myLine:delete()
+...
+
+
+
+
+The package file (usually with extension .pkg) passed to tolua is not the real C/C++ header file, but a cleaned version of it. tolua does not implement a complete parse to interpret C/C++ code, but it understands a few declarations that are used to describe the features that are to be exported to Lua. Regular header files can be included into packages files; tolua will extract the code specified by the user to parse from the header (see Basic Concepts). 
+
+传递到tolua的包文件（一般扩展名为.pkg）不是真正的C/C++头文件，但它是一个清理好的版本。tolua没有实现一个完整解析器来解析的C/C++代码，但它明白少数描述导出到Lua的特性的声明。常规头文件可以包含进包文件；tolua将从头文件中提取用户指定的代码来解析（见基本概念）。
+
+
+
+
+How to use toLua
+tolua is composed by two pieces of code: an executable and a library. The executable represents the parser that reads a package file and output a C/C++ code that implements the binding to access the C/C++ features from Lua. If the package file is a C++ like code (i.e., includes class definitions), a C++ code is generated. If the cleaned header file is a C like code (i.e., without classes), a C code is generated. tolua accepts a set of options. Running "tolua -h" displays the current accepted options. For instance, to parse a file called myfile.pkg generating the binding code in myfile.c, we do: 
+tolua -o myfile.c myfile.pkg 
+
+如何使用toLua
+tolua是由两部分代码组成：一个可执行文件和一个库。可执行文件代表一个解析器，
+读取包文件并输出一段C/C++代码来实现从Lua中访问C/C++特性的的绑定。
+如果包文件是一个类C++代码（即包括类的定义），将生成一段C++代码。如果清理好的头文件是一个类C的代码（即没有类），将生成C代码。tolua接受一组选项。运行"tolua -h"显示当前可接受的选项。例如，要解析一个文件名为myfile.pkg生成绑定代码到myfile.c，我们可以这样操作：
+tolua -o myfile.c myfile.pkg 
+
+
+
+The generated code must be compiled and linked with the application to provide the desired access from Lua. Each parsed file represents a package being exported to Lua. By default, the package name is the input file root name (myfile in the example). The user can specify a different name for the package: 
+
+tolua -n pkgname -o myfile.c myfile.pkg 
+
+生成的代码必须编译并链接到应用程序中以提供Lua中所需要的访问。每个被解析的文件代表一个导出到Lua的包。默认下，包名是输入文件的根名称（在这个例子是myfile）。用户可以指定一个与包名不同的名称：
+tolua -n pkgname -o myfile.c myfile.pkg 
+
+
+
+The package should also be explicitly initialized. To initialize the package from our C/C++ code, we must declare and call the initialization function. The initialization function is defined as 
+
+int tolua_pkgname_open (lua_State*); 
+
+这个包还应该显式初始化。要初始化从我们的C/C++代码得到的包，我们必须声明并调用初始化函数。初始化函数被定义为
+int tolua_pkgname_open (lua_State*); 
+
+
+
+where pkgname represents the name of the package being bound. If we are using C++, we can opt for automatic initialization: 
+
+tolua -a -n pkgname -o myfile.c myfile.pkg 
+
+
+其中pkgname代表绑定的包名。如果我们使用C++，我们可以选择自动初始化
+tolua -a -n pkgname -o myfile.c myfile.pkg 
+
+
+In that case, the initialization function is automatically called. However, if we are planning to use multiple Lua states, automatic initialization does not work, because the order static variables are initialized in C++ is not defined. 
+
+在那种场合下，初始化函数自动被调用。然而，如果我们计划使用多个Lua状态，自动初始化会不起作用，因为静态变量在C++中初始化顺序是无定义的。
+
+
+Optionally, the prototype of the open function can be outputted to a header file, which name is given by the -H option. 
+
+或者，open（打开）函数的原型可以输出到一个头文件，它的名字是由-H选项指定。
+
+
+The binding code generated by tolua uses a set of functions defined in the tolua library. Thus, this library also has to be linked with the application. The file tolua.h is also necessary to compile the generated code. 
+
+由tolua生成的绑定代码使用了一组定义在tolua库中的函数。因此，这个库必须被链接进应用程序中。文件tolua.h也是编译生成代码所必需的。
+
+An application can use tolua object oriented framework (see exported utility functions) without binding any package. In that case, the application must call tolua initialization function (this function is called by any package file initialization function): 
+
+int tolua_open (void); 
+
+应用程序可以不绑定任何包而使用tolua面向对象框架（见导出工具函数）。在这种情况下，应用程序必须调用tolua的初始化函数（这个函数被任意包文件的初始化函数调用）：
+int tolua_open (void); 
+
+
+
+
+Basic Concepts
+The first step in using tolua is to create the package file. Starting with the real header files, we clean them by declaring the features we want to access from Lua in a format that tolua can understand. The format tolua understands is simple C/C++ declarations as described below. 
+
+
+基本概念
+使用tolua的第一步是创建包文件。从真正的头文件开始，我们清理它们，通过声明我们想从Lua中访问的特性，变成一种tolua可以理解的格式。tolua能理解的格式是下面所描述的简单C/C++声明。
+
+
+Including files
+
+A package file may include other package file. The general format to do that is: 
+$pfile "include_file" 
+
+包含文件
+
+一个包文件可以包含其他包文件。这样做的一般格式是： 
+$pfile "include_file" 
+
+
+
+A package file may also include regular C/C++ header files, using the hfile or cfile directive: 
+
+$cfile "example.h" 
+
+一个包文件还可以包含常规C/C++头文件，使用hfile或cfile指令
+$cfile "example.h" 
+
+
+In which case, tolua will extract the code enclosed between tolua_begin and tolua_end, or or tolua_export for a single line. Consider this C++ header as example: 
+
+在这种情况下，tolua将提取tolua_begin和tolua和tolua_end之间封闭的代码，或者单行的tolua_export。
+以这个C++头文件为例：
+
+
+
+#ifndef EXAMPLE_H
+#define EXAMPLE_H
+
+class Example { // tolua_export
+
+private:
+
+	string name;
+	int number;
+
+public:
+
+	void set_number(int number);
+
+	//tolua_begin
+
+	string get_name();
+	int get_number();
+};
+// tolua_end
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+In this case, the code that's not supported by tolua (the private part of the class), along with the function set_number is left outside of the package that includes this header. 
+
+
+在这种情况下，tolua不支持的代码（类的私有部分），还有set_number函数被留在包含此头文件的包的外面。
+
+
+
+
+Finally, lua files can be included on a package file, using $lfile: 
+
+$lfile "example.lua" 
+
+
+最后，Lua文件可以包含在一个包文件，使用$lfile：
+$lfile "example.lua" 
+
+
+
+New on tolua++: an extra way to include source files is available since version 1.0.4 of tolua++, using ifile: 
+
+$ifile "filename" 
+
+tolua++新增：从tolua++版本1.0.4开始一种包含源文件的额外方式可用，使用ifile：
+$ifile "filename" 
+
+
+ifile also takes extra optional parameters after the filename, for example: 
+
+$ifile "widget.h", GUI
+$ifile "vector.h", math, 3d 
+
+ifile可以携带额外可选的参数跟在filename后面，例如
+$ifile "widget.h", GUI
+$ifile "vector.h", math, 3d 
+
+
+ifile's default behaviour is to include the whole file, untouched. However, the contents of the file and the extra parameters are put through the include_file_hook function before being included into the package (see Customizing tolua++ for more details). 
+
+ifile的缺省行为是包含整个文件，不作改变。然而，文件内容和额外参数在包含进包之前传入include_file_hook函数（详见定制tolua++）
+
+
+Basic types
+tolua automatically maps C/C++ basic types to Lua basic types. Thus, char, int, float, and double are mapped to the Lua type number; char* is mapped to string; and void* is mapped to userdata. Types may be preceded by modifiers (unsigned, static, short, const, etc.); however, be aware that tolua ignores the modifier const if applied to basic types. Thus, if we pass a constant basic type to Lua and then pass it back to C/C++ code where a non constant is expected, the constant to non constant conversion will be silently done. 
+Functions in C/C++ can also manipulate Lua objects explicitly. Thus lua_Object is also considered a basic type. In this case, any Lua value matches it. 
+
+基本类型
+tolua自动映射的C/C++基本类型到Lua的基本类型。因此，char，int，float，和double映射为lua的number类型；char*映射为string类型，void*映射为userdata。类型前面可以带修饰符（unsigned，static，short，const等），然而，注意tolua会忽略修饰符const如果它应用在基本类型上。因此，如果我们把常量基本类型传递到Lua，然后将它传递回C/C++的代码，这里是一个预计之中的非常量值，那么常量到非常量的转换将隐式执行。
+在C/C++中的函数还可以显式操纵Lua对象。因此lua_Object也被视为基本类型。在这种情况下，任何Lua值都可匹配它。
+
+
+
+
+New on tolua++: The C++ type string is also considered a basic type, and is passed as a value to lua (using the c_str() method). This feature can be turned off with the command line option -S. 
+
+tolua++新增：C++类型string也被视为基本类型，并且作为值传递给lua（使用c_str()方法）。这个特性可以用命令行选项-S关闭。
+
+
+User defined types
+All other types that appear in the package file being processed are considered user defined types. These are mapped to tagged userdata type in Lua. Lua can only store pointers to user defined types; although, tolua automatically makes the necessary arrangement to deal with references and values. For instance, if a function or method returns a value of user defined type, tolua allocates a clone object when returning it to Lua and sets the garbage collection tag method to automatically free the allocated object when no longer in use by Lua. 
+For user defined types, constness is preserved. Thus passing a non constant user defined type to a function that expects constant type generates an type mismatching error. 
+
+用户定义类型
+其它出现在包文件中的所有类型被当作用户定义类型来处理。这些东西被映射为Lua中的标签userdata类型。
+lua只可以保存指针为用户定义类型；但是tolua自动进行必要的安排以处理引用和值。例如，如果一个函数或方法返回一个用户定义类型的值，当返回它到Lua时tolua分配一个克隆对象，并且设置垃圾回收标签方法以在Lua不再使用这个分配对象时自动释放它。
+
+
+
+NULL and nil
+C/C++ NULL or 0 pointers are mapped to Lua nil type; conversely, nil may be specified wherever a C/C++ pointer is expected. This is valid for any type: char*, void*, and pointers to user defined types. 
+Typedefs
+
+NULL和nil
+C/C++的NULL或0指针映射为Lua的nil类型；相反，nil可以在任何期待C/C++指针的地方指定。这对任何类型是有效地：char*，void*，和指向用户定义类型的指针。
+
+
+
+tolua also accepts simple typedef's inside the package files. Any occurrence of a type after its definition is mapped by tolua to the base type. They are useful because several packages redefine the basic C/C++ types to their own types. For instance, one can define the type real to represent a double. In that case, real can be used to specify the variable types inside the package file interpreted by tolua, but only if we include the following definition before any use of the type real. 
+typedef double real; 
+
+
+tolua也接受包文件内的简单typedef。任何在它定义后出现的类型被tolua映射为基本类型。它们有用是因为一些包把基本C/C++类型映射为他们自己的类型。例如，你可以定义real类型来代表double。在那种情况下，real可以用于指定包文件内的变量类型而被tolua解析，但只能是我们在任何使用real类型前包含下面定义的情况。
+typedef double real; 
+
+
+Otherwise, real would be interpreted as a user defined type and would not be mapped to Lua numbers. 
+否则，real将被解析为一个用户定义类型而不会被映射为Lua的number。
+
+
+
+
+Including real header files
+In the package file, we must specify which are the real header files that should be included so that the generated code can access the constants, variables, functions, and classes we are binding. Any line in the package file beginning with a $ (except $[hclp]file, $[ , and $] lines) is inserted into the generated binding C/C++ code without any change, but the elimination of the $ itself. We use this feature to include the real header files. So, our package files will usually start with a set of $ beginning lines specifying the files that must be included, that is, the files the package file is based on. 
+
+
+包含真正的头文件
+在包文件中，我们必须指定哪些是真正的头文件，应该被包含而使生成的代码可以访问我们绑定的常量，变量，函数和类。在包文件内的以一个$开始的任何行（除了$[hclp]file，$[和$]行）会在消除$自身后不加修改地插入进所生成的绑定C/C++代码中。我们使用这种特性来包含真正的头文件。所以，我们的包文件通常都是用一组$开头的行来指定必须包含的文件。
+
+
+
+/* specify the files to be included */
+$#include "header1.h"                 // include first header
+$#include "header2.h"                 // include second header
+
+/* 指定要包含的文件 */
+$#include "header1.h"                 // 包含第一个头文件
+$#include "header2.h"                 // 包含第二个头文件
+
+
+
+As illustrated, tolua also accepts comments, using C or C++ convention, inside the package file. Nested C-like comments can also be used. 
+Also note that files included with $cfile or $hfile don't need to be included using this method, this is done automatically by tolua. 
+
+
+如同所示的那样，tolua还接受在包文件内使用C或C++约定的注释。也可以使用嵌套的类C注释。
+另外请注意，包含的$cfile或$hfile的文件不必使用这种方法包含，这由tolua自动完成。
+
+
+
+In the following sections, we describe how to specify the C/C++ code we want to bind to Lua. The formats are simplified valid C/C++ statements. 
+
+在下面的章节中，我们描述如何指定要绑定到Lua上的C/C++代码。格式是简化的合法C/C++语句。
+
+
+
+Binding constants
+To bind constants, tolua accepts both define's and enum's. For define's the general format is: 
+#define NAME [ VALUE ]
+
+
+绑定常量
+要绑定常量，tolua接受define和enum。对于define，一般格式是：
+#define NAME [ VALUE ]
+
+
+
+
+
+The value, as showed above, is optional. If such a code is inserted inside the file being processed, tolua generates a code that allows the use of NAME as a Lua global variable that has the corresponding C/C++ constant value. Only numeric constants are accepted. 
+New on tolua++: All other preprocessor directives are ignored. 
+
+
+该值，如上述所示，是可选的。如果这样的代码插入进被处理的文件中，tolua会生成一段代码，允许NAME作为一个Lua的全局变量具有C/C++常量相应的值来使用。只接受数字型常量。
+tolua++新增：忽略其他所有预处理器指令。
+
+
+
+
+
+For enum's, the general format is: 
+
+enum {
+  NAME1 [ = VALUE1 ] ,
+  NAME2 [ = VALUE2 ] ,
+  ...
+  NAMEn [ = VALUEn ]
+};
+
+
+对于enum，一般格式是：
+enum {
+  NAME1 [ = VALUE1 ] ,
+  NAME2 [ = VALUE2 ] ,
+  ...
+  NAMEn [ = VALUEn ]
+};
+
+
+Similarly, tolua creates a set of global variables, named NAMEi, with their corresponding values. 
+
+类似地，tolua创建一组全局变量，命名为NAMEi，带有它们相应的值
+
+
+Binding external variables
+Global extern variables can also be exported. In the cleaned header file they are specified as: 
+[extern] type var;
+
+绑定外部变量
+全局外部变量也可以被导出。在一个清理好的头文件中它们被指定为：
+[extern] type var;
+
+
+tolua binds such declarations to Lua global variables. Thus, in Lua, we can access the C/C++ variable naturally. If the variable is non constant, we can also assign the variable a new value from Lua. Global variables that represent arrays of value can also be bound to Lua. Arrays can be of any type. The corresponding Lua objects for arrays are Lua tables indexed with numeric values; however, be aware that index 1 in Lua is mapped to index 0 in an C/C++ array. Arrays must be pre dimensioned. For instance: 
+double v[10]; 
+
+tolua把这样的声明绑定到Lua的全局变量。因此，Lua中我们可以自然地访问C/C++变量。如果变量是非常量的。我们还可以在Lua中给它赋值为新的值。代表值的数组的全局变量也可以绑定到Lua中。数组可以是任意类型。相应数组的Lua对象是数组。数组必须是预定义大小的。例如：
+double v[10];
+
+
+New on tolua++: External variables can use the tolua_readonly modifier (see Additional Features) 
+
+tolua新增：外部函数可以使用tolua_readonly修饰（见附加特性）
+
+
+Binding functions
+Functions are also specified as conventional C/C++ declarations: 
+type funcname (type1 par1[, type2 par2[,...typeN parN]]);
+The returned type can be void, meaning no value is returned. A function can also have no parameter. In that case, void may be specified in the place of the list of parameters. The parameter types must follow the rules already posted. tolua creates a Lua function binding the C/C++ function. When calling a function from Lua, the parameter types must match the corresponding C/C++ types, otherwise, tolua generates an error and reports which parameter is wrongly specified. If a parameter name is omitted, tolua names it automatically, but its type should be a basic type or user type previously used. 
+
+绑定函数
+函数也可以用常规的C/c++声明来指定
+type funcname (type1 par1[, type2 par2[,...typeN parN]]);
+返回类型可以是void，意味着没有值返回。一个函数汉可以没有参数。在那种情况下，void可以被指定来取代参数列表。参数类型必须遵循已经被发表的规则。tolua创建一个绑定C/C++函数的Lua函数。当从Lua中调用一个函数时，参数类型必须匹配指定的C/C++类型，否则，tolua产生错误并报告那个参数错误指定。如果一个参数名被省略，tolua自动命名它，但它的类型应该是一个基本类型或者前面用过的用户类型。
+
+
+
+Arrays
+tolua also deals with function or method parameters that represent arrays of values. The nice thing about arrays is that the corresponding Lua tables have their values updated if the C/C++ function changes the array contents. 
+The arrays must be pre dimensioned. For instance: 
+
+void func (double a[3]); 
+
+is a valid function declaration for tolua and calling this function from Lua would be done by, for instance: 
+
+p = {1.0,1.5,8.6} 
+func (p) 
+
+
+数组
+tolua还处理代表值数组的函数或方法参数。关于数组的好处是如果C/C++函数改变数组的内容，相应的Lua表也会更新它们的值。
+数组必须是预定义大小的。例如
+void func (double a[3]); 
+对于tolua是合法的函数声明，从Lua中调用这个函数会像这样执行
+p = {1.0,1.5,8.6} 
+func (p) 
+
+
+The array dimension need not be a constant expression; the dimension can also be specified by any expression that can be evaluated in run time. For instance: 
+void func (int n, int m, double image[n*m]); 
+
+is also valid since the expression n*m is valid in the binding function scope. However, be aware that tolua uses dynamic allocation for binding this function, what can degrade the performance. 
+
+数组的大小不必是常量表达式；
+数组大小可以以任意可以在运行时中计算的表达式指定，例如：
+void func (int n, int m, double image[n*m]); 
+也是合法的，因为表达式n*m在绑定函数作用域内有效。然而，注意tolua在绑定这个函数时使用动态分配，会降低性能。
+
+
+
+Despite the dimension specification, it is important to know that all arrays passed to the actual C/C++ function are in the local scope of the binding function. So, if the C/C++ function being called needs to hold the array pointer for later use, the binding code will not work properly. 
+
+
+尽管指定大小，但重要的是要知道传递给实际的C/C++函数的所有数组是在绑定函数的局部作用域内。因此，如果被调用的C/C++函数需要保留数组的指针供以后使用，绑定代码将不能正常工作。
+
+
+
+
+Overloaded functions
+Overloaded functions are accepted. Remember that the distinction between two functions with the same name is made based on the parameter types that are mapped to Lua. So, although 
+void func (int a); 
+void func (double a); 
+
+represent two different functions in C++, they are the same function for tolua, because both int and double are mapped to the same Lua type: number. 
+
+
+重载函数
+重载函数可以接受。请记住，两项同名函数之间的区别是基于映射到Lua的参数类型。所以，尽管
+void func (int a); 
+void func (double a); 
+在C/C++中代表两个不同的函数，它们对于tolua来说是相同的函数，因为int和double都是映射为相同的Lua类型：number型。
+
+
+
+
+
+
+Another tricky situation occurs when expecting pointers. Suppose: 
+
+void func (char* s);
+void func (void* p);
+void func (Object1* ptr);
+void func (Object2* prt);
+
+另一个棘手的情况发生在预期的指针时。假设：
+void func (char* s);
+void func (void* p);
+void func (Object1* ptr);
+void func (Object2* prt);
+
+
+Although these four functions represent different functions in C++, a Lua statement like: 
+func(nil)
+matches all of them.
+
+尽管这四个函数在C++中代表不同的函数，一个Lua语句像
+func(nil)
+匹配它们全部。
+
+ 
+It is important to know that tolua decides which function will be called in run-time, trying to match each provided function. tolua first tries to call the last specified function; if it fails, tolua then tries the previous one. This process is repeated until one function matches the calling code or the first function is reached. For that reason, the mismatching error message, when it occurs, is based on the first function specification. When performance is important, we can specify the most used function as the last one, because it will be tried first. 
+
+
+重要是要知道tolua在运行时决定哪个函数被调用，尝试匹配每个所提供的函数。
+tolua首先尝试调用最后指定的函数；如果失败，tolua尝试前一个。
+这个处理重复直至一个函数匹配调用代码或者到达第一个函数。
+在那种原因发生时不匹配的错误信息将基于第一个指定函数。当性能重要时，我们可以指定最常用的函数为最后一个，因为它首先被尝试。
+
+
+
+tolua allows the use of overloaded functions in C, see Renaming for details. 
+
+
+tolua允许是在C中使用被重载的函数，详见重命名。
+
+
+Default parameter values
+The last function parameters can have associated default values. In that case, if the function is called with fewer parameters, the default values are assumed. The format to specify the default values is the same as the one used in C++ code: 
+type funcname (..., typeN-1 parN-1 [= valueN-1], typeN parN [= valueN]); 
+
+
+参数默认值
+排在后面的函数参数可以关联默认值。在那种场合下，如果函数使用较少参数调用，假定默认值。指定默认值的格式和在C++代码中使用的相同：
+type funcname (..., typeN-1 parN-1 [= valueN-1], typeN parN [= valueN]); 
+
+
+
+
+toLua implements this feature without using any C++ mechanism; so, it can be used also to bind C functions. 
+
+
+tolua不适用任何C++机制来实现这个特性；所以它也可以用于绑定C函数。
+
+
+We can also specify default values for the elements of an array (there is no way to specify a default value for the array itself, though). For instance: 
+
+void func (int a[5]=0); 
+
+
+我们还可以对一个数组的成员指定默认值（虽然没有方法指定数组自身的默认值）。例如
+void func (int a[5]=0); 
+
+
+
+sets the default element values to zero, thus the function can be called from Lua with an uninitialized table. 
+
+设置默认成员值为零，从而这个函数可以用一个未被初始化（注：这里0被转换为nil？）的表在Lua中调用。
+
+
+
+For Lua object types (lua_Object), tolua defines a constant that can be used to specify nil as default value: 
+
+void func (lua_Object lo = TOLUA_NIL); 
+
+
+对于Lua对象类型（lua_Object），tolua定义一个常数可用于指定nil作为默认值：
+void func (lua_Object lo = TOLUA_NIL); 
+
+
+New on tolua++: C++ class constructors are valid as default parameters. For example: 
+
+void set_color(const Color& color = Color(0,0,0)); 
+
+tolua++新增：C++类构造函数作为默认参数有效。例如：
+void set_color(const Color& color = Color(0,0,0)); 
+
+
+
+
+Multiple returned values
+In Lua, a function may return any number of values. tolua uses this feature to simulate values passed by reference. If a function parameter is specified as a pointer to or reference of a basic type or a pointer to or reference of a pointer to an user defined type, tolua accepts the corresponding type as input and returns, besides the conventional function returned value, if any, the updated parameter value. 
+For instance, consider a C function that swaps two values: 
+
+void swap (double* x, double* y); 
+
+or 
+
+void swap (double& x, double& y); 
+
+
+多返回值
+在Lua中，一个函数可以返回任意数量的值。tolua使用这种特性来模拟通过引用传递的值。
+如果指定一个函数参数为一个指向基本类型的指针或引用，或者是用户定义类型的指针或引用指针，tolua接受相应的类型作为输入和返回，包括出常规的函数返回值，和更新的参数值，如果有的话。
+例如，考虑交换两个值的C函数：
+void swap (double* x, double* y); 
+或
+void swap (double& x, double& y); 
+
+
+
+
+
+
+
+
+
+
+If such a function is declared in the package file, tolua binds it as a function receiving two numbers as input and returning two numbers. So, a valid Lua code would be: 
+
+x,y = swap(x,y) 
+
+
+如果这样的函数声明在包文件中，tolua绑定它作为一个接受两个number作为输入并返回两个number的函数。因此，一个合法的Lua代码将是：
+x,y = swap(x,y) 
+
+
+
+
+If the input values are not used, the use of default parameter value allows calling the function from Lua without specifying them: 
+
+void getBox (double* xmin=0, double* xmax=0, double* ymin=0, double* ymax=0); 
+
+
+如果输入值不被使用，允许从Lua中使用默认参数值调用这个函数而不用指定它们。
+void getBox (double* xmin=0, double* xmax=0, double* ymin=0, double* ymax=0); 
+
+
+
+In Lua: 
+
+xmin, xmax, ymin, ymax = getBox() 
+
+
+在lua中：
+xmin, xmax, ymin, ymax = getBox() 
+
+
+
+
+With user defined types, we would have for instance: 
+
+void update (Point** p); 
+
+or 
+
+void update (Point*& p); 
+
+
+使用用户定义类型，我们将有这样的例子
+void update (Point** p); 
+或者
+void update (Point*& p); 
+
+
+
+
+
+Binding struct fields
+User defined types are nicely bound by tolua. For each variable or function type that does not correspond to a basic type, tolua automatically creates a tagged userdata to represent the C/C++ type. If the type corresponds to a struct, the struct fields can be directly accessed from Lua, indexing a variable that holds an object of such a type. In C code, these types are commonly defined using typedef's: 
+typedef struct [name] {
+   type1 fieldname1;
+   type2 fieldname2;
+   ...
+   typeN fieldnameN;
+} typename;
+
+
+绑定struct字段
+用户定义类型可以被tolua优雅绑定。对于每个和基本类型没有对应的变量或函数类型，tolua自动创建标签的userdata来代表C/C++类型。如果类型对应一个struct，struct字段可以直接在Lua中访问，索引一个持有一个这种类型对象的变量。在C代码中，这些类型常使用typedef定义：
+typedef struct [name] {
+   type1 fieldname1;
+   type2 fieldname2;
+   ...
+   typeN fieldnameN;
+} typename;
+
+
+
+If such a code is inserted in the package file being processed, tolua allows any variable that holds an object of type typename to access any listed field indexing the variable by the field name. For instance, if var holds a such object, var.fieldnamei accesses the field named fieldnamei. 
+Fields that represent arrays of values can also be mapped: 
+
+typedef struct { 
+  int x[10]; 
+  int y[10]; 
+} Example; 
+  
+
+如果这段代码插入到被处理的包文件中，tolua允许任意变量持有一个拥有类型typename的对象来访问任意列举的字段，通过字段名来索引变量。例如，如果变量持有一个字段，代表值的数组，也可以被映射：
+typedef struct { 
+  int x[10]; 
+  int y[10]; 
+} Example; 
+
+
+
+Binding classes and methods
+C++ class definitions are also supported by tolua. Actually, the tolua deals with single inheritance and polymorphism in a natural way. The subsections below describe what can be exported by a class definition. 
+
+
+
+绑定类和方法
+tolua还支持C++类定义，实际上，tolua以自然的方式处理单一继承和多态性。下面的小节描述什么东西可以被类定义导出。
+
+
+
+
+Specifying inheritance
+
+
+If var is a Lua variable that holds an object of a derived class, var can be used wherever its base class type is expected and var can access any method of its base class. For this mechanism to take effect, we must indicate that the derived class actually inherits the base class. This is done in the conventional way: 
+class classname : public basename
+{
+ /* class definition */
+};
+
+
+指定继承
+如果变量是一个持有一个派生类对象的Lua变量，变量可以使用在任何期待它的基类的地方，且可以访问它基类的任何方法。由于这种机制的影响，我们必须指定派生类实际继承的基类。使用常规的方式进行：
+class classname : public basename
+{
+ /* 类定义 */
+};
+
+
+
+
+
+In this case, the definition of basename needs to appear before classname if the inheritance properties are to be taken advantage of from lua. 
+
+
+在这种情况下，如果继承属性在Lua中被利用，basename的定义需要在classname前出现。
+
+
+Multiple inheritance
+tolua++ (starting from version 1.0.4) supports multiple inheritance by allowing you to access the extra parents 'manually'. 
+For example, consider the following class: 
+
+
+class Slider : public Widget, public Range {
+	...
+};
+
+
+多重继承
+tolua++（从版本1.0.4开始）支持多重继承，允许你“手工地”访问额外父类。
+例如，考虑以下类：
+class Slider : public Widget, public Range {
+	...
+};
+
+
+
+
+An object of type 'Slider' will fully retain its inheritance with Widget, and will contain a 'member' of type Range, which will return the object cast to the correct base type. 
+
+
+一个类型为'Slider'的对象将完全保留Widget的继承，并将包含类型Range的“成员”，返回转换为正确基类的对象。
+
+
+For example: 
+
+
+slider = Slider:new()
+slider:show() -- a Widget method
+
+slider:set_range(0, 100) -- this won't work, because
+                         -- set_range is a method from Range
+
+slider.__Range__:set_range(0, 100) -- this is the correct way
+
+This is an experimental feature. 
+
+
+例如：
+slider = Slider:new()
+slider:show() -- 一个Widget方法
+slider:set_range(0, 100) -- 无效，因为set_range是来自Range的方法
+slider.__Range__:set_range(0, 100) -- 这是正确的方式
+
+这是一项试验特性
+
+
+
+Specifying exported members and methods
+As for struct fields, class fields, static or not, can be exported. Class methods and class static methods can also be exported. Of course, they must be declared as public in the actual C++ code (the public:keyword may appear in the package files, it will be ignored by tolua). 
+For each bound class, tolua creates a Lua table and stores it at a variable which name is the name of the C++ class. This tables may contain other tables that represent other tables, the way C++ classes may contain other classes and structs. Static exported fields are accessed by indexing this table with the field names (similar to struct fields). Static methods are also called using this table, with a colon. Non static exported fields are accessed by indexing the variable that holds the object. Class methods follow the format of the function declaration showed above. They can be accessed from Lua code using the conventional way Lua uses to call methods, applied of course to a variable that holds the appropriate object or to the class table, for static methods. 
+
+
+指定导出成员和方法
+作为struct字段，class字段，不管static与否，都可以被导出。类方法和类静态方法，也可以被导出。当然，它们必须在实际C++代码中声明为共有（public:关键字可以出现在包文件中，它会被tolua忽略）
+对于每个绑定的类，tolua创建一个Lua表并把它保存在一个名字与C++类名一样的变量中。这个表可以包含其他表来代表其他表，方式就如同C++的类可以包含其它类。用字段名索引这个表来访问静态导出字段（类似于struct字段）。静态方法也可以使用这个表来调用，用带冒号的形式调用。非静态导出字段以索引持有对象的变量的方式访问。类方法遵循上面演示的函数定义的格式。当然对于静态方法来说，它们可以从Lua代码中访问，使用Lua所用的常规方式调用方法，应用于一个持有合适对象或指向类表的变量。
+
+
+
+
+There are a few special methods that are also supported by tolua. Constructors are called as static methods, named new, new_local (on tolua++), or calling the class name directly (also on tolua++, see below for the difference betwheen these methods). Destructors are called as a conventional method called delete. 
+
+
+tolua也支持少数特殊方法。构造函数被作为静态方法调用，称为new，new_local（用于tolua++），或者直接调用类名（也是在tolua++，见下面关于这些方法不同点的讨论）。析构函数作为一种常规方法来调用，称为delete。
+
+
+
+Note that tolua does support overload. This applies even for constructors. Also note that the virtual keyword has no effect in the package file. 
+
+
+注意tolua支持重载。这甚至应用于构造函数。还应注意virtual关键字在包文件中不会造成影响。
+
+
+The following code exemplifies class definitions that can be interpreted by tolua. 
+
+class Point {
+   static int n;    // represents the total number of created Points
+   static int get_n();    // static method
+
+   double x;        // represents the x coordinate
+   double y;        // represents the y coordinate
+   static char* className (void);   // returns the name of the class
+   Point (void);                          // constructor 1
+   Point (double px, double py);          // constructor 2
+   ~Point (void);                         // destructor
+   Point add (Point& other);              // add points, returning another one
+};
+class ColorPoint : public Color {
+   int red;      // red color component [0 - 255]
+   int green;    // green color component [0 - 255]
+   int blue;     // blue color component [0 - 255]
+   ColorPoint (double px, double py, int r, int g, int b);
+};
+
+下面的代码举例说明可以用tolua解析的类定义。
+class Point {
+   static int n;    // 代表被创建点的总数
+   static int get_n();    // 静态方法
+
+   double x;        // 代表x坐标
+   double y;        // 代表y坐标
+   static char* className (void);   // 返回类名
+   Point (void);                          // 构造函数1
+   Point (double px, double py);          // 构造函数2
+   ~Point (void);                         // 析构函数
+   Point add (Point& other);              // 添加点，返回另一个
+};
+class ColorPoint : public Color {
+   int red;      // 红色分量 [0 - 255]
+   int green;    // 绿色分量 [0 - 255]
+   int blue;     // 蓝色分量 [0 - 255]
+   ColorPoint (double px, double py, int r, int g, int b);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+If this segment of code is processed by tolua, we would be able to write the following Lua statements: 
+p1 = Point:new(0.0,1.0)
+p2 = ColorPoint:new(1.5,2.2,0,0,255)
+print(Point.n)                     -- would print 2
+print(Point:get_n())               -- would also print 2
+p3 = p1:add(p2)
+local p4 = ColorPoint()
+print(p3.x,p3.y)                   -- would print 1.5 and 3.2
+print(p2.red,p2.green,p2.blue)     -- would print 0, 0, and 255
+p1:delete()                        -- call destructor
+p2:delete()                        -- call destructor
+
+
+
+如果这个代码部分被tolua处理，我们将可以写如下的Lua语句：
+p1 = Point:new(0.0,1.0)
+p2 = ColorPoint:new(1.5,2.2,0,0,255)
+print(Point.n)                     -- 将打印2
+print(Point:get_n())               -- 也会打印2
+p3 = p1:add(p2)
+local p4 = ColorPoint()
+print(p3.x,p3.y)                   -- 将打印1.5和3.2
+print(p2.red,p2.green,p2.blue)     -- 将打印0，0，和255
+p1:delete()                        -- 调用析构函数
+p2:delete()                        -- 调用析构函数
+
+
+
+
+Note that we can only explicitly delete objects that we explicitly create. In the example above, the point p3 will be garbage-collected by tolua automatically; we cannot delete it. 
+New on tolua++: Also note that p4 is created by calling the class name directly (ColorPoint()); this has the same effect as calling new_local, which leaves the object to be deleted by the garbaje collector, and it should not be deleted using delete. For each constructor on the pkg, one new, new_local and .call callback for the class is created. 
+
+注意我们只可以显式删除显式创建的对象。在上面的例子中，点p3可以被tolua自动立即回收；我们不能删除它。
+tolua++新增：还要注意p4通过直接调用类名创建（ColorPoint()）；这和调用new_local有相同的影响，把对象保留直至垃圾回收器删除，不应该使用delete删除。对于在pkg中的每个构造函数，在new，new_local和.call上会创建对类的回调。
+
+
+Of course, we need to specify only the methods and members we want to access from Lua. Sometimes, it will be necessary to declare a class with no member or method just for the sake of not breaking a chain of inheritances. 
+
+
+当然，我们只需要指定我们想从Lua中访问的方法和成员。有些时候，有必要声明一个没有成员和方法的类，只是为了不打破继承链。
+
+
+
+
+Using Regular functions as class methods
+tolua++ (starting from version 1.0.5) uses the keyword tolua_outside to specify regular functions as methods and static methods of a class or struct. For example: 
+
+
+使用常规函数作为类方法
+tolua++（从版本1.0.5开始）使用关键词tolua_outside来制定常规函数作为class或struct的方法和静态方法，例如：
+
+
+
+/////////////// position.h:
+
+typedef struct {
+
+	int x;
+	int y;
+} Position;
+
+Position* position_create();
+void position_set(Position* pos, int x, int y);
+
+/////////////// position.pkg:
+
+struct Position {
+
+	int x;
+	int y;
+
+	static tolua_outside Position* position_create @ create();
+	tolua_outside void position_set @ set(int x, int y);
+};
+
+--------------- position.lua
+
+local pos = Position:create()
+
+pos:set(10, 10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Note that the position_set method takes a pointer to Position as its first parameter, this is ommited on the tolua_outside declaration. Also note that we cannot name our methods new or new_local, or as overloaded operators (see next section), this will result in undefined behaviour. 
+
+
+注意position_set方法带有一个指向Position的指针作为它第一个参数，它在tolua_outside声明中被忽略。还要注意我们不能把我们的方法命名为new或new_local，或者作为重载运算符（见下一节），这会导致未定义的行为。
+
+
+
+
+
+
+
+
+
+
+Overloaded operators
+tolua automatically binds the following binary operators: 
+operator+   operator-   operator*   operator/ 
+operator<   operator>=  operator==  operator[]
+
+
+重载的运算符
+tolua自动绑定以下二元运算符
+operator+   operator-   operator*   operator/ 
+operator<   operator>=  operator==  operator[]
+
+
+
+For the relational operators, toLua also automatically converts a returned 0 value into nil, so false in C becomes false in Lua. 
+As an example, suppose that in the code above, instead of having: 
+
+   Point add (Point& other);              // add points, returning another one
+we had: 
+   Point operator+ (Point& other);        // add points, returning another one
+   
+   
+对于关系运算符，tolua也自动转换一个0值为nil，所以C中的false变成Lua的false。
+例如，假设在上面的代码，取代那种写法：
+   Point add (Point& other);              // 添加点，返回另一个
+我们把它改为：
+   Point operator+ (Point& other);        // 添加点，返回另一个
+
+
+
+In that case, in Lua, we could simply write: 
+p3 = p1 + p2
+
+在那种情况下，在Lua中，我们可以简单写：
+p3 = p1 + p2
+
+
+
+The indexing operator (operator[]) when receiving a numeric parameter can also be exported to Lua. In this case, tolua accepts reference as returned value, even for basic types. Then if a reference is returned, from Lua, the programmer can either get or set the value. If the returned value is not a reference, the programmer can only get the value. An example may clarify: suppose we have a vector class and bind the following operator: 
+   double& operator[] (int index);
+   
+索引运算符（operator[]）在接受一个数字型参数时也可以被导出到Lua中。在这种情况下，tolua接受引用作为返回值，即使是基本类型。那么如果从Lua中返回的值是一个引用，程序员可以获得或者设置这个值。如果返回值不是一个引用，程序员只可以获得它的值。一个例子可以阐明：假设我们有一个vector类绑定以下运算符：
+   double& operator[] (int index);
+
+
+
+
+
+In this case, in Lua, we would be able to write: value = myVector[i] and also myVector[i] = value, which updates the C++ object. However, if the bound operator was: 
+   double operator[] (int index);
+   
+在这种情况下，在Lua中，我们将可以这样写代码：value = myVector[i]以及myVector[i] = value，更新C++对象。然而，如果绑定运算符是：
+   double operator[] (int index);
+   
+   
+   
+   
+we would only be able to write: value = myVector[i]. 
+Free functions (i.e., not class members) that overload operators are not supported. 
+
+我们将只可以这样写代码：value = myVector[i]. 
+不支持自由函数（即非类成员）重载运算符。
+
+
+
+Cast operators
+New on tolua++ (versions 1.0.90 and up): casting operators are also supported. For example: 
+
+
+转换运算符
+tolua++新增（版本1.0.90和以上）：还支持转换运算符。例如：
+
+
+
+/////////////// node.h
+
+// a class that holds a value that can be of type int, double, string or Object*
+class Node { // tolua_export
+
+private:
+	union {
+		int int_value;
+		double double_value;
+		string string_value;
+		Object* object_value;
+	};
+
+// tolua_begin
+public:
+
+	enum Type {
+		T_INT,
+		T_DOUBLE,
+		T_STRING,
+		T_OBJECT,
+		T_MAX,
+	};
+
+	Type get_type();
+
+	operator int();
+	operator double();
+	operator string();
+	operator Object*();
+};
+// tolua_end
+
+
+
+
+
+
+/////////////// node.h
+
+// 一个类，持有一个可以是int，double，string或者Object*的值。
+class Node { // tolua_export
+
+private:
+	union {
+		int int_value;
+		double double_value;
+		string string_value;
+		Object* object_value;
+	};
+
+// tolua_begin
+public:
+
+	enum Type {
+		T_INT,
+		T_DOUBLE,
+		T_STRING,
+		T_OBJECT,
+		T_MAX,
+	};
+
+	Type get_type();
+
+	operator int();
+	operator double();
+	operator string();
+	operator Object*();
+};
+// tolua_end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tolua++ will produce code that calls the operators by casting the object Node (using C++ static_cast), and register them inside the class as ".typename". For example: 
+-- node.lua
+
+local node = list.get_node("some_node") -- returns a Node object
+
+if node.get_type() == Node.T_STRING then
+
+	print("node is "..node[".string"]())
+
+elseif node.get_type() == Node.T_OBJECT then
+
+	local object = node[".Object*"]()
+	object:method()
+end
+
+
+
+tolua++将引入调用运算符的代码，转换对象Node（使用C++的static_cast），并且注册它们进类中。例如：
+-- node.lua
+
+local node = list.get_node("some_node") -- 返回一个Node对象
+
+if node.get_type() == Node.T_STRING then
+
+	print("node is "..node[".string"]())
+
+elseif node.get_type() == Node.T_OBJECT then
+
+	local object = node[".Object*"]()
+	object:method()
+end
+
+
+
+
+
+
+
+
+
+
+
+Binding Properties
+tolua++ (starting from version 1.0.6) supports declaration of class propeties, using the tolua_property keyword. A property will look like a 'field' of the class, but it's value will be retrieved using class methods. For example:
+
+
+绑定属性
+tolua++（从版本1.0.6开始）支持类属性的声明，使用tolua_property关键字。一个属性看起来像类的“字段”，但它的值会用类方法来取出。例如：
+
+
+
+
+
+
+ 
+/////////////// label.h
+
+class Label {
+
+public:
+
+	string get_name();
+	void set_name(string p_name);
+
+	Widget* get_parent();
+};
+
+/////////////// label.pkg
+class Label {
+
+	tolua_property string name;
+
+	tolua_readonly tolua_property Widget* parent;
+};
+
+--------------- label.lua
+
+local label = Label()
+
+label.name = "hello"
+print(label.name)
+
+label.parent:show()
+
+
+
+
+
+
+
+
+
+
+
+Property types
+A property can have differt types, which determine how it's value will be set and retrieved. tolua++ comes with 3 different built-in types: 
+
+属性类型
+一个属性类型可以有不同的类型，决定它的值如何被设置和取出。tolua++带有3中不同的内建类型：
+
+
+
+
+
+
+default will use 'get_name' and 'set_name' methods to access a property called 'name' 
+qt will use 'name' and 'setName' 
+overload will use 'name' and 'name' (as in 'string name(void);' to get and 'void name(string);' to set) 
+The property type can be appended at the end of the 'tolua_property' keyword on the declaration: 
+
+tolua_property__qt string name;
+
+
+default将使用'get_name'和'set_name'访问一个叫'name'的属性
+qt将使用'name'和'setName'
+overload将使用'name'和'name'（在'string name(void);'中获取和在'void name(string);'中设置）
+属性类型可以放在声明中'tolua_property'关键词的后面：
+tolua_property__qt string name;
+
+
+
+
+
+When no type is specified, default will be used, but this can be changed (see below). 
+
+当没有指定类型，使用default，但这是可以被改变的（见下）。
+
+
+
+Changing the default property type
+The default property type can be changed using the 'TOLUA_PROPERTY_TYPE' macro. This will change the default type from the point of its invocation, until the end of the block that contains it. For example: 
+
+
+
+修改默认的属性类型
+默认属性类型可以被改变，使用'TOLUA_PROPERTY_TYPE'宏。这将从它调用点开始改变默认类型，直至包含它的块结束。例如：
+
+
+
+TOLUA_PROPERTY_TYPE(default); // default type for the 'global' scope
+
+namespace GUI {
+
+	class Point {
+
+		tolua_property int x; // will use get_x/set_x
+		tolua_property int y; // will use get_y/set_y
+	};
+
+	TOLUA_PROPERTY_TYPE(qt); // changes default type to 'qt' for the rest of the 'GUI' namespace
+
+	class Label {
+
+		tolua_property string name; // will use name/setName
+	};
+};
+
+class Sprite {
+
+	tolua_property GUI::Point position; // will use get_position/set_position
+
+	tolua_property__overload string name; // will use name/name
+};
+
+
+
+
+
+TOLUA_PROPERTY_TYPE(default); // “全局”作用域内的默认类型
+
+namespace GUI {
+
+	class Point {
+
+		tolua_property int x; // 将使用get_x/set_x
+		tolua_property int y; // 将使用get_y/set_y
+	};
+
+	TOLUA_PROPERTY_TYPE(qt); // 对'GUI'名字空间的其它部分修改类型为'qt'
+
+	class Label {
+
+		tolua_property string name; // 将使用name/setName
+	};
+};
+
+class Sprite {
+
+	tolua_property GUI::Point position; // 将使用get_position/set_position
+
+	tolua_property__overload string name; // 将使用name/name
+};
+
+
+
+
+Adding custom property types
+Custom property types can be added by redefining the function "get_property_methods_hook" (see Customizing tolua++ for more details). The functions takes the property type and the name, and returns the setter and getter function names. For example: 
+
+
+添加定制属性类型
+定制属性类型可以通过重定义函数"get_property_methods_hook"来添加（详见定制tolua++）。函数带有属性类型和名称，返回setter和getter函数名。例如：
+
+
+
+
+
+/////////////// custom.lua
+
+function get_property_methods_hook(ptype, name)
+
+	if ptype == "hungarian_string" then
+
+		return "sGet"..name, "Set"..name
+	end
+
+	if ptype == "hungarian_int" then
+
+		return "iGet"..name, "Set"..name
+	end
+	-- etc
+end
+
+/////////////// label.pkg
+class Label {
+
+	tolua_property__hungarian_string string Name; // uses 'sGetName' and 'SetName'
+
+	tolua_property__hungarian_int string Type; // uses 'iGetType' and 'SetType'
+};
+
+
+
+
+/////////////// custom.lua
+
+function get_property_methods_hook(ptype, name)
+
+	if ptype == "hungarian_string" then
+
+		return "sGet"..name, "Set"..name
+	end
+
+	if ptype == "hungarian_int" then
+
+		return "iGet"..name, "Set"..name
+	end
+	-- etc
+end
+
+/////////////// label.pkg
+class Label {
+
+	tolua_property__hungarian_string string Name; // 使用'sGetName'和'SetName'
+
+	tolua_property__hungarian_int string Type; // 使用'iGetType'和'SetType'
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Class Templates
+One of the additional features of tolua++ is the support for class templates, by using the TOLUA_TEMPLATE_BIND directive. For example: 
+class vector {
+
+	TOLUA_TEMPLATE_BIND(T, int, string, Vector3D, double)
+
+	void clear();
+	int size() const;
+
+	const T& operator[](int index) const;
+	T& operator[](int index);
+	void push_back(T val);
+
+	vector();
+	~vector();
+};
+
+
+类模板
+tolua++附加的一项新特性之一是支持类模板，使用TOLUA_TEMPLATE_BIND指令。例如：
+class vector {
+
+	TOLUA_TEMPLATE_BIND(T, int, string, Vector3D, double)
+
+	void clear();
+	int size() const;
+
+	const T& operator[](int index) const;
+	T& operator[](int index);
+	void push_back(T val);
+
+	vector();
+	~vector();
+};
+
+
+
+
+
+
+The TOLUA_TEMPLATE_BIND directive has to be the first thing on the class declaration, otherwise it will be ignored. This code will create 4 versions of the class vector, one for each type specified on the TOLUA_TEMPLATE_BIND parameters, each replacing the macro T (specified as the first argument of TOLUA_TEMPLATE_BIND). Thus, the functions operator[], &operator[] and push_back will have different signatures on each version of the object. The objects will be recognized as vector<type> on further declarations, and the name of the table on Lua will be vector_type_. Thus, the following Lua code could be used: 
+string_vector = vector_string_:new_local()
+string_vector:push_back("hello")
+string_vector:push_back("world")
+print(string_vector[0].." "..string_vector[1])
+
+TOLUA_TEMPLATE_BIND指令必须是类定义中第一条出现的，否则它会被忽略。
+这段代码将创建4个版本的类vector，每种类型由TOLUA_TEMPLATE_BIND的参数指定，每个都替换宏T（由TOLUA_TEMPLATE_BIND的第一个参数指定）。因此函数operator[]，&operator[]和push_back将在对象的不同版本中拥有不同的签名。对象将被视为vector<type>以获得更多声明信息，而在Lua中的表名将会是vector_type_。因此可以使用下面Lua代码：
+string_vector = vector_string_:new_local()
+string_vector:push_back("hello")
+string_vector:push_back("world")
+print(string_vector[0].." "..string_vector[1])
+
+
+
+
+
+
+
+
+
+Similarily, a template with more than 1 macro could be bound, and it could also inherit from another template: 
+class hash_map : public map<K,V> {
+
+	TOLUA_TEMPLATE_BIND(K V, int string, string vector<double>)
+
+	V get_element(K key);
+	void set_element(K key, V value);
+
+	hash_map();
+	~hash_map();
+};
+
+
+相似地，可以绑定一个带有多于1个宏的模板，它也可以从其他模板中继承：
+class hash_map : public map<K,V> {
+
+	TOLUA_TEMPLATE_BIND(K V, int string, string vector<double>)
+
+	V get_element(K key);
+	void set_element(K key, V value);
+
+	hash_map();
+	~hash_map();
+};
+
+
+
+
+
+In this example, one of the objects has another template as one of its types, so it will be recognized as hash_map<string,vector<double> > while its constructor will be on the Lua table hash_map_string_vector_double___ (see Type Renaming for a better way to access these objects). 
+Note that due to the complexity in the definition of some templates, you should be careful on how you declare them. For example, if you create an object with type hash_map<string,vector<double> > and then declare a variable with type hash_map<string, vector<double> > (note the space between string and vector), the type of the variable will not be recognized. The safest way is to declare a typedef, and use that to use each type (this is also a common practice on C++ programming). For example, using the previous declaration of vector: 
+
+
+typedef vector VectorInt;
+
+VectorInt variable;
+
+
+在这个例子中，对象之一拥有另一个模板作为它类型之一，所以它将被认为是 hash_map<string,vector<double> >但它的构造函数将在Lua的表hash_map_string_vector_double___上（见类型重命名关于更好的访问这些对象的方法）。
+注意因为在一些模板定义中的复杂性，你应该小心你是如何定义它们的。例如，如果你创建一个对象带有类型hash_map<string,vector<double> >然后声明一个变量带有类型hash_map<string, vector<double> >（注意string和vector之间的空格），变量类型将不被认识。最安全的方式是声明一个typedef，把它用于每种类型（也是C++编程的普遍做法）。例如，使用前面vector声明：
+typedef vector VectorInt;
+VectorInt variable;
+
+
+
+
+
+
+
+
+
+
+
+
+TOLUA_TEMPLATE_BIND can be used with more than one parenthesis to open and close, in order to be valid as a macro inside a regular .h file. The TOLUA_TEMPLATE_BIND macro is declared on tolua.h as: 
+#define TOLUA_TEMPLATE_BIND(x) 
+
+
+TOLUA_TEMPLATE_BIND可以带有多于一个附加词来打开和关闭，以使它在一个常规.h文件中作为一个宏而合法。TOLUA_TEMPLATE_BIND在tolua.h中声明为
+#define TOLUA_TEMPLATE_BIND(x)
+
+
+
+
+Also, the parameters can have double quotes. Thus, the following uses are valid: 
+
+TOLUA_TEMPLATE_BIND((T, int, float)) // to be used inside a real header file
+TOLUA_TEMPLATE_BIND("K V", "string string", int double)
+
+Function templates are not supported on this version. 
+
+
+同样，参数可以用双引号。因此，下面的使用是合法的：
+TOLUA_TEMPLATE_BIND((T, int, float)) // 用于一个真实头文件中
+TOLUA_TEMPLATE_BIND("K V", "string string", int double)
+函数模板在这个版本不支持。
+
+
+
+
+
+
+
+
+
+
+
+Module definition
+tolua allows us to group constants, variables, and functions in a module. The module itself is mapped to a table in Lua, and its constants, variables, and functions are mapped to fields in that table. The general format to specify a module is: 
+module name 
+{ 
+      ... // constant, variable, and function declarations 
+} 
+
+
+模块定义
+tolua允许我们在一个模块中分组常量，变量，和函数。模块自身在Lua中被映射为一个表，而它的常量，变量，函数被映射为那个表的字段。指定一个模块的通用格式是： 
+module name 
+{ 
+      ... // 常量，变量，和函数声明 
+} 
+
+
+
+
+
+
+
+Thus, if we bound the following module declaration: 
+
+module mod 
+{ 
+ #define N 
+ extern int var; 
+ int func (...): 
+} 
+
+In Lua we would be able to access such features by indexing the module: mod.N, mod.var, mod.func. 
+
+
+因此，如果我们绑定下面的模块声明：
+module mod 
+{ 
+ #define N 
+ extern int var; 
+ int func (...): 
+} 
+在LUa中我们可以通过索引模块来访问这些特性：mod.N，mod.var，mod.func。 
+
+
+
+
+
+
+
+
+
+
+Renaming constants, variables and functions
+When exporting constants, variable, and functions (members of a class or not), we can rename them, such that they will be bound with a different name from their C/C++ counterparts. To do that, we write the name they will be referenced in Lua after the character @. For instance: 
+extern int cvar @ lvar; 
+
+#define CNAME @ LNAME 
+
+enum { 
+  CITEM1 @ LITEM1, 
+  CITEM2 @ LITEM2, 
+  ... 
+}; 
+
+void cfunc @ lfunc (...); 
+
+class T 
+{ 
+   double cfield @ lfield; 
+   void cmeth @ lmeth (...); 
+   ... 
+}; 
+
+
+
+重命名常量，变量和函数
+当导出常量，变量，和函数（不管是否类成员），我们可以重命名它们，使得它们将被绑定为一个不同于他们C/C++相应名称的名称。
+为了做到这点，我们把在Lua中引用的名称写在字符@后面。例如：
+extern int cvar @ lvar; 
+
+#define CNAME @ LNAME 
+
+enum { 
+  CITEM1 @ LITEM1, 
+  CITEM2 @ LITEM2, 
+  ... 
+}; 
+
+void cfunc @ lfunc (...); 
+
+class T 
+{ 
+   double cfield @ lfield; 
+   void cmeth @ lmeth (...); 
+   ... 
+}; 
+
+
+
+
+In such a case, the global variable cvar would be identified in Lua by lvar, the constant CNAME by LNAME, and so on. Note that class cannot be renamed, because they represent types in C. 
+
+
+在这种情况下，全局变量cvar在Lua中将通过lvar确定，常量CNAME通过LNAME，如此类推。注意类不可以重命名，因为他们在C中代表类型
+
+
+
+This renaming feature allows function overload in C, because we can choose to export two different C functions with a same Lua name: 
+
+void glVertex3d @ glVertex (double x, double y, double z=0.0); 
+void glVertexdv @ glVertex (double v[3]=0.0); 
+
+
+
+这种重命名特性允许在C中重载函数，因为我们可以选择导出两个带有相同Lua名称的不同C函数：
+void glVertex3d @ glVertex (double x, double y, double z=0.0); 
+void glVertexdv @ glVertex (double v[3]=0.0); 
+
+
+
+
+
+
+
+
+Renaming Types
+Types can be renamed using the $renaming directive on pkg files, using the format: 
+$renaming real_name @ new_name 
+
+
+重命名类型
+类型可以在pkg文件中使用$renaming指令重命名，使用格式：
+$renaming real_name @ new_name 
+
+
+
+
+
+
+
+
+The parameters to renaming can be Lua patterns. For example: 
+
+
+$renaming ^_+ @
+$renaming hash_map<string,vector<double> > @ StringHash
+
+
+重命名参数可以是Lua模式。例如
+$renaming ^_+ @
+$renaming hash_map<string,vector<double> > @ StringHash
+
+
+
+
+
+
+
+The first example will remove all underscores at the beginning of all types, the second will rename the template type hash_map<string,vector<double> > to StringHash. Once renamed, the Lua table for each type can be accessed only by their new name, for example: StringHash:new() 
+
+
+第一个例子将删除所有类型前面的所有下划线，第二个例子将重命名模板类型hash_map<string,vector<double> >为StringHash。
+一旦重命名，每种类型的Lua表只可以通过它们新的名称访问，例如：StringHash:new()
+
+
+
+
+Storing additional fields
+Finally, it is important to know that even though the variables that hold C/C++ objects are actually tagged userdata for Lua, tolua creates a mechanism that allows us to store any additional field attached to these objects. That is, these objects can be seen as conventional Lua tables. 
+obj = ClassName:new()
+obj.myfield = 1  -- even though "myfield" does not represent a field of ClassName
+
+
+
+保存额外的字段
+最后，重要的是要知道即使持有C/C++对象的变量实际上是Lua中被标签的userdata，tolua还是会创造一种机制，允许我们存储任何额外的字段附加到这些对象上。也就是说，这些对象可以被看作是常规的Lua表。
+obj = ClassName:new()
+obj.myfield = 1  -- 即使"myfield"不代表ClassName的一个字段
+
+
+
+
+
+Such a construction is possible because, if needed, tolua automatically creates a Lua table and associates it with the object. So that, the object can store additional fields not mapped to C/C++, but actually stored in the conjugate table. The Lua programmer accesses the C/C++ features and these additional fields in an uniform way. Note that, in fact, these additional fields overwrite C/C++ fields or methods when the names are the same. 
+
+
+如果有必要这样的结构是可行的，tolua自动创建一个Lua表，并把它与对象相关联。这样，该对象可以存储附加字段而不会映射到C/C++，但实际上存储在共轭（注：组合）表中。Lua程序员以划一的方式访问C/C++特性和这些附加字段。请注意，事实上当名称相同时，这些附加字段会覆盖C/C++字段或方法。
+
+
+
+
+
+
+Additional features on tolua++
+
+
+Multiple variable declarations
+Multiple variables of the same type can be declared at the same time, for example: 
+float x,y,z; 
+
+will create 3 different variables of type float. Make sure you don't leave any spaces between the commas, as that will raise a parse error. 
+
+
+附加tolua++特性
+多重变量声明
+相同类型的多个变量可以在相同时刻声明，例如：
+float x,y,z; 
+将创建3个不同的float类型变量。确保你不要在逗号之间留有任何空格，将引发一个解析错误。
+
+
+
+
+
+
+tolua_readonly
+Any variable declaration can use the tolua_readonly modifier, to ensure that the variable is read-only, even when its type is not const. Example: 
+class Widget {
+
+	tolua_readonly string name;
+};
+
+
+tolua_readonly
+任何变量声明可以使用tolua_readonly修饰符，以确保变量是只读，即便它的类型是非const的。例如： 
+class Widget {
+
+	tolua_readonly string name;
+};
+
+
+
+
+
+This feature could be used to 'hack' the support for other unsupported things like operator->. Consider this example pkg file: 
+$hfile "node.h"
+$#define __operator_arrow operator->()
+$#define __get_name get_name()
+
+
+这种特性可用于'破解'其它并不支持的东西如operator->使之支持。
+考虑这个pkg文件例子：
+$hfile "node.h"
+$#define __operator_arrow operator->()
+$#define __get_name get_name()
+
+
+
+
+
+
+
+
+
+
+And on the file node.h: 
+template class<T>
+class Node { // tolua_export
+
+private:
+	string name;
+	T* value;
+
+public:
+
+	T* operator->() {return value;};
+	string get_name() {return name;};
+
+	// tolua_begin
+
+	#if 0
+	TOLUA_TEMPLATE_BIND(T, Vector3D)
+
+	tolua_readonly __operator_arrow @ p;
+	tolua_readonly __get_name @ name;
+	#endif
+
+
+	Node* next;
+	Node* prev;
+
+	void set_name(string p_name) {name = p_name;};
+
+	Node();
+};
+// tolua_end
+
+
+
+在文件node.h中： 
+template class<T>
+class Node { // tolua_export
+
+private:
+	string name;
+	T* value;
+
+public:
+
+	T* operator->() {return value;};
+	string get_name() {return name;};
+
+	// tolua_begin
+
+	#if 0
+	TOLUA_TEMPLATE_BIND(T, Vector3D)
+
+	tolua_readonly __operator_arrow @ p;
+	tolua_readonly __get_name @ name;
+	#endif
+
+
+	Node* next;
+	Node* prev;
+
+	void set_name(string p_name) {name = p_name;};
+
+	Node();
+};
+// tolua_end
+
+
+
+
+
+
+
+
+
+
+
+
+
+While not a pretty thing to do to a header file, this accomplishes a number of things: 
+
+The method operator->() can be used from Lua by calling the variable p on the object. 
+The method get_name() can be using from Lua by calling the variable name on the boject. Example lua usage: 
+node = Node_Vector3D_:new_local()
+-- do something with the node here --
+print("node name is "..node.name)
+print("node value is ".. node.p.x ..", ".. node.p.y ..", ".. node.p.z)
+
+
+
+
+虽然对一个头文件做了一件并不优雅的事情，但这会完成一些事情：
+方法operator->()可以从Lua中使用，通过调用对象的变量p。 
+方法get_name()可以从Lua中使用，通过调用boject上的变量name。例如lua的用法是：
+node = Node_Vector3D_:new_local()
+-- 在这里处理node --
+print("node name is "..node.name)
+print("node value is ".. node.p.x ..", ".. node.p.y ..", ".. node.p.z)
+
+
+
+
+
+
+
+
+Since tolua++ ignores all preprocessor directives (except for #define), node.h remains a valid C++ header file, and also a valid source for tolua++, eliminating the need to maintain 2 different files, even for objects with unusual features such as these ones. 
+The ability to rename functions as variables might be expanded on future versions. 
+
+
+由于tolua++忽略所有预处理器指令（#define除外），node.h仍然是一个有效的C++头文件，也是tolua++的合法来源，消除了维护两个不同文件的需要，即使这些对象带有与原来相比不寻常的特性。
+重命名函数为变量的能力可能在未来的版本中扩展。
+
+
+
+
+
+
+Defining values on command line
+Starting from version 1.0.92, the command line option -E allows you to introduce values into to the luastate where tolua++ runs, similar to GCC's -D. For example: 
+
+$ tolua++ -E VERSION=5.1 -E HAVE_ZLIB package.pkg > package_bind.cpp
+
+
+在命令行中定义值
+从版本1.0.92开始，命令行选项-E允许你引入值到tolua++运行的luastate中，类似于GCC的-D，例如：
+$ tolua++ -E VERSION=5.1 -E HAVE_ZLIB package.pkg > package_bind.cpp
+
+
+
+
+
+
+This will add 2 fields to the global table _extra_parameters: "VERSION", with the string value "5.1", and "HAVE_ZLIB" with the boolean value true. For the moment, there is no way to 'use' these values, except in custom scripts defined by the user (see customizing tolua++ for details). 
+
+
+这将添加2个字段到全局表_extra_parameters："VERSION"，带有字符串值"5.1"，以及"HAVE_ZLIB"带有布尔值true。此时，没有方法“使用”这些值，除了在由用户定义的定制脚本中（详见定制tolua++）
+
+
+
+
+
+
+
+Using C++ typeid
+Starting from version 1.0.92, the command line option -t is available, which generates a list of calls to the empty macro Mtolua_typeid, with its C++ type_info object, and the name used by tolua++ to identify the type. For example, if you have a package that binds 2 classes, Foo and Bar, using -t will produce the following output: 
+#ifndef Mtolua_typeid
+#define Mtolua_typeid(L,TI,T)
+#endif
+ Mtolua_typeid(tolua_S,typeid(Foo), "Foo");
+ Mtolua_typeid(tolua_S,typeid(Bar), "Bar");
+
+
+使用C++的typeid
+从版本1.0.92开始，命令行选项-t可用，生成一组空宏Mtolua_typeid的调用，带有它在C++的type_info对象，以及被tolua++用来唯一标识类型的名字。例如，如果你有一个绑定2个类的包，Foo和Bar，使用-t将引入下列输出：
+#ifndef Mtolua_typeid
+#define Mtolua_typeid(L,TI,T)
+#endif
+ Mtolua_typeid(tolua_S,typeid(Foo), "Foo");
+ Mtolua_typeid(tolua_S,typeid(Bar), "Bar");
+ 
+
+
+
+The implementation of Mtolua_typename is left as an exercise to the user. 
+
+
+
+Mtolua_typename的实现留给用户作为练习。
+
+
+
+
+
+Exported utility functions
+tolua uses itself to export some utility functions to Lua, including its object-oriented framework. The package file used by tolua is shown below: 
+module tolua 
+{ 
+ char* tolua_bnd_type @ type (lua_Object lo); 
+ void tolua_bnd_takeownership @ takeownership (lua_Object lo); 
+ void tolua_bnd_releaseownership @ releaseownership (lua_Object lo); 
+ lua_Object tolua_bnd_cast @ cast (lua_Object lo, char* type); 
+ void tolua_bnd_inherit @ inherit (lua_Object table, lua_Object instance); 
+
+/* for lua 5.1 */ 
+ void tolua_bnd_setpeer @ setpeer (lua_Object object, lua_Object peer_table); 
+ void tolua_bnd_getpeer @ getpeer (lua_Object object); 
+} 
+
+
+导出工具函数
+tolua用它自己导出一些工具函数到Lua中，包括他的面向对象框架。tolua所用的包文件如下所示： 
+module tolua 
+{ 
+ char* tolua_bnd_type @ type (lua_Object lo); 
+ void tolua_bnd_takeownership @ takeownership (lua_Object lo); 
+ void tolua_bnd_releaseownership @ releaseownership (lua_Object lo); 
+ lua_Object tolua_bnd_cast @ cast (lua_Object lo, char* type); 
+ void tolua_bnd_inherit @ inherit (lua_Object table, lua_Object instance); 
+
+/* 对于lua 5.1 */ 
+ void tolua_bnd_setpeer @ setpeer (lua_Object object, lua_Object peer_table); 
+ void tolua_bnd_getpeer @ getpeer (lua_Object object); 
+} 
+
+
+
+
+
+
+tolua.type (var)
+Returns a string representing the object type. For instance, tolua.type(tolua) returns the string table and tolua.type(tolua.type) returns cfunction. Similarly, if var is a variable holding a user defined type T, tolua.type(var) would return const T or T, depending whether it is a constant reference. 
+
+
+tolua.type (var)
+返回一个代表对象类型的字符串。例如tolua.type(tolua)返回字符串表，而tolua.type(tolua.type)返回c函数。类似地，如果var是一个持有用户定义类型T的变量，tolua.type(var)将返回const T或T，依赖于它是否是一个常量引用。
+
+
+
+
+
+
+
+
+
+
+
+
+
+tolua.takeownership (var)
+Takes ownership of the object referenced var. This means that when all references to that object are lost, the objects itself will be deleted by lua. 
+
+
+
+
+tolua.takeownership (var)
+带有被var引用的对象的所有权。意味着当对象的所有引用丢失时，对象本身将被lua删除。
+
+
+
+
+
+tolua.releaseownership (var)
+Releases ownership of the object referenced by var. 
+
+
+tolua.releaseownership (var)
+释放被var引用的对象的所有权. 
+
+
+
+
+
+
+
+tolua.cast (var, type)
+Changes the metatable of var in order to make it of type type. type needs to be a string with the complete C type of the object (including namespaces, etc). 
+
+
+tolua.cast (var, type)
+改变var的类型以拥有类型type。type需要是一个完整C对象类型的字符串（包括名字空间等）。
+
+
+
+
+
+
+
+
+
+
+tolua.inherit (table, var)
+
+(new on tolua++) Causes tolua++ to recognise table as an object with the same type as var, and to use var when necesary. For example, consider this method: 
+
+void set_parent(Widget* p_parent);
+A lua object could be used like this: 
+
+
+local w = Widget()
+local lua_widget = {}
+tolua.inherit(lua_widget, w)
+
+set_parent(lua_widget);
+
+
+
+
+tolua.inherit (table, var)
+（tolua++新增）导致tolua++认为table是一个和var拥有相同类型的对象，并且在必要时使用var。例如，考虑这样的方法
+void set_parent(Widget* p_parent);
+一个lua对象可以像这样使用： 
+local w = Widget()
+local lua_widget = {}
+tolua.inherit(lua_widget, w)
+set_parent(lua_widget);
+
+
+
+
+
+
+
+
+
+
+
+
+
+Remember that this will only cause the table to be recognised as type 'Widget' when necesary. To be able to access Widget's methods, you'll have to implement your own object system. A simple example: 
+
+
+lua_widget.show = Widget.show
+
+lua_widget:show() -- this will call the 'show' method from 'Widget', using the lua
+                  -- table as 'self'. Since lua_widget inherits from a widget instance,
+                  -- tolua++ will recognise 'self' as a 'Widget', and call the method
+
+
+
+记住这将只会造成当需要时这个表被认为是类型'Widget'。想成为访问Widget方法的表，你必须实现你自己的对象系统。一个简单的例子： 
+
+
+lua_widget.show = Widget.show
+
+lua_widget:show() -- 将调用来自'Widget'的'show'方法。
+                  -- 使用表作为'self'。因为lua_widget继承自一个widget实例,
+                  -- tolua++将认定'self'为一个'Widget'而调用方法
+
+
+
+
+Of course a better way would be to add a __index metamethod for the lua object. 
+
+Similarily, to implement virtual functions, you'll need to create a c++ object that inherits from the desired type, implement its virtual functions, and use that to inherit from lua. The object would have a reference to the lua table, and call its methods from the c++ virtual methods. 
+
+
+当然较好的方法是对lua对象添加一个__index元方法。 
+类似地，要实现虚函数，你将需要创建一个c++对象继承期待的类型，实现它的虚函数，并且从lua中使用它去继承。对象将拥有一个指向lua表的引用，调用它来自c++虚方法的方法。
+
+
+
+
+
+Note: the current implementation (as of version 1.0.6) stores the C instance inside the lua table on the field ".c_instance", and looks that up when necesary. This might change in the future, so it is recommended to use an alternative way to store the C instance to use with your own object system. 
+
+
+注意：现在的实现（如同版本1.0.6）在Lua表中的字段".c_instance"存储C实例，并且在必要时查找它。这可能在未来改变，所以建议使用一个不同的方式保存C实例以使用你自己的对象。
+
+
+
+
+
+
+
+
+
+tolua.setpeer (object, peer_table) (lua 5.1 only)
+Sets the table as the object's peer table (can be nil). The peer table is where all the custom lua fields for the object are stored. When compiled with lua 5.1, tolua++ stores the peer as the object's envirnment table, and uses uses lua_gettable/settable (instead of lua_rawget/set for lua 5.0) to retrieve and store fields on it. This allows us to implement our own object system on our table (using metatables), and use it as a way to inherit from the userdata object. Consider an alternative to the previous example: 
+
+tolua.setpeer (object, peer_table) (lua 5.1 only)
+设置表为对象的对应表（peer table）（可以是nil）。对应表是对象的所有定制lua字段存放的地方。当用lua5.1编译时，tolua++存储对应表作为对象的环境表，并且使用lua_gettable/settable（代替lua5.0的lua_rawget/set）来取出和存储它的字段。允许我们在我们的表上实现我们自己的对象系统（使用元表），并且使用它作为继承userdata对象的方式。考虑前一个例子的不同版本：
+
+
+
+
+-- a 'LuaWidget' class
+LuaWidget = {}
+LuaWidget.__index = LuaWidget
+
+function LuaWidget:add_button(caption)
+
+	-- add a button to our widget here. 'self' will be the userdata Widget
+end
+
+
+local w = Widget()
+local t = {}
+setmetatable(t, LuaWidget) -- make 't' an instance of LuaWidget
+
+tolua.setpeer(w, t) -- make 't' the peer table of 'w'
+
+set_parent(w) -- we use 'w' as the object now
+
+w:show() -- a method from 'Widget'
+w:add_button("Quit") -- a method from LuaWidget (but we still use 'w' to call it)
+
+
+
+
+-- 一个'LuaWidget'类
+LuaWidget = {}
+LuaWidget.__index = LuaWidget
+
+function LuaWidget:add_button(caption)
+
+	-- 这里添加一个按钮到我们的部件上。'self'将是userdata的Widget
+end
+
+
+local w = Widget()
+local t = {}
+setmetatable(t, LuaWidget) -- 使't'成为LuaWidget实例
+
+tolua.setpeer(w, t) -- 使't'成为'w'的对应表
+
+set_parent(w) -- 我们使用'w'作为对象
+
+w:show() -- 来自'Widget'的方法
+w:add_button("Quit") -- 来自LuaWidget的方法（但我们仍使用'w'来调用它）
+
+
+
+
+When indexing our object, the peer table (if present) will be consulted first, so we don't need to implement our own __index metamethod to call the C++ functions. 
+tolua.getpeer (object) (lua 5.1 only)
+Retrieves the peer table from the object (can be nil). 
+
+当索引我们的对象时，对应表（如果存在）将首先被查询，所以我们不必实现我们自己的__index元方法去调用C++函数。
+tolua.getpeer (object) (只适用于lua 5.1)
+从对象中获得对应的表（可以是nil）。 
+
+
+
+
+
+
+Embedded Lua code
+tolua allows us to embed Lua code in the C/C++ generated code. To do that, it compiles the specified Lua code and creates a C constant string, storing the corresponding bytecodes, in the generated code.  When the package is opened, such a string is executed. The format to embed Lua code is: 
+$[ 
+
+embedded Lua code 
+... 
+
+$] 
+
+
+嵌入的Lua代码
+tolua允许我们在C/C++生成代码中嵌入Lua代码。要做到这些，它编译指定的Lua代码并在生成代码中创建一个C常量字符串，保存相应的字节码。当打开包时，这个字符串被执行。嵌入Lua代码的格式如下：
+$[ 
+
+嵌入的Lua代码 
+... 
+
+$] 
+
+
+
+
+
+
+
+
+As an example consider the following .pkg excerpt: 
+
+/* Bind a Point class */ 
+class Point 
+{ 
+ Point (int x, int y); 
+ ~Point (); 
+ void print (); 
+ ... 
+} CPoint; 
+
+$[ 
+
+-- Create a Point constructor 
+function Point (self) 
+ local cobj = CPoint:new(self.x or 0, self.y or 0) 
+ tolua.takeownership(cobj) 
+ return cobj 
+end 
+
+$] 
+
+
+作为例子考虑以下.pkg片段：
+/* 绑定Point类 */ 
+class Point 
+{ 
+ Point (int x, int y); 
+ ~Point (); 
+ void print (); 
+ ... 
+} CPoint; 
+
+$[ 
+
+-- 创建一个Point构造函数 
+function Point (self) 
+ local cobj = CPoint:new(self.x or 0, self.y or 0) 
+ tolua.takeownership(cobj) 
+ return cobj 
+end 
+
+$] 
+
+
+
+
+
+
+
+
+
+
+
+
+
+Binding such a code would allow us to write the following Lua code: 
+
+p = Point{ x=2, y=3 } 
+p:print() 
+... 
+  
+  
+绑定代码将允许我们写以下Lua代码： 
+
+p = Point{ x=2, y=3 } 
+p:print() 
+... 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+Customizing tolua++
+tolua++ calls empty functions at specific points of its execution. This functions can be redefined on a separate lua file (and included using the -L command line option) and be used to control the way tolua++ behaves. This is the list of functions (taken from basic.lua on the tolua++ source): 
+
+
+定制tolua++
+tolua++在执行的指定点调用空函数。这个函数可以在一个单独地lua文件中重定义（和使用-L命令行选项包含），用于控制tolua++的行为方式。这是函数的列表（取自tolua++源代码的basic.lua）
+
+
+-- called right after processing the $[ichl]file directives,
+-- right before processing anything else
+-- takes the package object as the parameter
+function preprocess_hook(p)
+	-- p.code has all the input code from the pkg
+end
+
+
+-- 在解析完$[ichl]文件指令后调用,
+-- 和处理其它之前调用
+-- 把包对象作为参数
+function preprocess_hook(p)
+	-- p.code拥有来自pkg的所有输入代码
+end
+
+
+
+-- called for every $ifile directive
+-- takes a table with a string called 'code' inside, the filename, and any extra arguments
+-- passed to $ifile. no return value
+function include_file_hook(t, filename, ...)
+
+end
+
+-- 对每个$ifile指令调用
+-- 带一个称为内部“代码”的字符串表，文件名，和任意传递给$ifile的额外参数
+-- 无返回值
+function include_file_hook(t, filename, ...)
+
+end
+
+
+
+
+-- called after processing anything that's not code (like '$renaming', comments, etc)
+-- and right before parsing the actual code.
+-- takes the Package object with all the code on the 'code' key. no return value
+function preparse_hook(package)
+
+end
+
+-- 在处理任何非代码后调用（类似'$renaming'，注释，等)
+-- 并且在解析实际代码前调用。
+-- 带有一个包对象，以'code'键持有所有代码。无返回值
+function preparse_hook(package)
+
+end
+
+
+
+
+
+-- called after writing all the output.
+-- takes the Package object
+function post_output_hook(package)
+
+end
+
+
+-- 在写入所有输出后调用。
+-- 带包对象
+function post_output_hook(package)
+
+end
+
+
+
+
+
+
+
+
+-- called at the beginning of the main parser function, with the code being parsed as a parameter
+-- it can return nil if nothing was foind, or the contents of 'code', modified by the function
+-- Usually a parser hook will search the beginning of the string for a token, and if it finds
+-- anything, return the string without that token (after doing whatever it has to do with the token).
+function parser_hook(code)
+
+end
+
+-- 在主解析器函数开始时调用，带有被解析的代码作为参数
+-- 如果没有东西找到时它可以返回nil，否则返回被这个函数修改的"code"内容
+-- 通常一个解析器钩子将在字符串的开头搜索符号，如果找到
+-- 返回不带那个符号的字符串（在处理完符号后）。
+function parser_hook(code)
+
+end
+
+
+-- called from classFunction:supcode, before the call to the function is output
+-- the classFunction object is passed.
+function pre_call_hook(f)
+
+end
+
+
+-- 从classFunction:supcode中调用, 在函数输出前调用
+-- 传递classFunction对象。
+function pre_call_hook(f)
+
+end
+
+
+
+-- called from classFunction:supcode, after the call to the function is output
+-- the classFunction object is passed.
+function post_call_hook(f)
+
+end
+
+-- 从classFunction:supcode中调用, 在函数输出后调用
+-- 传递classFunction对象。
+function post_call_hook(f)
+
+end
+
+
+
+-- called before the register code is output
+function pre_register_hook(package)
+
+end
+
+
+-- 在注册代码输出前调用
+function pre_register_hook(package)
+
+end
+
+
+
+
+-- called to output an error message
+function output_error_hook(...)
+	return string.format(...)
+end
+
+
+-- 调用以输出一个错误信息
+function output_error_hook(...)
+	return string.format(...)
+end
+
+
+
+
+Handling custom types
+Starting from version 1.0.93, it is possible to specify custom functions to handle certain types. There are 3 types of functions: a 'push function', used to push the C value onto the Lua stack, a 'to function', used to retrieve the value from the Lua stack, and return it as a C value, and an 'is function', used to check if the value on the stack is valid (or convertible to a C value by the to function). These functions are modelled upon tolua_pushusertype, tolua_tousertype and tolua_isusertype, declared in tolua++.h. 
+A number of arrays found in basic.lua are used to specify these functions: 
+
+
+
+处理定制类型
+从1.0.93版本开始，可以指定定制函数来处理特定类型。有3类函数：一个“push函数”，用于把C值压入Lua栈中，一个“to函数”，用于从Lua栈中取出值，并且把它作为C值返回，以及一个“is函数”，用于检查在栈中检查一个值是否合法（或者通过to函数转换为一个C值）。这些函数在声明于tolua++.h的tolua_pushusertype，tolua_tousertype和tolua_isusertype上建模，
+在basic.lua中可以找到一些数组用于指定这些函数
+
+-- for specific types
+_push_functions = {}
+_is_functions = {}
+_to_functions = {}
+
+-- for base types
+_base_push_functions = {}
+_base_is_functions = {}
+_base_to_functions = {}
+
+
+-- 对于指定类型
+_push_functions = {}
+_is_functions = {}
+_to_functions = {}
+
+-- 对于基本类型
+_base_push_functions = {}
+_base_is_functions = {}
+_base_to_functions = {}
+
+
+
+
+Example (using the -L command line option): 
+
+_is_functions['Vector3'] = 'custom_is_vector3' -- checks for a 3d vector
+                                               -- (either userdata, or a table with 3 values)
+_to_functions['Vector3'] = 'custom_to_vector3' -- convertes the eventual table to a Vector3
+
+_base_push_functions['Widget'] = 'custom_push_widget' -- pushes anything that inherits from Widget
+
+The _base tables are used to lookup functions for types that are up in the inheritance chain. 
+
+
+
+例子（使用-L命令行选项）
+
+_is_functions['Vector3'] = 'custom_is_vector3' -- 检查一个3d向量(带3个值的userdata或者表)
+_to_functions['Vector3'] = 'custom_to_vector3' -- 转换最终表为一个Vector3
+
+_base_push_functions['Widget'] = 'custom_push_widget' -- 压入所有从Widget继承的任意东西
+
+
+
+
+
+Access
+Starting from version 1.0.7, all objects have a an access flag, which determines the object's access inside its container. Container objects also have a member called curr_member_access, which determines the access of each child object at the moment of its addition to the container. If the access flag has the value nil (default), false or 0, the object is public. Otherwise, the object is not public, and tolua++ will not export any code for that object (and any objects it may contain). 
+Another 'interesting' function is extract_code, defined on basic.lua, which extracs the code from files included with $cfile and $hfile (by looking for tolua_begin/end and tolua_export). 
+
+访问
+从版本1.0.7开始，所有的对象都有一个访问标志，它决定在它的容器内的对象访问。容器对象还有一个叫curr_member_access的成员，在它附加到容器的时侯决定了每个子对象的访问。如果访问标记的值是nil（默认），false或0，对象是公开的。否则，对象是不公开的，tolua++将不会导出该对象的任何代码（和它可能包含的任何对象）。
+另一个“有趣”的函数extract_code，定义在basic.lua，它分离出用$cfile和$hfile包含的代码（通过寻找tolua_begin/end和tolua_export）。
+
+
+
+
+
+
+Compatibility with older versions.
+tolua++ <1.0.90
+Version 1.0.90 of tolua++ introduces 2 small API changes the might be incompatible with older versions on some cases: 
+
+对旧版本的兼容性
+tolua++ <1.0.90
+tolua++的1.0.90版本引入的2个小API的改变，可能在一些场合下与旧版本不兼容：
+
+
+TEMPLATE_BIND 
+
+TEMPLATE_BIND is deprecated. Use TOLUA_TEMPLATE_BIND instead. Also, when declaring a template, the TOLUA_TEMPLATE_BIND statement has to be the first thing inside the class declaration, otherwise it will be ignored. This fixes a possible problem with nested template declarations. 
+
+
+TEMPLATE_BIND
+
+TEMPLATE_BIND已经废弃。使用TOLUA_TEMPLATE_BIND代替。另外，当声明一个模板，TOLUA_TEMPLATE_BIND语句必须是声明内最先出现，否则它会被忽略。它修复了嵌套模板声明中可能出现的问题。
+
+
+
+
+Retrieving Objects 
+
+When passing a full userdata to a function that accepts light userdata parameters (void*), the tolua++ library function tolua_touserdata will detect the full userdata and dereference the void** pointer if necesary. This is a change on the function's behaviour (which used to return the pointer as-is). This allows us to pass pointers to objects to a function that accepts void* pointers. Note that this was a problem when switching from toLua version 4 to version 5 (and tolua++ versions < 1.0.90). 
+
+
+获取对象
+当一个完全userdata传递给一个函数，它接受轻量userdata参数（void *），tolua++的库函数tolua_touserdata将检测完全userdata，如果有必要会取消void**指针的引用，如果必要的**无效。这是关于该函数的行为改变（用于原样返回指针）。这使我们能够传递指向对象的指针到接受void*参数的函数。请注意，当从toLua版本4切换到版本5时会有问题（以及版本小于1.0.90的tolua++）。
+
+
+
+
+toLua 4
+Retrieving Objects 
+
+Users switching from tolua v4 should know that tolua++ stores the objects as void** on Lua, so when retrieving an object from the luastate using lua_touserdata, the pointer should be dereferenced. The library function tolua_tousertype should work as expected. Example: 
+
+
+toLua 4
+获取对象 
+
+Users switching from tolua v4 should know that tolua++ stores the objects as void** on Lua, so when retrieving an object from the luastate using lua_touserdata, the pointer should be dereferenced. The library function tolua_tousertype should work as expected. Example: 
+
+
+从tolua v4切换过来的用户应该知道，tolua++把对象当作void **存储在Lua中，因此当在luastate中使用lua_touserdata获取对象时，应该取消指针引用。库函数tolua_tousertype应该按预期工作。例如：
+
+
+
+
+
+
+
+lua_pushglobal(lua_state, "get_Object");
+lua_call(lua_state, 0, 1);  // calling a function that returns an Object
+
+Object *new_object = (Object*)(*lua_touserdata(lua_state, -1));
+or
+Object *new_object = (Object*)tolua_tousertype(lua_state, -1, NULL);
+
+
+
+lua_pushglobal(lua_state, "get_Object");
+lua_call(lua_state, 0, 1);  // 调用一个函数，返回一个对象
+Object *new_object = (Object*)(*lua_touserdata(lua_state, -1));
+或者
+Object *new_object = (Object*)tolua_tousertype(lua_state, -1, NULL);
+
+
+
+
+
+
+
+C++ Strings 
+tolua++ binds the c++ type std::string as a basic type, passing it to Lua as a regular string (using the method c_str()). This feature can be turned off with the command line option -S. 
+
+
+C++字符串 
+tolua++绑定c++类型std::string作为基本类型，作为一个常规字符串传递它到Lua（使用方法c_str()）。这个特性可以用命令行选项-S关闭）。
+ 
+
+
+Operators 
+
+The list of supported operators has changed, see Binding classes and methods for more information. 
+
+
+操作符
+所支持的操作符列表被改变，详见绑定类和方法
+
+
+toLua 5
+Class destructors. 
+
+With every class constructor, tolua++ exports a 'local' constructor, to create an instance of the class that is owned by the lua state. To implement this, tolua++ will also export a function that will delete the class. There are 2 options to prevent this: 
+
+
+
+tolua5
+类析构函数
+伴随每个类构造函数，tolua++导出一个“局部”构造函数，以创建一个lua状态所拥有的类的实例。
+为实现这样，tolua++也将导出一个删除类的函数。有两个选项去阻止它。
+
+
+
+
+
+
+Using the -D command line option will turn this off completely. Destructor functions will only be exported when a destructor for the class is explicitly declared, or when there is a function or method that returns an object of the type by value (this is compatible with tolua's behaviour). 
+
+
+使用-D命令行选项将完全关闭它。析构函数将仅在类的析构显式声明时才导出，或者有一个函数或方法以值返回该类型的对象（这和tolua的行为兼容）。
+
+
+
+
+
+Using the TOLUA_PROTECTED_DESTRUCTOR directive inside the class declaration, to specify that the class has a private or protected destructor. In this case, no destructor will be exported for that class. 
+
+
+使用TOLUA_PROTECTED_DESTRUCTOR在类声明中指示，以指定这个类有一个私有或受保护的析构函数。在这种情况下，这个类没有析构函数被导出。
+
+
+
+operator[] index 
+
+Users switching from tolua v5 should know that tolua 5 substracts 1 from the index on operator[] functions, for compatibility with lua's method for indexing arrays (1 is the first element). This feature is turned off by default on tolua++ (making it compatible with tolua 4). It can be turned back on with the command line option -1 
+
+
+运算符[]索引
+从tolua v5切换的用户应该知道tolua 5在operator[]函数中对索引减一，以兼容lua数组索引的方法（1是首个元素）。这个特性在tolua++是默认关闭的（兼容tolua4）。它可以用命令行选项-1重新打开。
+
+
+
+C++ Strings 
+
+(see c++ strings on tolua 4 below) 
+
+
+C++字符串
+（见下面在tolua4中的c++字符串）
+
+
+Changes since v. 3.0
+Support for binding arrays as variables and struct/class fields; 
+Support for embedding Lua code into the generated binding code; 
+New utility functions: cast and takeownership; 
+Option to create the corresponding header file of the binding code; 
+New "close" package function; 
+Fixed bug on cloning objects in C++; 
+Fixed bug on enum and struct parsing; 
+
+
+
+从v. 3.0开始的改变
+支持绑定数组作为变量和struct/class字段（成员）；
+支持嵌入Lua代码进生成的绑定代码；
+新的工具函数：cast和takeownership；
+创建相应绑定代码的头文件的选项；
+新的"close"包函数；
+修复在C++中克隆对象的缺陷；
+修复enum和struct解析的缺陷；
+
+
+
+Changes since v. 2.0
+There is a new executable parser; 
+Support for multiple Lua states is provided; 
+Support for module definition is provided; 
+Global variables is now directly bound to Lua global variables; 
+Constness of user defined types is preserved in Lua; 
+Support for multiple returned values from C/C++ is provided (simulating parameters passed by reference); 
+Constants, variables, and functions bound to Lua can have different names from their C/C++ counterparts; 
+Object-oriented framework (and other utility functions) used in tolua is now exported for Lua programmers; 
+
+从v. 2.0开始的改变
+有一个新的可运行解析器；
+支持提供多个Lua状态；
+支持提供模块定义；
+全局变量现在直接绑定为Lua的全局变量；
+用户定义类型的常量性保留在Lua中；
+提供C/C++的多个返回值的支持（模拟引用传递的参数）；
+常量，变量，和绑定Lua的函数的名字可以和他们在C/C++所对应的不同。
+在tolua中使用的面向对象框架（和其它工具函数）现在可以导出供Lua程序员使用；
+
+
+Incompatibilities
+Lua code based on tolua v2.* should run with no change on tolua v3.0. Although, it may be necessary to change the .pkg file in order to get the same behavior. The following incompatibilities exist: 
+Parameters defined as pointer to basic types are no longer converted to arrays of dimension one; they are now considered parameters passed by reference. 
+Automatic initialization for C++ code must be explicitly requested when using the new parser; 
+Global variables are no longer mapped to a table; the definition of a module including the global variables may be used to simulate the old behavior; 
+The initialization function is no longer toLua_package_open but tolua_package_open, without the capital letter (sorry!). 
+
+
+
+不兼容性
+基于tolua v2.*的Lua代码可以不作修改在tolua v3.0上运行。但是有必要修改.pkg文件以获得相同的行为。
+存在下面兼容性：
+定义为指向基本类型的指针的参数不再转换为带大小的数组；它们现在被认为是用引用传递的参数。
+当使用新的解析器时，C++代码的自动初始化必须显式请求；
+全局变量不再映射到一个表中；包含全局变量的模块的定义可以用于模拟旧行为；
+初始化函数不再是toLua_package_open而是tolua_package_open，没有大写字母（对不起！）。
+
+
+Changes since v. 1.*
+The binding code should run much faster; 
+The cleaned header file extension should now be .pkg instead of .L; 
+Type modifiers is now accepted (though the current version ignores const's); 
+Returning object by value is accepted and memory allocation is controlled by Lua garbage collection; 
+Overloaded functions/methods are accepted; 
+Parameters with default values are accepted; 
+Some overloaded operators are automatically bound. 
+
+从v. 1.*开始的改变
+绑定代码应该跑得更快。
+清理好的头文件扩展名现在是.pkg而不是.L
+现在接受类型修饰符（虽然现在的版本忽略const）
+接受通过值返回对象，内存分配受Lua垃圾回收控制。
+接受被重载的函数/方法
+接受默认值的参数
+一些被重载的运算符自动绑定
+
+
+
+Credits
+Luiz Henrique de Figueiredo had the idea of creating a tool to automatically bind C code to Lua. L.H.F. wrote the very first version of such a tool (that bound C functions, variables, and constants) in awk. At that time, Waldemar Celes (now the main author) was only responsible for the C code that supported the generated binding code. 
+While working at NGD Studios, Ariel Manzur made some changes to tolua4 for their game engine. After the release of tolua5, having left NGD, enough changes were made to tolua to justify a separate release (with Waldemar's blessing :-) 
+
+
+鸣谢
+Luiz Henrique de Figueiredo提出创建绑定C代码到Lua的自动化工具。L.H.F.用awk写了这个工具的第一个版本（绑定C函数，变量和常量）。在那个时候，Waldemar Celes（现在的主要作者）仅负责生成绑定代码的C支持代码。
+工作在NGD Studios期间，Ariel Manzur为他们的游戏引擎对tolua4进行多次修改。在tolua5发布以后，已经离开NGD的他，对tolua做了足够的修改以作为一个单独的发布版（带有Waldemar的祝福:-)）
+
+
+
+  
+
+Availability
+tolua++ is freely available by http. The software provided hereunder is on an "as is" basis, and the author has no obligation to provide maintenance, support, updates, enhancements, or modifications. 
+
+
+可用性
+tolua++是通过http自由可用。软件提供的行为基于“正如”，作者没有义务提供维护，支持，更新，加强或修改。
+
+
+--------------------------------------------------------------------------------
+This document was created by Waldemar Celes With modifications by Ariel Manzur/ 
+Last update: Sept 2003 
+
+这个文档由Waldemar Celes创建，由Ariel Manzur修改
+最后更新：2003年9月
+
+
+
+

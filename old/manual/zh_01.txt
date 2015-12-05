@@ -1,0 +1,4061 @@
+--------------------------------------------------------------------------------
+
+ Lua 5.1 参考手册 
+由Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes编写 
+版权归属 ? 2006-2008 Lua.org, PUC-Rio。可在Lua 许可的条款下自由使用。 
+
+
+--------------------------------------------------------------------------------
+
+目录 · 索引 
+
+
+1 - 介绍
+Lua是种带有数据描述设备的扩展式程序设计语言，被设计用于支持常规过程式程序设计。也很好地支持面向对象，函数式以及数据驱动的程序设计。Lua作为强大、轻量的脚本语言，可供任何需要的程序使用。Lua被实现为使用纯净的C（即ANSI C和C++共有的子集）编写的库。 
+
+作为扩展式语言，Lua没有“main”程序的概念：它只能嵌入一个宿主程序运行——称为嵌套程序或简称为宿主。该宿主程序通过调用函数能够执行一段Lua代码，读写Lua变量，以及注册为Lua代码所用的C函数。C函数扩充了Lua的应用领域，使它可以处理不同的领域，如此则创建了定制的程序语言，而它们共享同一个语法框架。Lua分发包带有一个称为lua的示例宿主程序，它利用Lua库提供了完整、独立的Lua解释器。 
+
+Lua是自由软件，并且根据使用许可不提供任何担保。本手册描述的实现可在Lua官方网站www.lua.org找到。 
+
+跟任何其他的参考手册一样，本文档有些地方比较枯燥。Lua网站提供的技术论文探讨了Lua背后的设计决定。对于Lua程序设计方面的详细入门指导，可参阅Roberto的书Lua程序设计（第二版）。 
+
+2 - 语言
+本节描述Lua的词法、语法和语义。换句话说，本节描述了哪些记号（token）是有效的，它们可以怎样组合，以及组合的含义。 
+
+语言的构成概念将用常见的扩展的BNF记法（notation）进行说明，其中{a} 表示 0或多个a，[a] 表示一个可选的a。非最终符号（non-terminal）原样显示，关键字显示似kword，其他最终符号（terminal symbols）显示似`=′。Lua的完整语法放在本手册最后的§8。 
+
+2.1 - 词法约定
+Lua中的名称（也称为标识符（identifier））是非数字开头的字母、数字和下划线构成的任何字符串。这与多数语言的名称定义相符。（字母的定义依赖于当前环境，其中的字母表中的任何字符都可用于标识符。）标识符用于命名变量和表的字段。 
+
+下面的关键字是保留的，不能用作名字： 
+
+     and       break     do        else      elseif
+     end       false     for       function  if
+     in        local     nil       not       or
+     repeat    return    then      true      until     while
+
+Lua是大小写敏感的语言：and是保留字，但And和AND是不同的合法名字。通常约定，以下划线开头后跟大写字母（如_VERSION）的名字被Lua留作内部全局变量。 
+
+下面的字符串表示其他的记号： 
+
+     +     -     *     /     %     ^     #
+     ==    ~=    <=    >=    <     >     =
+     (     )     {     }     [     ]
+     ;     :     ,     .     ..    ...
+
+字面（literal）字符串可用单引号或双引号定界，而且可包含下面C风格的转义序列： 
+
+'\a' （响铃）
+'\b' （退格）
+'\f' （换页）
+'\n' （换行）
+'\r' （回车）
+'\t' （横向制表符）
+'\v' （纵向制表符）
+'\\' （反斜线）
+'\"' （双引号）
+'\'' （单引号）
+
+此外，反斜线后跟真正的换行符会实际在字符串中插入一个换行符。在字符串中，也能利用转义序列\ddd通过字符的数字值指定它，此处的ddd是最多3位的十进制数字序列。（注意，如果数字转义后面必须紧接着一个数字，必须严格地使用3个数字表示。）Lua中的字符串可以包含任意8位值，包括由‘\0’指定的内嵌的0。 
+字面字符串也能通过一种用长括号括起来长格式进行定义。我们把在2个开方括号中间插入n个等号的符号定义为n级开长括号。所以，0级开长括号记为[[，1级开长括号记为[=[，依次类推。闭长括号的定义类似；例如，4级闭长括号记为]====]。一个以任意级别开长括号开头的长字符串结束于第一个同级闭长括号。这种形式中的字面值可以跨越多行，不解释任何转义序列，并且忽略任何其他级别的长括号。除了合适级别的闭括号，无所不包。 
+
+出于方便性的考虑，当开长括号后面直接跟着一个换行时，该换行被忽略。举个例子，在使用ASCII的系统（其中‘a’被编码为97，换行是10，‘1’是49）中，下面的5个字面字符串表示相同的字符串： 
+
+     a = 'alo\n123"'
+     a = "alo\n123\""
+     a = '\97lo\10\04923"'
+     a = [[alo
+     123"]]
+     a = [==[
+     alo
+     123"]==]
+
+数字常量可被写成带有可选的小数部分和可选的十进制指数部分。Lua也接受十六进制整数常量，只需前缀0x。合法的数字常量的例子是 
+
+     3   3.0   3.1416   314.16e-2   0.31416E1   0xff   0x56
+
+注释可在字符串外的任何地方以两个连字符（--）开始。如果--直接后跟的文本不是开长括号，它就是短注释，到行尾结束。否则就是长注释，它直到相应的闭长括号结束。长注释常用于临时屏蔽代码。 
+
+2.2 - 值与类型
+Lua种动态类型语言。这表明变量没有类型；只有值才有。语言中不存在类型定义。所有值自带类型信息。 
+
+Lua中的所有值都是一等（first-class）的值。这表示所有值都能存于变量中，作为参数传入函数，以及作为结果返回。 
+
+Lua中有8中基本类型：nil，boolean，number，string，function，userdata，thread和table。 Nil是值nil的类型，该值的主要性质是与其他的所有值都不同；常用于表示一个无意义的值。Boolean是值false和true的类型。nil和false都使条件为假；任何其他值得到真。Number表现实数（双精度浮点数）。（很容易使用数值的其他内部表示形式，如单精度浮点数或长整型，构建Lua解释器，参考文件luaconf.h。）String表示字符数组。Lua使用完全的8位：字符串可含有任何8位字符，包括内嵌的0（‘\0’）（见§2.1）。 
+
+Lua能调用（以及操作）用Lua和C写的函数（见§2.5.8）。 
+
+类型userdata允许在Lua变量中存储任意的C数据。该类型对应一块原始内存，除了赋值和一致性判断，没有预定义的Lua操作。然而，通过使用metatables，程序员可以为用户数据值定义各种操作（见§2.8）。在Lua中不能创建或修改用户数据，只能通过C API。这样确保宿主程序持有的数据的完整性。 
+
+类型thread表示独立的执行线程，并且被用于实现协同例程（coroutine，见§2.11）。不要把Lua线程同操作系统的线程搞混了。所有系统上的Lua都支持协程，甚至是不支持线程的系统。 
+
+类型table实现了关联数组，不只是数字，任何值都可以做索引（除了nil）。表可为异质的；即可以包含所有类型（除了nil）的值。表是Lua中唯一一种提供数据结构的机制；它们可用来表现普通的数组、符号表、集合、记录、图、树，等等。Lua用字段名作为索引可表现记录。在语言层面通过提供a.name作为a["name"]的语法糖来支持这种表现形式（记录）。有多种便利的方式在Lua中创建表（见§2.5.7）。 
+
+跟索引一样，表字段的值可为任意类型（除了nil）。特别是，由于函数是一等值，表字段可含有函数。由此表也可支持方法（见§2.5.9）。 
+
+表、函数、线程和（完整的）用户数据的值是对象：变量并不实际持有这些值，只是引用这些值。赋值、传参和函数返回总是操作对这些值的引用；这些操作不包含任何性质的拷贝。 
+
+库函数type返回描述给定值的类型的字符串。 
+
+2.2.1 - 强制转换
+Lua提供运行时字符串和数字值间的自动转换。将数学运算符用于字符串会尝试依照通常的转换规则将该字符串转为数字。反过来，当把数字用在期望字符串的地方时，数字以合理的格式被转为字符串。要完全控制数字到字符串的转换，使用字符串库德format函数（见string.format）。 
+
+2.3 - 变量
+变量是存储值的地方。Lua中有3种变量：全局变量、局部变量和表字段。 
+
+单个名字可表示全局变量或局部变量（或函数的形式参数，它是一种特殊的局部变量）： 
+
+	var ::= Name
+
+Name表示§2.1中定义的标识符。 
+
+如果未明确地声明为局部的（见§2.4.7），任何变量都假定为全局的。局部变量具有词法作用域（lexically scoped）：局部变量可被定义于它们所在作用域内的函数自由访问（见§2.6）。 
+
+在首次赋值以前，变量的职为nil。 
+
+方括号被用于索引一个标： 
+
+	var ::= prefixexp `[′ exp `]′
+
+对全局变量和表字段的访问的含义可通过元表（metatable）进行改变。对索引的变量t[i]的访问等价于调用gettable_event(t,i)。（函数gettable_event的完整描述见§2.8。在Lua中该函数并不存在或不可访问。我们这儿用它只作说明的目的。） 
+
+语法var.Name仅仅是var["Name"]的语法糖： 
+
+	var ::= prefixexp `.′ Name
+
+所有全局变量都作为字段存在于一个普通的Lua表中，称为环境表或简称环境（见§2.9）。每个函数都有个引用指向某个环境，所以此函数内的所有全局变量都将引用该环境表。创建一个函数时，它从创建它的函数继承了环境。调用getfenv可得到Lua函数的环境表。调用setfenv可替换它。（你只能通过调试库来操作C函数的环境；见§5.9） 
+
+访问全局变量x等价于_env.x，后者又等价于 
+
+     gettable_event(_env, "x")
+
+这里的_env是当前运行的函数的环境。（函数gettable_event的完整描述见§2.8。在Lua中该函数并不存在或不可访问。同样地，变量_env也未在Lua中定义。我们这儿用它们只作说明的目的。） 
+
+2.4 - 语句
+Lua支持语句的常规集，类似于Pascal或C。该集包括赋值、控制结构、函数调用和变量声明。 
+
+2.4.1 - （语句）单元（chunk）
+Lua的执行单元（unit）称为单元（chunk）。一个单元只是一系列的语句，它们被顺序执行。每条语句可随意地以一个分号结束： 
+
+	chunk ::= {stat [`;′]}
+
+不允许空语句，因而‘;;’不合法。 
+
+Lua将单元视为带不定参数的匿名函数进行处理（见§2.5.9）。正因如此，单元可定义局部变量、接收参数以及返回值。 
+
+单元可以存储在一个文件中或者存在于宿主程序的一个字符串中。要执行一个单元，Lua首先把它预编译为虚拟机中的指令，然后用虚拟机的解释器执行编译后的代码。 
+
+单元也可被预编译为二进制形式；细节参考程序luac。源码中的程序和编译后的形式可交换的；Lua自动检测文件类型进而作相应地处理。 
+
+2.4.2 - （语句）块（block）
+语句块（block）是一系列语句；从语法上讲，语句块同单元一样： 
+
+	block ::= chunk
+
+语句块可被显式地分隔以产生单条语句： 
+
+	stat ::= do block end
+
+显式的语句块有助于控制变量声明的作用预。有时显式的语句块也用于在另一个语句块中加入return或break语句（见§2.4.4）。 
+
+2.4.3 - 赋值
+Lua允许多重赋值。因此，赋值的语法定义为左边一系列变量和右边一系列表达式。两个系列中的元素都用逗号分隔： 
+
+	stat ::= varlist `=′ explist
+	varlist ::= var {`,′ var}
+	explist ::= exp {`,′ exp}
+
+表达式在§2.5中讨论。 
+
+赋值以前，值列表被调整匹配变量列表的长度。如果值比需要的多，多出的值被丢弃。如果值比需要的少，就用适当数量的nil扩展值列表。如果表达式列表以一个函数调用结束，那么调整之前那个调用所返回的所有值都进入值列表（除非该调用被括在圆括号中；见§2.5）。 
+
+赋值语句首先计算它的所有表达式，然后才会执行赋值操作。因此代码 
+
+     i = 3
+     i, a[i] = i+1, 20
+
+设置a[3]为20，而不影响a[4]，因为a[i]中的i在它被赋值为4之前被计算（为3）。同样地，代码行 
+
+     x, y = y, x
+
+交换x和y的值， 
+
+     x, y, z = y, z, x
+
+循环置换x、y和z的值。 
+
+向全局变量和表字段赋值的含义可通过元表被改变。向索引的变量t[i] = val赋值等价于settable_event(t,i,val)。（函数settable_event的完整说明见§2.8。在Lua中该函数并不存在或不可访问。我们这儿用它只作说明的目的。） 
+
+向全局变量x = val赋值等价于赋值_env.x = val，后者又等价于 
+
+     settable_event(_env, "x", val)
+
+此处_env是当前运行函数的环境。（在Lua中未定义变量_env。我们这儿用它只作说明的目的。） 
+
+2.4.4 - 控制结构
+控制结构if，while和repeat具有通常的含义和相似的语法： 
+
+	stat ::= while exp do block end
+	stat ::= repeat block until exp
+	stat ::= if exp then block {elseif exp then block} [else block] end
+
+Lua也有for语句，它有两种风格（见§2.4.5）。 
+
+控制结构的条件表达式可能返回任何值。false和nil都作为假。所有不同于nil和false的值作为真（特别要注意，数字0和空字符串也是真）。 
+
+在repeat–until循环中，内部代码块并非截止于until关键字，而是在条件之后。所以，条件也能引用在循环体中声明的本地变量。 
+
+return语句用来从函数或单元（其实也是函数）中返回一些值。 函数和单元可以返回多个值，因此return语句的语法是 
+
+	stat ::= return [explist]
+
+break语句用于终止while，repeat或for循环的执行，跳到循环之后的下一条语句： 
+
+	stat ::= break
+
+break终止最内层的循环。 
+
+return和break语句只能写作代码块的最后一条last语句。如果确实需要在代码块中部return或break，可以用do return end和do break end这种方式显式地加入内部代码块，这样return和break就是他们的（内部）代码块中的最后一条语句了。 
+
+2.4.5 - For 语句
+for语句有两种形式：数字形式和一般形式。 
+
+数字形式的for循环随着控制变量在算术级数（等差级数，arithmetic progression）中移动，重复执行一块代码。语法如下： 
+
+	stat ::= for Name `=′ exp `,′ exp [`,′ exp] do block end
+
+当name从第一个exp的值开始，直到它以第三个exp为步长通过第二个exp为止，block被重复执行。更确切地说，for语句类似 
+
+     for v = e1, e2, e3 do block end
+
+等价于代码： 
+
+     do
+       local var, limit, step = tonumber(e1), tonumber(e2), tonumber(e3)
+       if not (var and limit and step) then error() end
+       while (step > 0 and var <= limit) or (step <= 0 and var >= limit) do
+         local v = var
+         block
+         var = var + step
+       end
+     end
+
+注意事项如下： 
+
+三个控制变量都只在循环开始前计算一次。它们都必须得到数字值。 
+var，limit和step是不可见变量。此处显示的名字只为方便说明。 
+如果省略第三个表达式（步长），则步长为1。 
+你可用break退出for循环。 
+循环变量v是循环局部的；不能在for结束或被打断之后使用。如果需要该值，可在打断或退出循环之前赋给另一个变量。 
+一般形式的for语句重复检查称为迭代器（iterator）的函数。每次迭代，调用迭代器函数以产生一个新值，如该值为nil则停止。一般形式的for循环语法如下： 
+
+	stat ::= for namelist in explist do block end
+	namelist ::= Name {`,′ Name}
+
+for语句类似 
+
+     for var_1, ···, var_n in explist do block end
+
+等价于代码： 
+
+     do
+       local f, s, var = explist
+       while true do
+         local var_1, ···, var_n = f(s, var)
+         var = var_1
+         if var == nil then break end
+         block
+       end
+     end
+
+注意下列事项： 
+
+explist只计算一次。其结果是一个迭代器函数、一个状态机（state），以及第一个迭代器变量（iterator variable）的初始值。 
+f，s，和var是不可见变量。此处的名字只为方便说明。 
+可用break退出for循环。 
+循环变量var_i是循环局部的；for结束后不可使用。如果需要它们，在打断或退出循环之前把它们赋给其他的变量。 
+2.4.6 - 函数调用语句
+为了允许使用可能的副作用，函数调用可作为语句执行： 
+
+	stat ::= functioncall
+
+此时所有的返回值被丢弃。函数调用在§2.5.8中解释。 
+
+2.4.7 - 局部声明
+可在代码块内部的任何位置声明局部变量。声明时可赋初值： 
+
+	stat ::= local namelist [`=′ explist]
+
+如果存在，赋初值同样有多重赋值的语义（见§2.4.3）。否则，所有变量初始化为nil。 
+
+单元也是代码块（见§2.4.1），因此可在任何显式的代码块外面声明局部变量。这种局部变量的作用域延伸到单元末尾。 
+
+局部变量的可见性规则在§2.6中说明。 
+
+2.5 - 表达式
+下面是Lua中的基础表达式： 
+
+	exp ::= prefixexp
+	exp ::= nil | false | true
+	exp ::= Number
+	exp ::= String
+	exp ::= function
+	exp ::= tableconstructor
+	exp ::= `...′
+	exp ::= exp binop exp
+	exp ::= unop exp
+	prefixexp ::= var | functioncall | `(′ exp `)′
+
+数值和字面字符串见§2.1；变量见§2.3；函数定义见§2.5.9；函数调用见§2.5.8；表构造器见§2.5.7。可变参数（vararg）表达式，由三个点表示（‘...’），只能直接用在可变参数的函数中；它们在§2.5.9中解释。 
+
+二元操作符包括算术运算操作符（见§2.5.1）、关系操作符（见§2.5.2）、逻辑操作符（见§2.5.3）和连接符（见§2.5.4）。一元操作符包括负号（见§2.5.1）、取反（not）（见§2.5.3）和取长操作符（length operator）（见§2.5.5）。 
+
+函数调用和可变参数表达式都可产生多个值。如果表达式被用作语句（只能是函数调用（见§2.4.6）），其返回列表被调整为0各元素，从而丢弃所有返回值。如果表达式用于表达式列表的最后（或是仅有的），就不做调整（除非该调用被括在圆括号中）。在所有其他情形中，Lua将结果列表调整为一个元素，除第一个之外所有值都被忽略。 
+
+看一些例子： 
+
+     f()                -- 调整为0个结果
+     g(f(), x)          -- f()被调整为1个结果
+     g(x, f())          -- g得到x及来自f()的所有结果
+     a,b,c = f(), x     -- f()被调整为1个结果（c为nil）
+     a,b = ...          -- a得到第一个可变参数，b得到第二个
+                        -- （如果没有相应的可变参数，a和b都为nil）
+     
+     a,b,c = x, f()     -- f()被调整为2个结果
+     a,b,c = f()        -- f()被调整为3个结果
+     return f()         -- 返回f()的所有结果
+     return ...         -- 返回收到的所有可变参数
+     return x,y,f()     -- 返回x，y和f()的所有结果
+     {f()}              -- 用f()的所有结果创建列表
+     {...}              -- 用所有可变参数创建列表
+     {f(), nil}         -- f()被调整为1个结果
+
+括在圆括号中的任何表达式总是只产生一个值。因此，(f(x,y,z))总是单个值，即使f返回多个值。（(f(x,y,z))的值是f返回的第一个值或nil——如果f无返回值。） 
+
+2.5.1 - 数学运算操作符
+Lua支持常用的数学运算操作符：二元+（加），-（减），*（乘），/（除），%（取模）和^（求幂）；以及一元-（负号）。如果操作数是数值或可转为数值的字符串（见§2.2.1），所有操作都是常规含义。求幂可用于任何指数。例如，x^(-0.5)计算x的平方根的倒数。取模定义为 
+
+     a % b == a - math.floor(a/b)*b
+
+就是说，它是商被朝向负无穷大取整的除法的余数。 
+
+2.5.2 - 关系操作符
+Lua中的关系操作符有 
+
+     ==    ~=    <     >     <=    >=
+
+这些操作符总是得到false或true。 
+
+相等（==）首先比较操作数的类型。类型不同则结果为false。否则比较操作数的值。数值和字符串进行常规比较。对象（表，用户数据，线程和函数）比较引用（reference）：引用同一个对象才是相等。每次创建的新对象（表，用户数据，线程或函数）都与任何之前存在的对象不同。 
+
+可通过“eq”元方法改变表和用户数据的比较方式（见§2.8）。 
+
+§2.2.1的转换规则不会用到相等比较上。因此"0"==0求值为false，并且t[0]和t["0"]表示表中的不同条目。 
+
+操作符~=恰好是相等（==）的反值。 
+
+顺序（比较）操作按如下方式进行。数值比较自身。字符串根据当前环境比较它们的值。否则，Lua尝试调用“lt”或“le”元方法（见§2.8）。对a > b比较被转换为b < a，a >= b比较被转换为b <= a。 
+
+2.5.3 - 逻辑操作符
+Lua中的逻辑操作符有and、or和not。同控制结构（见§2.4.4）一样，所有逻辑操作符把false和nil作为假，其他所有的都为真。 
+
+取反操作符not总返回false或true。如果首参为false或nil，与操作符and返回它，否则返回第二个参数。如果首参不是nil或false，或操作符or返回它，否则返回第二个参数。and和or都是用捷径求值法；即，只在需要时对第二个操作数求值。看些例子： 
+
+     10 or 20            --> 10
+     10 or error()       --> 10
+     nil or "a"          --> "a"
+     nil and 10          --> nil
+     false and error()   --> false
+     false and nil       --> false
+     false or nil        --> nil
+     10 and 20           --> 20
+
+（在本手册中，--> 指出前面表达式的结果。） 
+
+2.5.4 - 连接符
+Lua中的字符串连接符用两个点（“..”）表示。对于字符串或数字，根据§2.2.1中提到的规则转换为字符串。否则调用“concat”元方法。（见§2.8）。 
+
+2.5.5 - 取长操作符
+取长操作符用一元操作符取长操作符#表示。字符串的长度是其字节数（即常规含义，一个字符为一个字节时的字符串长度）。 
+
+表t的长度定义为任何整数索引n，使得t[n]非nil且t[n+1]为nil；此外，如果t[1]为nil，n可为0。对于从1到给定的n都非空（non-nil）的常规数组，其长度就是末值的索引n。如果数组带有“空穴”（即其他非空值间的nil值），则#t可为任何nil值的直接前项（就是说，它可能把任何nil值作为数组的结束）。 
+
+2.5.6 - 优先级
+Lua中的操作符优先级遵循下表的顺序，由低到高： 
+
+     or
+     and
+     <     >     <=    >=    ~=    ==
+     ..
+     +     -
+     *     /     %
+     not   #     - (unary)
+     ^
+
+通常可用圆括号改变表达式的优先级。连接（“..”）和求幂（“^”）操作符是右结合的。所有其他二元操作符是左结合的。 
+
+2.5.7 - 表构造器
+表构造器是创建表的表达式。每次求值一个构造器都创建新表。构造器能用于创建空表或创建表并初始化一些字段。构造器的一般语法是 
+
+	tableconstructor ::= `{′ [fieldlist] `}′
+	fieldlist ::= field {fieldsep field} [fieldsep]
+	field ::= `[′ exp `]′ `=′ exp | Name `=′ exp | exp
+	fieldsep ::= `,′ | `;′
+
+每个形如[exp1] = exp2的域向新表中增加一项，其键值为exp1并且值为exp2。形如name = exp的域等价于["name"] = exp。最后，形如exp的域等价于[i] = exp，此处的i是从1开始的连续整数。其他形式的域不影响计数。举个例子， 
+
+     a = { [f(1)] = g; "x", "y"; x = 1, f(x), [30] = 23; 45 }
+
+等价于 
+
+     do
+       local t = {}
+       t[f(1)] = g
+       t[1] = "x"         -- 1st exp
+       t[2] = "y"         -- 2nd exp
+       t.x = 1            -- t["x"] = 1
+       t[3] = f(x)        -- 3rd exp
+       t[30] = 23
+       t[4] = 45          -- 4th exp
+       a = t
+     end
+
+如果列表的最后一个域形如exp而且该表达式是函数调用或可变参数，则该表达式的所有返回值连续地加入列表（见§2.5.8）。要避免这样，用圆括号把函数调用或可变参数表达式括起来（见§2.5）。 
+
+域列表最后可带分隔符，这对机器生成的代码很方便。 
+
+2.5.8 - 函数调用
+Lua中的函数调用语法如下： 
+
+	functioncall ::= prefixexp args
+
+函数调用时，首先对prefixexp和args求值。如果prefixexp的值是function类型，则用给定的参数调用该函数。否则调用prefixexp的元方法“call”，并以prefixexp的值为第一个参数，后跟原始调用参数（见§2.8）。 
+
+形如 
+
+	functioncall ::= prefixexp `:′ Name args
+
+可用于调用“方法”。一个v:name(args)调用是v.name(v,args)的语法糖，不同的是v只求值一次。 
+
+参数语法如下： 
+
+	args ::= `(′ [explist] `)′
+	args ::= tableconstructor
+	args ::= String
+
+所有参数表达式在调用前求值。形如f{fields}的调用是f({fields})的语法糖；此处参数列表是单个新建的表。形如f'string'（或f"string"或f[[string]]）的调用是f('string')的语法糖；此处参数列表示单个字面字符串。 
+
+Lua的语法格式很自由，但有个例外，你不能在函数调用的(之前断行。这个限制避免了语言的一些歧义。如果你编写 
+
+     a = f
+     (g).x(a)
+
+Lua会把它看作单条语句a = f(g).x(a)。所以，如果你要的是两条语句，必须在他们之间加个分号。如果你想要调用f，必须去掉(g)之前的断行。 
+
+形如return functioncall的调用称为尾调用（tail call）。Lua实现了适当的尾调用（proper tail call）（或者说适当的尾递归（recursion））：在尾调用中，被调用函数重用调用者函数的栈项。因此，程序可执行的嵌套尾调用的数量是没有限制的。然而，尾调用擦除了调用者函数的调试信息。注意，尾调用需要特别的语法，return用单个寒暑调用作为参数；这种语法使得调用者函数严格地返回被调用函数的结果。所以，下面的例子都不是尾调用： 
+
+     return (f(x))        -- 结果调整为1个
+     return 2 * f(x)
+     return x, f(x)       -- 额外的结果
+     f(x); return         -- 丢弃结果
+     return x or f(x)     -- 结果调整为1个
+
+2.5.9 - 函数定义
+函数定义的语法是 
+
+	function ::= function funcbody
+	funcbody ::= `(′ [parlist] `)′ block end
+
+下面是简化函数定义的语法糖： 
+
+	stat ::= function funcname funcbody
+	stat ::= local function Name funcbody
+	funcname ::= Name {`.′ Name} [`:′ Name]
+
+语句 
+
+     function f () body end
+
+转换为 
+
+     f = function () body end
+
+语句 
+
+     function t.a.b.c.f () body end
+
+转换为 
+
+     t.a.b.c.f = function () body end
+
+语句 
+
+     local function f () body end
+
+转换为 
+
+     local f; f = function () body end
+
+而不是 
+
+     local f = function () body end
+
+（当函数体内含有对f的引用时才有区别。） 
+
+函数定义是个可执行的表达式，其值为function类型。Lua预编译单元时也会预编译它的所有函数体。因而Lua执行函数定义时，函数被实例化（instantiate）（或闭合，close）。该函数实例（或闭包，closure）是表达式的终值。相同函数的不同实例可引用不同的外部局部变量，并且可具有不同的环境表。 
+
+形参是由实参初始化的局部变量： 
+
+	parlist ::= namelist [`,′ `...′] | `...′
+
+当函数被调用时，除了可变参数函数（vararg function）——由形参列表最后的三个点（“...”）表示，实参列表被调整为形参列表的长度。可变参数函数不会调整其实参列表；而是收集所有额外的实参并通过可变参数表达式（vararg expression）——也写为三个点提供给函数。该表达式的值同带多个结果的函数一样，是所有额外实参的列表。如果可变参数表达式被用于其他表达式内部或者表达式列表的中间，它的返回列表被调整为一个元素。如果该表达式用于表达式列表的最后一个元素则不做调整（除非末尾的表达式被括在圆括号中）。 
+
+作为例子，考虑下面的定义： 
+
+     function f(a, b) end
+     function g(a, b, ...) end
+     function r() return 1,2,3 end
+
+然后，我们有下列从实参到形参和可变参数表达式的映射： 
+
+     CALL            PARAMETERS
+     
+     f(3)             a=3, b=nil
+     f(3, 4)          a=3, b=4
+     f(3, 4, 5)       a=3, b=4
+     f(r(), 10)       a=1, b=10
+     f(r())           a=1, b=2
+     
+     g(3)             a=3, b=nil, ... -->  (nothing)
+     g(3, 4)          a=3, b=4,   ... -->  (nothing)
+     g(3, 4, 5, 8)    a=3, b=4,   ... -->  5  8
+     g(5, r())        a=5, b=1,   ... -->  2  3
+
+结果使用return语句返回（见§2.4.4）。如果控制流到达函数结尾而没遇到return语句，则函数不返回结果。 
+
+冒号语法用于定义方法（method），就是说函数有个隐式的额外形参self。因此，语句 
+
+     function t.a.b.c:f (params) body end
+
+是下面写法的语法糖： 
+
+     t.a.b.c.f = function (self, params) body end
+
+2.6 - 可见性规则
+Lua是种有词法作用域的语言。变量的作用域从声明后面的第一条语句开始，直到包含声明的最内层代码块的结尾。考虑下面的例子： 
+
+     x = 10                -- 全局变量
+     do                    -- 新代码块
+       local x = x         -- 新“x”，值为10
+       print(x)            --> 10
+       x = x+1
+       do                  -- 另一个代码块
+         local x = x+1     -- 另一个“x”
+         print(x)          --> 12
+       end
+       print(x)            --> 11
+     end
+     print(x)              --> 10（全局的）
+
+注意，在类似local x = x的声明中，新声明的x还不在作用域中，所以第二个x 引用外部的变量。 
+
+根据词法作用域规则，局部变量可被定义于它们作用域内的函数自由访问。被内部函数使用的局部变量在该函数内被称为upvalue或外部局部变量（external local variable）。 
+
+注意，每次执行local语句会定义新局部变量。考虑下面的例子： 
+
+     a = {}
+     local x = 20
+     for i=1,10 do
+       local y = 0
+       a[i] = function () y=y+1; return x+y end
+     end
+
+循环内创建了十个闭包（即匿名函数的十个闭包）。每个闭包使用不同的y变量，然而它们共享同一个x。 
+
+2.7 - 错误处理
+因为Lua是种嵌入式扩展语言，其所有的操作都是从宿主程序中的C代码调用Lua库函数（见lua_pcall）开始的。Lua编译或执行时值要发生错误，控制权就会交还给C，后者可以采取适当的措施（比如打印错误消息）。 
+
+Lua代码可以通过调用函数error显式地产生错误。如果需要在Lua中捕获错误，可用pcall函数。 
+
+2.8 - 元表（Metatable）
+Lua中每个值都可具有元表。 元表是普通的Lua表，定义了原始值在某些特定操作下的行为。你可通过在值的原表中设置特定的字段来改变作用于该值的操作的某些行为特征。例如，当数字值作为加法的操作数时，Lua检查其元表中的"__add"字段是否有个函数。如果有，Lua调用它执行加法。 
+
+我们称元表中的键为事件（event），称值为元方法（metamethod）。前述例子中的事件是"add"，元方法是执行加法的函数。 
+
+可透过函数getmetatable查询任何值的元表。 
+
+可透过函数setmetatable替换表的元表。不能从Lua中改变其他类型的元表（除了利用调试库）；必须使用C API才能做到。 
+
+表和完整的用户数据具有独立的元表（尽管多个表和用户数据可共享元表）。每种其他类型的所有值共享一个元表；即所有数字共享一个元表，字符串等也是。 
+
+元表控制对象的数学运算、顺序比较、连接、取长、和索引操作的行为。元表也能定义用户数据被垃圾收集时调用的函数。Lua给这些操作的每一个都关联了称为事件的特定键。当Lua对某值执行其中一个操作时，检查该值是否含有元表以及相应的事件。如果有，与该键关联的值（元方法）控制Lua如何完成操作。 
+
+元表控制后面列举的操作。每个操作由相应的名字标识。每个操作的键是由其名字前缀两个下划线“__”的字符串；例如，操作“加（add）”的键是字符串"__add"。这些操作的语义通过一个Lua函数描述解释器如何执行操作作了更好的说明。 
+
+下面显示的Lua代码只是说明性的；真实的行为被硬编码到解释器中，并且比这里的模拟更加高效。这些描述中的所有函数（rawget、tonumber等等。）在§5.1中描述。特别一提，要获取给定对象的元方法，我们使用表达式 
+
+     metatable(obj)[event]
+
+它应被解读为 
+
+     rawget(getmetatable(obj) or {}, event)
+
+就是说，访问一个元方法不会调用其他元方法，而且访问没有元表的对象不会失败（只是结果为nil）。 
+
+"add": + 操作。 
+下面的getbinhandler函数定义Lua如何选择二元操作的处理程序。首先尝试第一操作数，如果它的类型没有定义该操作的处理程序，则尝试第二操作数。 
+
+     function getbinhandler (op1, op2, event)
+       return metatable(op1)[event] or metatable(op2)[event]
+     end
+
+通过应用该函数，op1 + op2的行为是 
+
+     function add_event (op1, op2)
+       local o1, o2 = tonumber(op1), tonumber(op2)
+       if o1 and o2 then  -- 两操作数都是数字？
+         return o1 + o2   -- ‘+’此处是‘add’的原语
+       else  -- 至少一个操作数不是数字
+         local h = getbinhandler(op1, op2, "__add")
+         if h then
+           -- 用两个操作数调用处理程序
+           return (h(op1, op2))
+         else  -- 没有可用的处理程序：缺省行为
+           error(···)
+         end
+       end
+     end
+
+
+"sub": - 操作。 行为类似于“add”操作。 
+"mul": * 操作。 行为类似于“add”操作。 
+"div": / 操作。 行为类似于“add”操作。 
+"mod": % 操作。 行为类似于“add”操作。以o1 - floor(o1/o2)*o2为操作原语。 
+"pow": ^ （取幂）操作。 行为类似于“add”操作，以函数pow（来自C数学库）为操作原语。 
+"unm": 一元-操作。 
+     function unm_event (op)
+       local o = tonumber(op)
+       if o then  -- 操作数是数字？
+         return -o  -- ‘-’此处是‘unm’的原语
+       else  -- 操作数不是数字
+         -- 尝试由操作数取得处理程序。
+         local h = metatable(op).__unm
+         if h then
+           -- 用操作数调用处理程序
+           return (h(op))
+         else  -- 没有可用的处理程序：缺省行为
+           error(···)
+         end
+       end
+     end
+
+
+"concat": .. （连接）操作。 
+     function concat_event (op1, op2)
+       if (type(op1) == "string" or type(op1) == "number") and
+          (type(op2) == "string" or type(op2) == "number") then
+         return op1 .. op2  -- 字符串连接原语
+       else
+         local h = getbinhandler(op1, op2, "__concat")
+         if h then
+           return (h(op1, op2))
+         else
+           error(···)
+         end
+       end
+     end
+
+
+"len": # 操作。 
+     function len_event (op)
+       if type(op) == "string" then
+         return strlen(op)         -- 取字符串长度原语
+       elseif type(op) == "table" then
+         return #op                -- 取表长度原语
+       else
+         local h = metatable(op).__len
+         if h then
+           -- 用操作数调用处理程序
+           return (h(op))
+         else  -- 没有可用的处理程序：缺省行为
+           error(···)
+         end
+       end
+     end
+
+表长度的描述见§2.5.5。 
+
+"eq": == 操作。 函数getcomphandler定义Lua如何选择比较操作符的元方法。只有待比较的两个对象类型和选定操作对应的元方法都相同，才会选择该元方法。 
+     function getcomphandler (op1, op2, event)
+       if type(op1) ~= type(op2) then return nil end
+       local mm1 = metatable(op1)[event]
+       local mm2 = metatable(op2)[event]
+       if mm1 == mm2 then return mm1 else return nil end
+     end
+
+“eq”事件定义如下： 
+
+     function eq_event (op1, op2)
+       if type(op1) ~= type(op2) then  -- 类型不同？
+         return false   -- 对象不同
+       end
+       if op1 == op2 then   -- 相等原语？
+         return true   -- 对象相同
+       end
+       -- 尝试元方法
+       local h = getcomphandler(op1, op2, "__eq")
+       if h then
+         return (h(op1, op2))
+       else
+         return false
+       end
+     end
+
+a ~= b等价于not (a == b)。 
+
+"lt": < 操作。 
+     function lt_event (op1, op2)
+       if type(op1) == "number" and type(op2) == "number" then
+         return op1 < op2   -- 数字比较
+       elseif type(op1) == "string" and type(op2) == "string" then
+         return op1 < op2   -- 词典顺序比较
+       else
+         local h = getcomphandler(op1, op2, "__lt")
+         if h then
+           return (h(op1, op2))
+         else
+           error(···)
+         end
+       end
+     end
+
+a > b等价于b < a。 
+
+"le": <= 操作。 
+     function le_event (op1, op2)
+       if type(op1) == "number" and type(op2) == "number" then
+         return op1 <= op2   -- 数字比较
+       elseif type(op1) == "string" and type(op2) == "string" then
+         return op1 <= op2   -- 词典顺序比较
+       else
+         local h = getcomphandler(op1, op2, "__le")
+         if h then
+           return (h(op1, op2))
+         else
+           h = getcomphandler(op1, op2, "__lt")
+           if h then
+             return not h(op2, op1)
+           else
+             error(···)
+           end
+         end
+       end
+     end
+
+a >= b等价于 b <= a。注意，假定a <= b等价于not (b < a)，那么当没有“le”元方法时，Lua尝试“lt”。 
+
+"index": 索引访问table[key]。 
+     function gettable_event (table, key)
+       local h
+       if type(table) == "table" then
+         local v = rawget(table, key)
+         if v ~= nil then return v end
+         h = metatable(table).__index
+         if h == nil then return nil end
+       else
+         h = metatable(table).__index
+         if h == nil then
+           error(···)
+         end
+       end
+       if type(h) == "function" then
+         return (h(table, key))     -- 调用处理程序
+       else return h[key]           -- 对它重复上述操作
+       end
+     end
+
+
+"newindex": 索引赋值table[key] = value。 
+     function settable_event (table, key, value)
+       local h
+       if type(table) == "table" then
+         local v = rawget(table, key)
+         if v ~= nil then rawset(table, key, value); return end
+         h = metatable(table).__newindex
+         if h == nil then rawset(table, key, value); return end
+       else
+         h = metatable(table).__newindex
+         if h == nil then
+           error(···)
+         end
+       end
+       if type(h) == "function" then
+         h(table, key,value)           -- 调用处理程序
+       else h[key] = value             -- 对它重复上述操作
+       end
+     end
+
+
+"call": 当Lua调用值时被调用。 
+     function function_event (func, ...)
+       if type(func) == "function" then
+         return func(...)   -- 调用原语
+       else
+         local h = metatable(func).__call
+         if h then
+           return h(func, ...)
+         else
+           error(···)
+         end
+       end
+     end
+
+
+2.9 - 环境
+除了元表，线程、函数和用户数据类型的对象拥有与它们关联的其他表，称为它们环境（environment）。同元表一样，环境是常规表，而且多个对象可以共享同一环境。 
+
+被创建的线程共享创建者线程的环境。被创建的用户数据和C函数共享创建者C函数的环境。被创建的非嵌套的Lua函数（由loadfile、loadstring或load创建）共享创建者线程的环境。被创建的嵌套的Lua函数共享创建者Lua函数的环境。 
+
+对Lua来说，与用户数据关联的环境没有意义。它只是为了方便程序员把表关联到用户数据的方便特性。 
+
+同线程关联的环境称为全局环境（global environments）。它们被用作由线程创建的线程和非嵌套的Lua函数的缺省环境，而且可为C代码直接访问（见§3.3）。 
+
+与C函数关联的环境能被C代码直接访问（见§3.3）。它被用作由其创建的其他C函数和用户数据的缺省环境。 
+
+同Lua函数关联的环境被用来解决函数内所有对全局变量的访问（见§2.3）。它们被用作由其创建的嵌套的Lua函数的缺省环境。 
+
+可调用setfenv来改变Lua函数或当前运行的线程的环境。可调用getfenv获取Lua函数或当前运行的线程的环境。要操作其他对象的环境（用户数据、C函数、其他线程），必须使用C API。 
+
+2.10 - 垃圾收集
+Lua提供自动内存管理。这表示你无需担心新对象的内存分配以及当对象不再需要时的释放工作。Lua通过运行有时运行的垃圾收集器（garbage collector）收集所有的死掉的对象（即不能从Lua中访问的对象）来自动地管理内存。Lua用到的所有内存都被自动管理：表、用户数据、函数、线程、字符串，等等。 
+
+Lua实现了增量标记清除（mark-and-sweep）收集器。它用两个数字控制垃圾收集周期：garbage-collector pause和garbage-collector step multiplier。二者都用百分比点数作为单位（所以值100表示内部的值1）。 
+
+garbage-collector pause控制收集器在启动新一轮周期前等待多久。数值越大，收集器的活性越低。小于100意味着收集器在启动新周期前不会等待。值为200意味着收集器等已用内存总量翻倍时启动新周期。 
+
+step multiplier控制收集器对内存分配的相对速度。数值越大，收集器的活性越高，同时也增大了每步增量的尺寸。小于100的值使得收集器太慢并且可导致周期无法完成。缺省值200意味着收集器以内存分配的二倍速运行。 
+
+可调用C中的lua_gc或Lua中的collectgarbage改变这些数值。这些函数也能直接控制（比如停止和重启）收集器。 
+
+2.10.1 - 垃圾收集元方法
+可用C API为用户数据设置垃圾收集器元方法（见§2.8）。这些元方法也称为析构器（finalizer）。析构器允许你协调Lua的垃圾收集和外部资源管理（比如关闭文件、网络或数据库连接，或释放你自己的内存）。 
+
+元表中带有__gc字段的无用用户数据不会被垃圾收集器立刻回收。代替的做法是，Lua将它们放进一个列表。回收之后，Lua对列表中的每个用户数据执行下面函数的等价操作： 
+
+     function gc_event (udata)
+       local h = metatable(udata).__gc
+       if h then
+         h(udata)
+       end
+     end
+
+在垃圾收集周期的最后，本周期收集的用户数据的析构器以它们创建的反序被调用。就是说，程序中最后创建的用户数据关联的析构器被第一个调用。用户数据本身只在下一次垃圾收集周期释放。 
+
+2.10.2 - 弱引用表（Weak）
+弱引用表（Weak）的元素都是弱引用（weak reference）。弱引用被垃圾收集器忽略（认为是无用的）。换句话说，如果某对象仅有的引用是弱引用，垃圾收集器会回收该对象。 
+
+弱引用表可能具有弱引用键、弱引用值或二者都有。具有弱引用键的表允许对其键的回收，但会阻止对其值进行回收。键和值都是弱引用的表允许对二者的回收。无论键或值被回收，整个键值对从表中移除。表的弱引用性由其元表的__mode字段控制。如果该字段是个包含‘k’的字符串，表中的键是弱引用的。如果含有‘v’，值是弱引用的。 
+
+把某个表用作元表后就不能修改其__mode字段的值了。否则，该元表控制的表的弱引用行为就是未定义的。 
+
+2.11 - 协同例程（Coroutine）
+Lua支持协同例程，也称为协同式多线程（collaborative multithreading）。Lua中的协程描绘对立的执行线程。不同于多线程系统中的线程，协程只能通过显式地调用中断（yield）函数暂停自身的执行。 
+
+调用coroutine.create创建一个协程。它的唯一参数是协程的主函数。函数create只是创建一个新协程并返回指向它（thread类型的对象）的句柄；它并没启动协程执行。 
+
+首次调用coroutine.resume并传入由coroutine.create返回的线程作为第一参数时，协程在其主函数的第一行启动运行。传入coroutine.resume的额外参数被传入协程的主函数。协程启动运行后会一直运行直到结束或中断. 
+
+协程有两种方式结束它的运行：正常的，当它的主函数返回（显式或隐式地，在最后指令之后）时；非正常的，发生未预防的错误。第一种情况下，coroutine.resume返回true，以及协程主函数返回的任何值。发生错误的情况下，coroutine.resume返回false以及一条错误消息。 
+
+协程通过调用coroutine.yield中断。当协程中断时，相应的coroutine.resume立刻返回，即使中断发生在嵌套的函数调用内部（即不在主函数中，而是主函数直接或间接调用的函数中）。中断的情况下，coroutine.resume也返回true，以及传入coroutine.yield的任何值。下次恢复同样的协程，它从被中断处继续运行，同时对coroutine.yield的调用返回的任何额外值作为参数传入coroutine.resume。 
+
+同coroutine.create一样，函数coroutine.wrap也创建一个协程，但是它返回一个恢复协程的函数而不是协程本身。传入该函数的任何参数成为coroutine.resume的额外参数。除了第一个（错误代码布尔值），coroutine.resume返回的值coroutine.wrap也都返回。与coroutine.resume不同的是，coroutine.wrap不会捕获错误；任何错误都被传播到调用者。 
+
+作为一个例子，考虑下面的代码： 
+
+     function foo (a)
+       print("foo", a)
+       return coroutine.yield(2*a)
+     end
+     
+     co = coroutine.create(function (a,b)
+           print("co-body", a, b)
+           local r = foo(a+1)
+           print("co-body", r)
+           local r, s = coroutine.yield(a+b, a-b)
+           print("co-body", r, s)
+           return b, "end"
+     end)
+            
+     print("main", coroutine.resume(co, 1, 10))
+     print("main", coroutine.resume(co, "r"))
+     print("main", coroutine.resume(co, "x", "y"))
+     print("main", coroutine.resume(co, "x", "y"))
+
+运行时它会产生下面的输出： 
+
+     co-body 1       10
+     foo     2
+     
+     main    true    4
+     co-body r
+     main    true    11      -9
+     co-body x       y
+     main    true    10      end
+     main    false   cannot resume dead coroutine
+
+3 - 应用编程接口
+本节描述用于Lua的C API，即可用于宿主程序和Lua通信的C函数集合。所有API函数和相关的类型和常量在头文件lua.h中声明。 
+
+即使当我们使用术语“函数”时，API中的任何设备可能改为宏提供。所有这些宏严格地只使用它们的每个参数一次（除了第一参数，它总是个Lua状态机），因此不要产生任何隐藏的副作用（side-effects）。 
+
+同多数C库一样，Lua API函数不会检查它们的参数的合法性和可靠性。可是，你可通过为文件luaconf.h中的宏luai_apicheck使用适当的定义编译Lua来改变这种行为。 
+
+3.1 - 栈
+Lua用一个虚拟栈（virtual stack）向或从C传值。该栈中的每个元素表示一个Lua值（nil、数字、字符串，等等）。 
+
+无论何时Lua调用C，被调用函数得到一个新栈，它与以前的栈和一直活动的C函数的栈都无关。该栈最初包含传入C函数的任何参数，并且它也是C函数压入要被返回到调用者的结果的地方（见lua_CFunction）。 
+
+为了方便的目的，API中的多数查询操作并不遵循严格的栈规范。而是通过使用index可引用栈中的任何元素：正数索引表示绝对的栈位置（从1开始）；负数索引表示相对于栈顶的偏移。更明确地说，如果栈有n个元素，则索引1表示第一个元素（即第一个压入栈的元素），索引n表示最后的元素；索引-1也表示最后的元素（即栈顶的元素），索引-n表示第一个元素。如果索引处于1和栈顶之间（就是说如果1 ≤ abs(index) ≤ top）我们说它是有效的。 
+
+3.2 - 栈尺寸
+当你同Lua API交互时，你有责任确保可靠性。特别地，你有责任控制栈溢出。你可用函数lua_checkstack增长栈尺寸。 
+
+无论何时Lua调用C，它确保至少LUA_MINSTACK栈位置是可用的。LUA_MINSTACK被定义为20，所以通常不需要担心栈空间，除非你的代码循环将元素压栈。 
+
+多数查询函数接受的索引为可用的栈空间内的任何值，即一直到你通过lua_checkstack设置的最大栈尺寸。这样的索引称为认可的索引。认可的索引更正式地定义如下： 
+
+     (index < 0 && abs(index) <= top) ||
+     (index > 0 && index <= stackspace)
+
+注意0决不是认可的索引。 
+
+3.3 - 伪索引
+除非另有说明，任何接受有效索引的函数也能用伪索引调用，它们表示C代码可访问但是并不在栈中的某些Lua值。伪索引用于访问线程环境、函数环境、注册表和C函数的upvalue（见§3.4）。 
+
+线程环境（其中存在全局变量）总是在伪索引LUA_GLOBALSINDEX处。正运行的C函数的环境总在伪索引LUA_ENVIRONINDEX处。 
+
+要访问和改变全局变量的值，你可在环境表上使用常规的表操作。例如，要访问一个全局变量的值，执行 
+
+     lua_getfield(L, LUA_GLOBALSINDEX, varname);
+
+3.4 - C闭包
+当一个C函数被创建时，它可能关联了一些值，这样创建了一个C闭包；这些值称为upvalue，并且不论何时调用，它们对函数都是可访问的（见lua_pushcclosure）。 
+
+只要一个C函数被调用，其upvalue就被定位在特定的伪索引处。这些伪索引由宏lua_upvalueindex产生。关联到函数的第一个值在位置lua_upvalueindex(1)处，依次类推。任何访问lua_upvalueindex(n)，其中n大于当前函数的upvalue的数量（但不大于256），产生一个可接受（但无效）的索引。 
+
+3.5 - 注册表
+Lua提供一个registry，它是个预定义表，可被任何C代码用来存储它需要存储的任何Lua值。该表总是定位于伪索引LUA_REGISTRYINDEX处。任何C库都能存储数据到该表中，但是它应该小心地选择不同于其他库用到的键，以避免冲突。典型地，你应该在你的代码中使用含有你的库名的字符串或带有C对象地址的轻量级用户数据作为键。 
+
+注册表中的整数键被辅助库实现的引用机制使用，因此不应该用作其他目的。 
+
+3.6 - C错误处理
+Lua在内部使用C的longjmp设备处理错误。（如果你用C++也可选择使用异常；见文件luaconf.h。）当Lua面临任何错误时（例如内存分配错误、类型错误、语法错误和运行时错误这样的），它抛出（raise）一个错误；即执行一个长跳转。受保护的环境使用setjmp设置一个还原点；发生任何错误会跳到最近（时间上）活动的还原点。 
+
+Lua中的多数函数可抛出错误，例如内存分配错误。每个函数的文档指出它能否抛出错误。 
+
+在C函数内可通过调用lua_error抛出错误。 
+
+3.7 - 函数与类型
+这儿我们按照字母顺序列出来自C API的所有函数和类型。每个函数有个类似这样的指示器：[-o, +p, x] 
+
+第一个字段，o，是函数出栈多少个元素。第二个字段，p，是函数入栈多少个元素。（所有的函数总是在将其参数出栈后将其结果入栈。）形如x|y的字段意思是函数可入栈（或出栈）x或y个元素，依赖实际情形；一个问号标记‘?’意思是我们不能通过察看其参数知道函数出栈/入栈多少元素（例如，它们可能依赖于栈中存储的情况）。第三个字段，x，告知函数是否可能抛出错误：'-' 意思是函数决不抛出任何错误；'m' 意思是函数可能抛出一个错误，只取决于内存不足；'e' 意思是函数可能抛出其他类型的错误；'v' 意思是函数可能故意抛出错误。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Alloc
+typedef void * (*lua_Alloc) (void *ud,
+                             void *ptr,
+                             size_t osize,
+                             size_t nsize);
+这种类型的内存分配函数由Lua状态机使用。分配器函数必须提供类似realloc的功能，但是不必完全一样。它的参数是ud，一个由lua_newstate传入的不透明指针；ptr，一个指向即将被分配/重分配/释放的内存块的指针；osize，内存块原来的尺寸；nsize，内存块的新尺寸。当且仅当osize是0时ptr为NULL。当nsize是0时，分配器必须返回NULL；如果osize非0，它将会释放ptr指向的内存块。当nsize非0时，当且仅当分配器不能满足请求时返回NULL。当nsize非0且osize是0时，分配器应该表现的类似malloc。当nsize和osize非0时，分配器表现的类似realloc。Lua假定当osize >= nsize时分配器决不失败。 
+
+这儿有个分配器函数的简单实现。它被辅助库中的被luaL_newstate使用。 
+
+     static void *l_alloc (void *ud, void *ptr, size_t osize,
+                                                size_t nsize) {
+       (void)ud;  (void)osize;  /* not used */
+       if (nsize == 0) {
+         free(ptr);
+         return NULL;
+       }
+       else
+         return realloc(ptr, nsize);
+     }
+
+该代码假定free(NULL)不起作用而且realloc(NULL, size)等价于malloc(size)。ANSI C确保这两种行为。 
+
+
+--------------------------------------------------------------------------------
+
+lua_atpanic
+[-0, +0, -] 
+
+lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf);
+设置新的应急（panic）函数并返回前一个。 
+
+如果在任何受保护的环境外面发生了错误，Lua调用应急函数接着调用exit(EXIT_FAILURE)，从而退出宿主程序。你的应急函数可通过永不返回（例如执行一次长跳转）以避免这次退出。 
+
+应急函数可访问栈顶的错误消息。 
+
+
+--------------------------------------------------------------------------------
+
+lua_call
+[-(nargs + 1), +nresults, e] 
+
+void lua_call (lua_State *L, int nargs, int nresults);
+调用一个函数。 
+
+要调用函数必须使用下面的协议：首先，将要被调用的函数压栈；然后，将函数参数顺序压栈；即第一参数首先压栈。最后，调用lua_call；nargs是你压栈的参数数量。当函数被调用时所有参数以及函数值被弹出栈。当函数返回时其结果被压栈。结果被调整为nresults个，除非nresults是LUA_MULTRET。在该情况下，来自函数的所有结果被压栈。Lua会确保返回值适合栈空间。函数结果被顺序压栈（第一个结果首先压栈），因而调用后最后一个结果在栈顶。 
+
+被调用函数内的任何错误会被向上传播（使用longjmp）。 
+
+下面的例子显示宿主程序可如何执行与该Lua代码等价的操作： 
+
+     a = f("how", t.x, 14)
+
+这是C中的代码： 
+
+     lua_getfield(L, LUA_GLOBALSINDEX, "f");          /* 要被调用的函数 */
+     lua_pushstring(L, "how");                             /* 第1个参数 */
+     lua_getfield(L, LUA_GLOBALSINDEX, "t");            /* 要被索引的表 */
+     lua_getfield(L, -1, "x");           /* 将t.x的结果压栈（第2个参数） */
+     lua_remove(L, -2);                  /* 从栈中删除‘t’ */
+     lua_pushinteger(L, 14);                               /* 第3个参数 */
+     lua_call(L, 3, 1);               /* 以3个参数调用‘f’，返回1个结果 */
+     lua_setfield(L, LUA_GLOBALSINDEX, "a");        /* 设置全局变量‘a’ */
+
+注意上面的代码是“对称的”：在其结尾，栈回到其初始配置。这是一种良好的编程习惯。 
+
+
+--------------------------------------------------------------------------------
+
+lua_CFunction
+typedef int (*lua_CFunction) (lua_State *L);
+用于C函数的类型。 
+
+为了与Lua恰当地通讯，C函数必须使用下面的协议，它定义了参数和结果的传递方式：C函数在其栈中以顺序的方式（第一参数被首先压栈）接收来自Lua的参数。所以，当函数开始时，lua_gettop(L)返回函数收到的参数个数。第一参数（如果存在）在索引1处，最后的参数在索引lua_gettop(L)处。要向Lua返回值，C函数只需要将它们顺序压栈（第一个结果被首先压栈），并返回结果的个数。栈中结果下面的任何其他值将被Lua恰当地丢弃。同Lua函数一样，被Lua调用的C函数也能返回多个结果。 
+
+作为例子，下面的函数接收可变数量的数字参数，并返回它们的平均数与总和： 
+
+     static int foo (lua_State *L) {
+       int n = lua_gettop(L);    /* 参数的个数 */
+       lua_Number sum = 0;
+       int i;
+       for (i = 1; i <= n; i++) {
+         if (!lua_isnumber(L, i)) {
+           lua_pushstring(L, "incorrect argument");
+           lua_error(L);
+         }
+         sum += lua_tonumber(L, i);
+       }
+       lua_pushnumber(L, sum/n);        /* 第1个参数 */
+       lua_pushnumber(L, sum);         /* 第2个参数 */
+       return 2;                   /* 结果的个数 */
+     }
+
+
+--------------------------------------------------------------------------------
+
+lua_checkstack
+[-0, +0, m] 
+
+int lua_checkstack (lua_State *L, int extra);
+确保栈中存在至少extra个空闲栈槽位。如果栈不能增长到那个尺寸则返回假。本函数从不缩小栈；如果栈已经比新尺寸大则无变化。 
+
+
+--------------------------------------------------------------------------------
+
+lua_close
+[-0, +0, -] 
+
+void lua_close (lua_State *L);
+销毁给定Lua状态机中的全部对象（如果存在对应的垃圾收集元方法则调用它们），并释放该状态机占用的所有动态内存。在一些平台上，你可能不需要调用本函数，因为当宿主程序结束时，所有资源自然地被释放。另一方面，长期运行的程序，比如后台程序（daemon）或web服务器，可能需要在状态机不再需要时立刻释放它们，以避免增长过大。 
+
+
+--------------------------------------------------------------------------------
+
+lua_concat
+[-n, +1, e] 
+
+void lua_concat (lua_State *L, int n);
+连接栈顶的n个值，弹出它们并将结果留在栈顶。如果n是1，结果就是栈上的单个值（即函数什么也不做）；如果n是0，结果是空字符串。连接操作依照Lua的常规语义执行（见§2.5.4）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_cpcall
+[-0, +(0|1), -] 
+
+int lua_cpcall (lua_State *L, lua_CFunction func, void *ud);
+以保护模式调用C函数func。func的栈中只有一个元素，是个包含ud的轻量级用户数据。发生错误时，lua_cpcall返回同lua_pcall一样的错误代码，以及栈顶的错误对象；否则返回0且不改变栈。func返回的所有值被丢弃。 
+
+
+--------------------------------------------------------------------------------
+
+lua_createtable
+[-0, +1, m] 
+
+void lua_createtable (lua_State *L, int narr, int nrec);
+创建新的空表并将其压栈。新表预分配narr个数组元素和nrec个非数组元素的空闲空间。当你确切地知道表将由多少个元素时，预分配是非常有用的。否则，你可用函数lua_newtable。 
+
+
+--------------------------------------------------------------------------------
+
+lua_dump
+[-0, +0, m] 
+
+int lua_dump (lua_State *L, lua_Writer writer, void *data);
+将函数转储为二进制代码单元。接收栈顶的Lua函数并产生二进制单元，如果后者被再次加载，得到与被转储的等价的函数。当产生单元的各部分时，lua_dump用给定的data调用函数writer（见lua_Writer）来写出它们。 
+
+返回值是最后一次调用记录器（writer）返回的错误代码；0表示没有错误。 
+
+本函数不会将Lua函数从栈中弹出。 
+
+
+--------------------------------------------------------------------------------
+
+lua_equal
+[-0, +0, e] 
+
+int lua_equal (lua_State *L, int index1, int index2);
+沿用Lua的==操作符的语义（即可能调用元方法），比较在可接受索引index1和index2中的两个值，如果相等则返回1。否则返回0。如果任何索引无效也返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_error
+[-1, +0, v] 
+
+int lua_error (lua_State *L);
+产生一个Lua错误。错误消息（实际上可为任何类型的Lua值）必须在栈顶。本函数执行长跳转，因此从不返回。（见luaL_error）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gc
+[-0, +0, e] 
+
+int lua_gc (lua_State *L, int what, int data);
+控制垃圾收集器。 
+
+本函数根据参数what的值执行若干任务： 
+
+LUA_GCSTOP: 停止垃圾收集器。 
+LUA_GCRESTART: 重新启动垃圾收集器。 
+LUA_GCCOLLECT: 执行一次完整的垃圾收集器周期。 
+LUA_GCCOUNT: 返回Lua当前占用的内存总量（以Kbyte为单位）。 
+LUA_GCCOUNTB: 返回Lua当前的内存用量的字节数除1024的余数。 
+LUA_GCSTEP: 执行一步增量垃圾收集。步“长”由data以未指定的方式控制（值越大意味着步骤越多）。要控制步长，你必须实验性地调整data的值。如果该步完成了一个垃圾收集周期则函数返回1。 
+LUA_GCSETPAUSE: 设置data作为收集器的pause（见§2.10）的新值。返回pause的前一个值。 
+LUA_GCSETSTEPMUL: 设置data作为收集器的step multiplier（见§2.10）的新值。返回step multiplier的前一个值。 
+
+--------------------------------------------------------------------------------
+
+lua_getallocf
+[-0, +0, -] 
+
+lua_Alloc lua_getallocf (lua_State *L, void **ud);
+返回给定状态机的内存分配函数。如果ud不为NULL，Lua将lua_newstate传入的不透明指针存入*ud。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getfenv
+[-0, +1, -] 
+
+void lua_getfenv (lua_State *L, int index);
+将给定索引处的值的环境表压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getfield
+[-0, +1, e] 
+
+void lua_getfield (lua_State *L, int index, const char *k);
+将t[k]的值压栈，其中t是给定的有效索引处的值。同Lua中一样，本函数可能触发用于“index”事件的元方法（见§2.8）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getglobal
+[-0, +1, e] 
+
+void lua_getglobal (lua_State *L, const char *name);
+将全局变量name的值压栈。它被定义为宏： 
+
+     #define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)
+
+
+--------------------------------------------------------------------------------
+
+lua_getmetatable
+[-0, +(0|1), -] 
+
+int lua_getmetatable (lua_State *L, int index);
+将给定的认可的索引处的值的元表压栈。如果索引无效，或者如果该值没有元表，本函数返回0且不会压栈任何东西。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gettable
+[-1, +1, e] 
+
+void lua_gettable (lua_State *L, int index);
+将值t[k]压栈，其中t是指定的有效索引处的值，并且k是栈顶的值。 
+
+本函数将键出栈（将结果值放在它的位置）。同Lua中一样，本函数可能触发用于“index”事件的元方法（见§2.8）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gettop
+[-0, +0, -] 
+
+int lua_gettop (lua_State *L);
+返回栈顶元素的索引。因为索引从1开始，该结果等于栈中元素的数量（所以0表示空栈）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_insert
+[-1, +1, -] 
+
+void lua_insert (lua_State *L, int index);
+将栈顶元素移入给定的有效索引，并将该索引上面的元素上移至开放空间。不能以伪索引调用，因为伪索引不是真实的栈位置。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Integer
+typedef ptrdiff_t lua_Integer;
+被Lua API用来表示整型值的类型。 
+
+缺省是ptrdiff_t，它通常是机器能处理的最大的带符号整型。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isboolean
+[-0, +0, -] 
+
+int lua_isboolean (lua_State *L, int index);
+如果给定的认可的索引处的值具有布尔类型则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_iscfunction
+[-0, +0, -] 
+
+int lua_iscfunction (lua_State *L, int index);
+如果给定的认可的索引处的值是C函数则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isfunction
+[-0, +0, -] 
+
+int lua_isfunction (lua_State *L, int index);
+如果给定的认可的索引处的值是函数（C或Lua）则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_islightuserdata
+[-0, +0, -] 
+
+int lua_islightuserdata (lua_State *L, int index);
+如果给定的认可的索引处的值是轻型用户数据则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isnil
+[-0, +0, -] 
+
+int lua_isnil (lua_State *L, int index);
+如果给定的认可的索引处的值是nil则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isnone
+[-0, +0, -] 
+
+int lua_isnone (lua_State *L, int index);
+如果给定的认可的索引处的值不合法（即其引用当前栈外部的元素）则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isnoneornil
+[-0, +0, -] 
+
+int lua_isnoneornil (lua_State *L, int index);
+如果给定的认可的索引处的值不合法（即其引用当前栈外部的元素）或该索引处的值是nil则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isnumber
+[-0, +0, -] 
+
+int lua_isnumber (lua_State *L, int index);
+如果给定的认可的索引处的值是数字或者可转为数字的字符串则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isstring
+[-0, +0, -] 
+
+int lua_isstring (lua_State *L, int index);
+如果给定的认可的索引处的值是字符串或数字（它总是可转为字符串）则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_istable
+[-0, +0, -] 
+
+int lua_istable (lua_State *L, int index);
+如果给定的认可的索引处的值是表则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isthread
+[-0, +0, -] 
+
+int lua_isthread (lua_State *L, int index);
+如果给定的认可的索引处的值是线程则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_isuserdata
+[-0, +0, -] 
+
+int lua_isuserdata (lua_State *L, int index);
+如果给定的认可的索引处的值是用户数据（完整的或轻型的）则返回1，否则返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_lessthan
+[-0, +0, e] 
+
+int lua_lessthan (lua_State *L, int index1, int index2);
+如果认可的索引index1处的值小于认可的索引index2处的值则返回1，该操作遵循Lua的<操作符的语义（即可能调用元方法）。否则返回0。如果任何索引不合法也返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_load
+[-0, +1, -] 
+
+int lua_load (lua_State *L,
+              lua_Reader reader,
+              void *data,
+              const char *chunkname);
+加载Lua代码单元。如果没有错误，lua_load将编译的单元作为Lua函数压栈。否则，将一条错误消息压栈。lua_load的返回值是： 
+
+0: 没有错误； 
+LUA_ERRSYNTAX: 预编译期间的语法错误； 
+LUA_ERRMEM: 内存分配错误。 
+本函数只是载入单元；并不执行它。 
+
+lua_load自动地检测单元是文本还是二进制，进而加载它（见程序luac）。 
+
+lua_load函数使用用户提供的reader函数读取单元（见lua_Reader）。data参数是传入读取器函数的不透明值。 
+
+chunkname参数给单元提供名字，用于错误消息和调试信息（见§3.8）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_newstate
+[-0, +0, -] 
+
+lua_State *lua_newstate (lua_Alloc f, void *ud);
+创建新的、独立的状态机。如果不能创建状态机则返回NULL（由于内存不足）。参数f是分配器函数；Lua通过该函数为状态机执行全部的内存分配操作。第二参数ud是个不透明的指针，在每次调用中Lua将其传入分配器。 
+
+
+--------------------------------------------------------------------------------
+
+lua_newtable
+[-0, +1, m] 
+
+void lua_newtable (lua_State *L);
+创建新的空表并将其压栈。它等价于lua_createtable(L, 0, 0)。 
+
+
+--------------------------------------------------------------------------------
+
+lua_newthread
+[-0, +1, m] 
+
+lua_State *lua_newthread (lua_State *L);
+创建新线程，将其压栈，并返回指向lua_State的指针，它表示该新线程。本函数返回的新状态机与初始状态机共享所有全局对象（例如表），但具有独立的执行栈。 
+
+没有关闭或销毁线程的显式函数。像任何Lua对象一样，线程受垃圾收集的支配。 
+
+
+--------------------------------------------------------------------------------
+
+lua_newuserdata
+[-0, +1, m] 
+
+void *lua_newuserdata (lua_State *L, size_t size);
+本函数分配新的给定尺寸的内存块，以块地址的方式将完整的用户数据压栈，并返回该地址。 
+
+Lua中的用户数据表示C值。完整的用户数据表示一块内存。它是个对象（如同表）：你必须创建它，它可以有自己的元表，而且当被收集时能被检测到。完整的用户数据只等于自己（依照原始的相等比较）。 
+
+当Lua用gc元方法收集完整的用户数据时，Lua调用该元方法并把用户数据标记为完成的。当该用户数据再次被收集时，Lua释放其对应的内存。 
+
+
+--------------------------------------------------------------------------------
+
+lua_next
+[-1, +(2|0), e] 
+
+int lua_next (lua_State *L, int index);
+从栈中弹出一个键，并从给定的索引处的表中弹出一个键-值对（给定键的“下一”对）。如果表中没有更多的元素，则lua_next返回0（且不会压栈任何东西）。 
+
+典型的遍历看起来像这样： 
+
+     /* 表在栈中的索引‘t’处 */
+     lua_pushnil(L);  /* 第一个键 */
+     while (lua_next(L, t) != 0) {
+       /* 使用‘键’（索引-2）和‘值’(索引-1） */
+       printf("%s - %s\n",
+              lua_typename(L, lua_type(L, -2)),
+              lua_typename(L, lua_type(L, -1)));
+       /* 移除‘值’；为下次迭代保留‘键’ */
+       lua_pop(L, 1);
+     }
+
+当遍历表时，不要直接对键调用lua_tolstring，除非你知道键确实是字符串。回忆一下，lua_tolstring会改变给定所引处的值；这会干扰下一次调用lua_next。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Number
+typedef double lua_Number;
+Lua中的数字类型。缺省是双精度浮点数，但是能在luaconf.h中改变。 
+
+通过配置文件能改变Lua去操作其他的类型用作数字（例如单精度浮点数或长整型）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_objlen
+[-0, +0, -] 
+
+size_t lua_objlen (lua_State *L, int index);
+返回给定的认可的索引处的值的“长度”：对于字符串，这是其长度；对于表，这是取长操作符（‘#’）的结果；对于用户数据，这是为其分配的内存块的尺寸；对于其他类型是0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pcall
+[-(nargs + 1), +(nresults|1), -] 
+
+int lua_pcall (lua_State *L, int nargs, int nresults, int errfunc);
+在保护模式中调用函数。 
+
+nargs和nresults同lua_call中的有相同的含义。如果调用期间没有错误，lua_pcall的行为完全类似lua_call。然而，如果存在任何错误，lua_pcall捕捉它，将单个值压栈（错误消息），并返回错误代码。同lua_call一样，lua_pcall总是从栈中移除函数及其参数。 
+
+如果errfunc是0，则在栈上返回的错误消息就是原始的错误消息。否则,errfunc就是错误处理器函数（error handler function）的栈索引。（当前实现中，该索引不能是伪索引。）在发生运行时错误时，该函数将用错误消息调用，而且其返回值将变成栈上被lua_pcall返回的消息。 
+
+典型地，错误处理器函数用于向错误消息中增加更多调试信息，例如栈回溯。这种信息不能在lua_pcall返回后搜集，因为那时候栈已释放。 
+
+成功时lua_pcall函数返回0，或者下面的错误代码之一（在lua.h中定义）： 
+
+LUA_ERRRUN: 运行时错误。 
+LUA_ERRMEM: 内存分配错误。对于这类错误，Lua不会调用错误处理器函数。 
+LUA_ERRERR: 当运行错误处理器函数时的错误。 
+
+--------------------------------------------------------------------------------
+
+lua_pop
+[-n, +0, -] 
+
+void lua_pop (lua_State *L, int n);
+从栈中弹出n个元素。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushboolean
+[-0, +1, -] 
+
+void lua_pushboolean (lua_State *L, int b);
+把值b作为布尔值压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushcclosure
+[-n, +1, m] 
+
+void lua_pushcclosure (lua_State *L, lua_CFunction fn, int n);
+把新的C闭包压栈。 
+
+当C函数被创建时，它可以把一些值与自己关联，这样就创建了C闭包（见§3.4）；接下来无论何时它被调用，这些值对该函数都是可访问的。要将值与C函数关联，首先这些值应当被压栈（当有多个值时第一个值首先压栈）。然后用参数n调用lua_pushcclosure来创建C函数并将其压栈，n表明应当把多少值关联到该函数。lua_pushcclosure也会将这些值从栈中弹出。 
+
+n的最大值是255。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushcfunction
+[-0, +1, m] 
+
+void lua_pushcfunction (lua_State *L, lua_CFunction f);
+将C函数压栈。本函数接收一个指向C函数的指针并把一个function类型的Lua值压栈，当这种类型的函数被调用时，会调用相应的C函数。 
+
+任何要在Lua中注册的函数必须遵循正确的协议，以接收其参数并返回其结果（见lua_CFunction）。 
+
+lua_pushcfunction被定义为宏： 
+
+     #define lua_pushcfunction(L,f)  lua_pushcclosure(L,f,0)
+
+
+--------------------------------------------------------------------------------
+
+lua_pushfstring
+[-0, +1, m] 
+
+const char *lua_pushfstring (lua_State *L, const char *fmt, ...);
+将格式化的字符串压栈并返回指向它的指针。它与C函数sprintf类似，但也有一些重要的区别： 
+
+你不需要为结果分配空间：结果是Lua字符串且Lua会照看内存分配（以及通过垃圾收集解除分配）。 
+转换说明符非常的有限。没有标记、宽度或精度。转换说明符只能是'%%' （在字符串中插入一个'%'），'%s' （插入一个以0结尾的字符串，没有尺寸限制），'%f' （插入一个lua_Number），'%p' （插入一个指针作为十六进制数），'%d' （插入一个int），以及'%c' （插入一个int作为字符）。 
+
+--------------------------------------------------------------------------------
+
+lua_pushinteger
+[-0, +1, -] 
+
+void lua_pushinteger (lua_State *L, lua_Integer n);
+将一个值为n的数字压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushlightuserdata
+[-0, +1, -] 
+
+void lua_pushlightuserdata (lua_State *L, void *p);
+将轻型用户数据压栈。 
+
+在Lua中用户数据表示C值。轻型用户数据表示一个指针。它是个值（就像数字）：你不用创建它，它没有单独的元表，而且它不会被回收（如同从不被创建）。带有相同的C地址的轻型用户数据相等。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushliteral
+[-0, +1, m] 
+
+void lua_pushliteral (lua_State *L, const char *s);
+本宏等价于lua_pushlstring，但是只能当s是字面字符串时使用。在这些情况下，它自动地提供字符串长度。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushlstring
+[-0, +1, m] 
+
+void lua_pushlstring (lua_State *L, const char *s, size_t len);
+将s指向的尺寸为len的字符串压栈。Lua制造（或重用）给定字符串的内部拷贝，所以函数返回后s的内存立刻可被释放或重用。字符串可含有内嵌的0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushnil
+[-0, +1, -] 
+
+void lua_pushnil (lua_State *L);
+将nil值压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushnumber
+[-0, +1, -] 
+
+void lua_pushnumber (lua_State *L, lua_Number n);
+将值为n的数字压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushstring
+[-0, +1, m] 
+
+void lua_pushstring (lua_State *L, const char *s);
+将s指向的以0结尾的字符串压栈。Lua制造（或重用）给定字符串的内部拷贝，所以函数返回后s的内存立刻可被释放或重用。字符串不可含有内嵌的0；假定它在首个0处结束。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushthread
+[-0, +1, -] 
+
+int lua_pushthread (lua_State *L);
+将L表示的线程压栈。如果该线程是其状态机的主线程则返回1。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushvalue
+[-0, +1, -] 
+
+void lua_pushvalue (lua_State *L, int index);
+将给定的有效索引处的元素的拷贝压栈。 
+
+
+--------------------------------------------------------------------------------
+
+lua_pushvfstring
+[-0, +1, m] 
+
+const char *lua_pushvfstring (lua_State *L,
+                              const char *fmt,
+                              va_list argp);
+等价于lua_pushfstring，除了它接收一个va_list而不是可变数量的参数。 
+
+
+--------------------------------------------------------------------------------
+
+lua_rawequal
+[-0, +0, -] 
+
+int lua_rawequal (lua_State *L, int index1, int index2);
+如果认可的索引index1和index2处的两个值原生相等（即不调用元方法）则返回1。否则返回0。如果任何索引不合法也返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_rawget
+[-1, +1, -] 
+
+void lua_rawget (lua_State *L, int index);
+类似lua_gettable，但是执行一次原生访问（也就是不用元方法）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_rawgeti
+[-0, +1, -] 
+
+void lua_rawgeti (lua_State *L, int index, int n);
+降值t[n]压栈，其中t是给定的有效索引处的值。访问是原生的；即不会调用元方法。 
+
+
+--------------------------------------------------------------------------------
+
+lua_rawset
+[-2, +0, m] 
+
+void lua_rawset (lua_State *L, int index);
+类似lua_settable，但是执行一次原生赋值（也就是不用元方法）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_rawseti
+[-1, +0, m] 
+
+void lua_rawseti (lua_State *L, int index, int n);
+执行t[n] = v的等价操作，其中t是给定的有效索引处的值，v是栈顶的值。 
+
+本函数将值出栈。赋值是原生的；即不调用元方法。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Reader
+typedef const char * (*lua_Reader) (lua_State *L,
+                                    void *data,
+                                    size_t *size);
+被lua_load使用的读取器函数。每次需要单元的另一段时，lua_load沿着它的data参数调用读取器。读取器必须返回一个的内存块的指针，其中含有单元的新代码段，并且设置size为块尺寸。块必须一直存在直到再次调用读取器函数。读取器必须返回NULL或设置size为0来指示单元结束。读取器函数可能返回大于0的任何尺寸的代码段。 
+
+
+--------------------------------------------------------------------------------
+
+lua_register
+[-0, +0, e] 
+
+void lua_register (lua_State *L,
+                   const char *name,
+                   lua_CFunction f);
+设置C函数f为全局变量name的新值。它被定义为宏： 
+
+     #define lua_register(L,n,f) \
+            (lua_pushcfunction(L, f), lua_setglobal(L, n))
+
+
+--------------------------------------------------------------------------------
+
+lua_remove
+[-1, +0, -] 
+
+void lua_remove (lua_State *L, int index);
+移除给定的有效索引处的元素，并将该索引上面的元素下移来填充空隙。不能用伪索引调用，因为伪索引不是真实的栈位置。 
+
+
+--------------------------------------------------------------------------------
+
+lua_replace
+[-1, +0, -] 
+
+void lua_replace (lua_State *L, int index);
+将栈顶元素移动到给定的索引中（并弹出它），不会移动任何元素（因此替换给定位置的值）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_resume
+[-?, +?, -] 
+
+int lua_resume (lua_State *L, int narg);
+启动和恢复给定线程中的一个协程。 
+
+要启动一个协程，首先创建线程（见lua_newthread）；接着将主函数以及任何参数压到它的栈中；然后用narg指定参数个数来调用lua_resume。当协程挂起或运行完成时该调用返回。当它返回时，栈中含有lua_yield传入的所有值，或主体函数返回的所有值。如果协程中断则lua_resume返回LUA_YIELD，如果运行无误结束则返回0，或者在发生错误时返回错误代码（见lua_pcall）。发生错误时，栈未被释放，所以可对它使用调试API。错误消息位于栈顶。要重新启动协程，你只需把要从yield传出的结果放到它的栈上，然后调用lua_resume。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setallocf
+[-0, +0, -] 
+
+void lua_setallocf (lua_State *L, lua_Alloc f, void *ud);
+把给定状态机的分配器函数换成带用户数据ud的f。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setfenv
+[-1, +0, -] 
+
+int lua_setfenv (lua_State *L, int index);
+从栈中弹出一个表并把它设为给定索引处的值的新环境。如果给定索引处的值既不是函数又不是线程也不是用户数据，lua_setfenv返回0。否则返回1。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setfield
+[-1, +0, e] 
+
+void lua_setfield (lua_State *L, int index, const char *k);
+执行t[k] = v的等价操作，其中t是给定的有效索引处的值，v是栈顶的值。 
+
+本函数从栈中弹出值。同Lua中一样，本函数可能触发“newindex”事件的元方法（见§2.8）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setglobal
+[-1, +0, e] 
+
+void lua_setglobal (lua_State *L, const char *name);
+从栈中弹出一个值并将其设为全局变量name的新值。它被定义为宏： 
+
+     #define lua_setglobal(L,s)   lua_setfield(L, LUA_GLOBALSINDEX, s)
+
+
+--------------------------------------------------------------------------------
+
+lua_setmetatable
+[-1, +0, -] 
+
+int lua_setmetatable (lua_State *L, int index);
+从栈中弹出一个表并将其设为给定的认可的索引处的值的新元表。 
+
+
+--------------------------------------------------------------------------------
+
+lua_settable
+[-2, +0, e] 
+
+void lua_settable (lua_State *L, int index);
+执行t[k] = v的等价操作，其中t是给定的有效索引处的值，v是栈顶的值，k正好是栈顶下面的值。 
+
+本函数将键和值都弹出栈。同Lua中一样，本函数可能触发“newindex”事件的元方法（见§2.8）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_settop
+[-?, +?, -] 
+
+void lua_settop (lua_State *L, int index);
+接受任何认可的索引或0，并将栈顶设为该值。如果新栈顶比旧的大，则新元素用nil填充。如果index 是0，则移除所有栈元素。 
+
+
+--------------------------------------------------------------------------------
+
+lua_State
+typedef struct lua_State lua_State;
+保持一个Lua解释器的完整状态机的不透明结构。Lua库是完全可重入的：没有全局变量。关于状态机的所有信息保持在该结构中。 
+
+一个指向该状态机的指针必须作为第一参数传入库中的所有函数，除了lua_newstate，它从头创建Lua状态机。 
+
+
+--------------------------------------------------------------------------------
+
+lua_status
+[-0, +0, -] 
+
+int lua_status (lua_State *L);
+返回线程L的状态。 
+
+对于正常的线程状态可为0，如果线程发生错误而结束则为错误代码，或者如果线程挂起则为LUA_YIELD。 
+
+
+--------------------------------------------------------------------------------
+
+lua_toboolean
+[-0, +0, -] 
+
+int lua_toboolean (lua_State *L, int index);
+把给定的认可的索引处的Lua值转换为C布尔值（0或1）。同Lua中的所有测试一样，对于任何不同于false和nil的Lua值，lua_toboolean返回1；否则返回0。当用不合法的索引调用时也返回0。（如果你要只接受真正的布尔值，使用lua_isboolean测试值的类型。） 
+
+
+--------------------------------------------------------------------------------
+
+lua_tocfunction
+[-0, +0, -] 
+
+lua_CFunction lua_tocfunction (lua_State *L, int index);
+把给定的认可的索引处的值转换为C函数。那个值必须是个C函数，否则返回NULL。 
+
+
+--------------------------------------------------------------------------------
+
+lua_tointeger
+[-0, +0, -] 
+
+lua_Integer lua_tointeger (lua_State *L, int index);
+把给定的认可的索引处的Lua值转换为带符号整数类型lua_Integer。该Lua值必须是数字或可转换为数字的字符串（见§2.2.1）；否则lua_tointeger返回0。 
+
+如果该数字不是整数，它会被以某种未指定的方式被截断。 
+
+
+--------------------------------------------------------------------------------
+
+lua_tolstring
+[-0, +0, m] 
+
+const char *lua_tolstring (lua_State *L, int index, size_t *len);
+把给定的认可的索引处的Lua值转换为C字符串。如果len不是NULL，也会用字符串长度设置*len。该Lua值必须是字符串或数字；否则，本函数返回NULL。如果该值是数字，则lua_tolstring也会改变栈中的实际值为字符串。（当在表遍历期间lua_tolstring被用于键时，这个改变会干扰lua_next。） 
+
+lua_tolstring返回个指向Lua状态机内部的字符串的完全调整的指针。这个字符串总是在其最后字符后有个0（‘\0’）（同C中一样），但是其体内可含有其他的0。因为Lua具有垃圾收集，所以无法担保lua_tolstring返回的指针在相应的值从栈中移除后仍然有效。 
+
+
+--------------------------------------------------------------------------------
+
+lua_tonumber
+[-0, +0, -] 
+
+lua_Number lua_tonumber (lua_State *L, int index);
+把给定的认可的索引处的Lua值转换为C类型lua_Number（见lua_Number）。该Lua值必须是数字或可转为数字的字符串（见§2.2.1）；否则lua_tonumber返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_topointer
+[-0, +0, -] 
+
+const void *lua_topointer (lua_State *L, int index);
+把给定的认可的索引处的值转换为普通的C指针（void*）。该值可为用户数据、表、线程或函数；否则lua_topointer返回NULL。不同的对象将给出不同的指针。没有方法可以把指针转回其原始值。 
+
+典型地，本函数只用于调试信息。 
+
+
+--------------------------------------------------------------------------------
+
+lua_tostring
+[-0, +0, m] 
+
+const char *lua_tostring (lua_State *L, int index);
+等价于len等于NULL时的lua_tolstring。 
+
+
+--------------------------------------------------------------------------------
+
+lua_tothread
+[-0, +0, -] 
+
+lua_State *lua_tothread (lua_State *L, int index);
+把给定的认可的索引处的值转换为Lua线程（用lua_State*表示）。该值必须为线程；否则，本函数返回NULL。 
+
+
+--------------------------------------------------------------------------------
+
+lua_touserdata
+[-0, +0, -] 
+
+void *lua_touserdata (lua_State *L, int index);
+如果给定的认可的索引处的值是完整的用户数据，则返回其块地址。如果是轻型用户数据，返回其指针。否则返回NULL。 
+
+
+--------------------------------------------------------------------------------
+
+lua_type
+[-0, +0, -] 
+
+int lua_type (lua_State *L, int index);
+返回给定的认可的索引处的值的类型，或者对不合法的索引返回LUA_TNONE（即指向“空”栈位置的索引）。lua_type返回的类型在lua.h中定义，被编码为下面的常量： LUA_TNIL、LUA_TNUMBER、LUA_TBOOLEAN、LUA_TSTRING、LUA_TTABLE、LUA_TFUNCTION、LUA_TUSERDATA、LUA_TTHREAD和LUA_TLIGHTUSERDATA。 
+
+
+--------------------------------------------------------------------------------
+
+lua_typename
+[-0, +0, -] 
+
+const char *lua_typename  (lua_State *L, int tp);
+返回由值tp编码的类型名，tp必须是lua_type的返回值的其中一个。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Writer
+typedef int (*lua_Writer) (lua_State *L,
+                           const void* p,
+                           size_t sz,
+                           void* ud);
+由lua_dump使用的记录器函数的类型。lua_dump沿着要被写入的缓冲区（p）调用本函数，同时传入缓冲区尺寸（sz）和提供给lua_dump的data参数。每次调用会产生单元的另一段代码。 
+
+记录器返回错误代码：0表示没错误；任何其他值表示错误并阻止lua_dump再次调用记录器。 
+
+
+--------------------------------------------------------------------------------
+
+lua_xmove
+[-?, +?, -] 
+
+void lua_xmove (lua_State *from, lua_State *to, int n);
+在同一个全局状态机的不同线程间交换值。 
+
+本函数从栈from中弹出n个值并把它们压入栈to中。 
+
+
+--------------------------------------------------------------------------------
+
+lua_yield
+[-?, +?, -] 
+
+int lua_yield  (lua_State *L, int nresults);
+中断一个协程。 
+
+本函数只应当作为C函数的返回表达式调用，如下： 
+
+     return lua_yield (L, nresults);
+
+当C函数以那种方式调用lua_yield时，当前运行的协程挂起，并且启动该协程的lua_resume调用返回。参数nresults是作为结果传给lua_resume的来自栈中的值的数量。 
+
+3.8 - 调试接口
+Lua没有内置的调试装备。取而代之的是，它依靠函数和hook提供特定接口。该接口允许构造不同类型的调试器、profiler和其他的需要来自解释器“内部信息”的工具。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Debug
+typedef struct lua_Debug {
+  int event;
+  const char *name;           /* (n) */
+  const char *namewhat;       /* (n) */
+  const char *what;           /* (S) */
+  const char *source;         /* (S) */
+  int currentline;            /* (l) */
+  int nups;                   /* (u) upvalue的数量 */
+  int linedefined;            /* (S) */
+  int lastlinedefined;        /* (S) */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* 专用部分 */
+  其他字段
+} lua_Debug;
+用于持有关于活动函数的信息的不同事项的结构。lua_getstack只填充本结构的专用部分，留作后用。要用有用的信息填充lua_Debug的其他字段，调用lua_getinfo。 
+
+lua_Debug的字段具有下面的含义： 
+
+source: 如果函数在字符串中定义，则source就是那个字符串。如果函数在文件中定义，则source以‘@’开头后跟文件名。 
+short_src: 一个source的“可打印”版本，将用于错误消息中。 
+linedefined: 函数定义开始的行号。 
+lastlinedefined: 函数定义结束的行号。 
+what: 如果函数是Lua函数则为字符串"Lua"，如果是C函数则为"C"，如果是单元的主体部分则为"main"，并且如果是执行了尾调用的函数则为 "tail"。最后一种情况，Lua没有关于函数的其他信息。 
+currentline: 给定函数正执行的当前行。当没有行信息可用时，currentline被设为-1。 
+name: 给定函数的合适的名字。因为Lua函数是第一类值，所以它们没有固定的名字：一些函数可为多个全局变量的值，然而其他的可只存储于一个表字段中。函数lua_getinfo检查函数是如何被调用的以找到合适的名字。如果找不到，则name被设为NULL。 
+namewhat: 解释name字段。依据函数被如何调用，namewhat的值可为"global"、"local"、"method"、"field"、"upvalue"或""（空字符串）。（当看似没有其他选项可用时Lua使用空串。） 
+nups: 函数的upvalue的数量。 
+
+--------------------------------------------------------------------------------
+
+lua_gethook
+[-0, +0, -] 
+
+lua_Hook lua_gethook (lua_State *L);
+返回当前的hook函数。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gethookcount
+[-0, +0, -] 
+
+int lua_gethookcount (lua_State *L);
+返回当前的hook计数。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gethookmask
+[-0, +0, -] 
+
+int lua_gethookmask (lua_State *L);
+返回当前的hook掩码。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getinfo
+[-(0|1), +(0|1|2), m] 
+
+int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
+返回关于特定的函数或函数调用的信息。 
+
+要得到关于函数调用的信息，参数ar必须是有效的活动记录（activation record），它被之前的lua_getstack调用填充，或者作为hook的参数（见lua_Hook）。 
+
+要得到关于函数的信息，将它压栈并让字符串what以字符‘>’开头。（那种情况下，lua_getinfo弹出栈顶的函数。）例如，要知道想函数f在哪一行定义，可编写下面的代码： 
+
+     lua_Debug ar;
+     lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* 得到全局的‘f’ */
+     lua_getinfo(L, ">S", &ar);
+     printf("%d\n", ar.linedefined);
+
+字符串what中的每个字符选取结构ar中某些要填充的字段或要被压栈的某个值： 
+
+'n': 填充字段name和namewhat； 
+'S': 填充字段source、short_src、linedefined、lastlinedefined和what； 
+'l': 填充字段currentline； 
+'u': 填充字段nups； 
+'f': 把正在给定的级别运行的函数压栈； 
+'L': 把一个表压栈，其索引是函数的有效行的编号。（有效行是与一些代码关联的行，即可以放置断点的行。无效的行包括空行和注释。） 
+出错时本函数返回0（例如，what有无效选项）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getlocal
+[-0, +(0|1), -] 
+
+const char *lua_getlocal (lua_State *L, lua_Debug *ar, int n);
+获得给定的活动记录的一个局部变量的信息。参数ar必须是有效的活动记录，它被之前的lua_getstack调用填充，或者作为hook的参数（见lua_Hook）。索引n选取要检阅哪个局部变量（1是第一个参数或活动的局部变量，以此类推，直到最后一个活动的局部变量）。lua_getlocal将变量的值压栈并返回其名字。 
+
+‘(’（开圆括号）开头的变量表示内部变量（循环控制变量、临时变量和C函数局部变量）。 
+
+当索引比活动的局部变量的数量大时返回NULL（且不压栈任何东西）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getstack
+[-0, +0, -] 
+
+int lua_getstack (lua_State *L, int level, lua_Debug *ar);
+得到关于解释器运行时的栈信息。 
+
+本函数用执行于给定级别的函数的活动记录的标识符填充部分lua_Debug结构。0级是当前运行的函数，而n+1级是调用n级的函数。无错误时lua_getstack返回1；当以超过栈深度的级别调用时返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getupvalue
+[-0, +(0|1), -] 
+
+const char *lua_getupvalue (lua_State *L, int funcindex, int n);
+得到闭包的一个upvalue的信息。（对于Lua函数，upvalue是函数用到因而被包含在其闭包内的外部局部变量。）lua_getupvalue得到索引n处的upvalue，将其值压栈并返回其名。funcindex指向栈中的闭包。（upvalue没有特定的顺序，因为它们在整个函数中从头至尾都是活动的，所以它们以任意顺序被编号。） 
+
+当索引比upvalue的数量大时返回NULL（且不压栈任何东西）。对于C函数，本函数用空串""作为所有upvalue的名字。 
+
+
+--------------------------------------------------------------------------------
+
+lua_Hook
+typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
+调试的hook函数类型。 
+
+当hook被调用时，其ar参数将其字段event设为触发该hook的特定事件。Lua用下面的常量标识这些事件：LUA_HOOKCALL、LUA_HOOKRET、LUA_HOOKTAILRET、LUA_HOOKLINE和LUA_HOOKCOUNT。此外，对于行事件，也会设置字段currentline。要得到ar中其他字段的值，hook必须调用lua_getinfo。对于返回事件，event可以是普通值LUA_HOOKRET或LUA_HOOKTAILRET。对于后者，Lua将模拟从执行了尾调用的函数中的返回；这种情况下，调用lua_getinfo是无用的。 
+
+当Lua运行hook时，它禁止其他的hook调用。因此，如果hook回调Lua来执行函数或单元，该次执行不带任何hook调用。 
+
+
+--------------------------------------------------------------------------------
+
+lua_sethook
+[-0, +0, -] 
+
+int lua_sethook (lua_State *L, lua_Hook f, int mask, int count);
+设置调试的hook函数。 
+
+参数f是hook函数。mask规定发生哪个事件时hook将被调用：它由常量LUA_MASKCALL、LUA_MASKRET、LUA_MASKLINE和LUA_MASKCOUNT按位或组成。只当掩码含有LUA_MASKCOUNT时，count参数才有意义。对于每个事件，hook如下面解释的那样被调用： 
+
+call hook: 当解释器调用函数时被调用。hook在Lua刚进入新函数后、在函数得到其参数前被调用。 
+return hook: 当解释器从函数返回时被调用。hook在Lua正要离开函数前被调用。你不能访问要被函数返回的值。 
+line hook: 当解释器将要开始新行代码的执行或跳回到代码中（甚至是同一行）时被调用。（该事件只在Lua正执行Lua函数时发生。） 
+count hook: 在解释器执行每count条指令后被调用。（该事件只在Lua正执行Lua函数时发生。） 
+通过设定mask为0禁用hook。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setlocal
+[-(0|1), +0, -] 
+
+const char *lua_setlocal (lua_State *L, lua_Debug *ar, int n);
+设置给定的活动记录的一个局部变量的值。参数ar和n与lua_getlocal中一样（见lua_getlocal）。lua_setlocal把栈顶的值赋给变量并返回其名字。它也将值从栈中弹出。 
+
+当索引超过活动的局部变量的数量时返回NULL（且不出栈任何东西）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setupvalue
+[-(0|1), +0, -] 
+
+const char *lua_setupvalue (lua_State *L, int funcindex, int n);
+设置闭包的upvalue的值。它把栈顶的值赋给upvalue并返回其名字。它也把值从栈中弹出。参数funcindex和n同lua_getupvalue中一样（见lua_getupvalue）。 
+
+当索引超过upvalue的数量时返回NULL（且不出栈任何东西）。 
+
+4 - 辅助库
+辅助库为连接C和Lua提供若干便利的函数。基础API为C和Lua间的所有交互提供基本功能，而辅助库为一些通用任务提供高级功能。 
+
+所有来自辅助库的函数在头文件lauxlib.h中定义并具有前缀luaL_。 
+
+辅助库中的所有函数建立于基础API的顶层，所以该API做不了的它们也不提供。 
+
+辅助库中的一些函数用于检查C函数的参数。它们的名字总是luaL_check*或luaL_opt*。如果未满足检查条件，所有这些函数会抛出错误。因为错误消息是为参数格式化的（例如“bad argument #1”），所以不能把这些函数用于其它栈值。 
+
+4.1 - 函数与类型
+这儿我们以字母顺序列出来自辅助库的所有函数和类型。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addchar
+[-0, +0, m] 
+
+void luaL_addchar (luaL_Buffer *B, char c);
+把字符c添加到缓冲器B（见luaL_Buffer）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addlstring
+[-0, +0, m] 
+
+void luaL_addlstring (luaL_Buffer *B, const char *s, size_t l);
+把s指向的长度为l的字符串添加到缓冲器B（见luaL_Buffer）。字符串可含有内嵌的0。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addsize
+[-0, +0, m] 
+
+void luaL_addsize (luaL_Buffer *B, size_t n);
+把先前拷贝到缓冲区（见luaL_prepbuffer）的长为n的字符串添加到缓冲器B（见luaL_Buffer）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addstring
+[-0, +0, m] 
+
+void luaL_addstring (luaL_Buffer *B, const char *s);
+把s指向的0结尾的字符串添加到缓冲器B（见luaL_Buffer）。字符串不可包含内嵌的0。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addvalue
+[-1, +0, m] 
+
+void luaL_addvalue (luaL_Buffer *B);
+把栈顶的值添加到缓冲器B（见luaL_Buffer）。弹出该值。 
+
+这是仅有能（且必须）用栈上的一个额外元素调用的关于字符串缓冲器的函数，该元素是要被添加到缓冲器的值。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_argcheck
+[-0, +0, v] 
+
+void luaL_argcheck (lua_State *L,
+                    int cond,
+                    int narg,
+                    const char *extramsg);
+检查cond是否为真。如果不是，则抛出带下面的消息的错误，其中func是取自调用栈： 
+
+     bad argument #<narg> to <func> (<extramsg>)
+
+
+--------------------------------------------------------------------------------
+
+luaL_argerror
+[-0, +0, v] 
+
+int luaL_argerror (lua_State *L, int narg, const char *extramsg);
+抛出带下面的消息的错误，其中func是取自调用栈： 
+
+     bad argument #<narg> to <func> (<extramsg>)
+
+本函数决不返回，但是像return luaL_argerror(args)这样是用在C函数中的习惯用法。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_Buffer
+typedef struct luaL_Buffer luaL_Buffer;
+字符串缓冲器类型。 
+
+字符串缓冲器允许C代码逐段地构建Lua字符串。其使用模式如下： 
+
+首先声明luaL_Buffer类型的变量b。 
+接着调用luaL_buffinit(L, &b)初始化它。 
+然后调用luaL_add*函数把字符串片断添加到缓冲器。 
+通过调用luaL_pushresult(&b)结束。该调用把最终的字符串放在栈顶。 
+在字符串缓冲器的常规操作期间，它占用的栈槽数量不固定。所以，使用缓冲器时，你不能假定知道栈顶在哪儿。只要用法是对称的，你就能在连续的对缓冲器操作的调用之间使用栈；就是说，当你调用缓冲器操作时，栈处于前一个缓冲器操作后立刻得到的水平。（该规则的唯一例外是luaL_addvalue。）调用luaL_pushresult之后，栈回到缓冲器被初始化时的水平，加上栈顶的最终字符串。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_buffinit
+[-0, +0, -] 
+
+void luaL_buffinit (lua_State *L, luaL_Buffer *B);
+初始化缓冲器B。本函数不分配任何空间；缓冲器必须已被声明为变量（见luaL_Buffer）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_callmeta
+[-0, +(0|1), e] 
+
+int luaL_callmeta (lua_State *L, int obj, const char *e);
+调用一个元方法。 
+
+如果索引obj处的对象具有元表且该元表具有字段e，本函数调用该字段并传入该对象为其唯一参数。这种情况下，本函数返回1并将该调用返回的值压栈。如果没有元表或没有元方法，本函数返回0（不将任何值压栈）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkany
+[-0, +0, v] 
+
+void luaL_checkany (lua_State *L, int narg);
+检查函数是否在位置narg处有个任意类型（包括nil）的参数。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkint
+[-0, +0, v] 
+
+int luaL_checkint (lua_State *L, int narg);
+检查函数参数narg是否数字并把该数转型为int返回。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkinteger
+[-0, +0, v] 
+
+lua_Integer luaL_checkinteger (lua_State *L, int narg);
+检查函数参数narg是否数字并把该数转型为lua_Integer返回。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checklong
+[-0, +0, v] 
+
+long luaL_checklong (lua_State *L, int narg);
+检查函数参数narg是否数字并把该数转型为long返回。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checklstring
+[-0, +0, v] 
+
+const char *luaL_checklstring (lua_State *L, int narg, size_t *l);
+检查函数参数narg是否字符串并返回它；如果l不是NULL则用字符串的长度填充它。 
+
+本函数用lua_tolstring得到其结果，所以那个函数的所有变换和警告也适用于此处。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checknumber
+[-0, +0, v] 
+
+lua_Number luaL_checknumber (lua_State *L, int narg);
+检查函数参数narg是否数字并返回它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkoption
+[-0, +0, v] 
+
+int luaL_checkoption (lua_State *L,
+                      int narg,
+                      const char *def,
+                      const char *const lst[]);
+检查函数参数narg是否字符串并且在数组lst（必须是NULL结尾的）中搜索它。返回数组中发现该字符串的地方的索引。如果该参数不是字符串或没被找到则引发错误。 
+
+如果def不是NULL，当参数narg不存在或为nil时，函数用def作为缺省值。 
+
+这是个把字符串映射到C枚举的有用函数。（Lua库中的通常约定是用字符串代替数字来选取选项。） 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkstack
+[-0, +0, v] 
+
+void luaL_checkstack (lua_State *L, int sz, const char *msg);
+增长栈尺寸到top + sz个元素，如果不能增长到那个尺寸则引发错误。msg是加入错误消息的补充文本。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkstring
+[-0, +0, v] 
+
+const char *luaL_checkstring (lua_State *L, int narg);
+检查函数参数narg是否字符串并返回它。 
+
+本函数用lua_tolstring取得其结果，所以那个函数的所有变换和警告也适用于此处。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checktype
+[-0, +0, v] 
+
+void luaL_checktype (lua_State *L, int narg, int t);
+检查函数参数narg是否具有类型t。用于类型t的编码见lua_type。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkudata
+[-0, +0, v] 
+
+void *luaL_checkudata (lua_State *L, int narg, const char *tname);
+检查函数参数narg是否tname类型的用户数据（见luaL_newmetatable）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_dofile
+[-0, +?, m] 
+
+int luaL_dofile (lua_State *L, const char *filename);
+载入并运行给定文件。它被定义为下面的宏： 
+
+     (luaL_loadfile(L, filename) || lua_pcall(L, 0, LUA_MULTRET, 0))
+
+如果没有错误则返回0，发生错误时返回1。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_dostring
+[-0, +?, m] 
+
+int luaL_dostring (lua_State *L, const char *str);
+载入并运行给定的字符串。它被定义为下面的宏： 
+
+     (luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
+
+如果没有错误则返回0，发生错误时返回1。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_error
+[-0, +0, v] 
+
+int luaL_error (lua_State *L, const char *fmt, ...);
+引发一个错误。错误消息格式由fmt以及任何额外参数指定，且遵循同lua_pushfstring一样的规则。如果错误发生的文件名和行号可用，它也在消息开头添加该信息。 
+
+本函数从不返回，但是在C函数中return luaL_error(args)是个习惯用法。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_getmetafield
+[-0, +(0|1), m] 
+
+int luaL_getmetafield (lua_State *L, int obj, const char *e);
+把来自索引obj处的对象的元表的字段e压栈。如果对象没有元表或其元表没有该字段，则返回0且不会压栈任何东西。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_getmetatable
+[-0, +1, -] 
+
+void luaL_getmetatable (lua_State *L, const char *tname);
+把与注册表中的名字tname相关联的元表压栈。（见luaL_newmetatable）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_gsub
+[-0, +1, m] 
+
+const char *luaL_gsub (lua_State *L,
+                       const char *s,
+                       const char *p,
+                       const char *r);
+通过把出现的任何字符串p替换为字符串r来创建字符串s的拷贝。把结果字符串压栈并返回它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadbuffer
+[-0, +1, m] 
+
+int luaL_loadbuffer (lua_State *L,
+                     const char *buff,
+                     size_t sz,
+                     const char *name);
+载入缓冲器并作为一个Lua单元。本函数用lua_load来加载缓冲器中由buff指向且长度为sz的单元。 
+
+本函数返回同lua_load一样的结果。name是单元名字，用于调试信息和错误消息。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadfile
+[-0, +1, m] 
+
+int luaL_loadfile (lua_State *L, const char *filename);
+载入文件作为一个Lua单元。本函数用lua_load来载入名为filename的文件中的单元。如果filename是NULL，则从标准输入载入。文件中的第一行如果以#开头则被忽略。 
+
+本函数返回同lua_load一样的结果，除了有个额外的错误代码LUA_ERRFILE，用于不能打开/读取文件的情况。 
+
+同lua_load一样，本函数只载入单元；不会运行它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadstring
+[-0, +1, m] 
+
+int luaL_loadstring (lua_State *L, const char *s);
+载入字符串作为一个Lua单元。本函数用lua_load来载入以0结尾的字符串s中的单元。 
+
+本函数返回同lua_load一样的结果。 
+
+本函数只载入单元，这也同lua_load一样；不会运行它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_newmetatable
+[-0, +1, m] 
+
+int luaL_newmetatable (lua_State *L, const char *tname);
+如果注册表已经有了键tname则返回0。否则，创建将用作用户数据的元表的新表，把它同键tname一起加入注册表，并且返回1。 
+
+两种情况都把注册表中与tname相关联的最终值压栈。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_newstate
+[-0, +0, -] 
+
+lua_State *luaL_newstate (void);
+创建新的Lua状态机。它用基于标准C的realloc函数的分配器调用lua_newstate，然后设置一个在发生重大错误时向标准错误输出打印一条错误消息的应急函数（见lua_atpanic）。 
+
+返回新的状态机，如果发生内存分配错误则返回NULL。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_openlibs
+[-0, +0, m] 
+
+void luaL_openlibs (lua_State *L);
+打开所有的标准Lua库到给定的状态机中。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optint
+[-0, +0, v] 
+
+int luaL_optint (lua_State *L, int narg, int d);
+如果函数参数narg是数字，则把该数字转型为int返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optinteger
+[-0, +0, v] 
+
+lua_Integer luaL_optinteger (lua_State *L,
+                             int narg,
+                             lua_Integer d);
+如果函数参数narg是数字，则把该数字转型为lua_Integer返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optlong
+[-0, +0, v] 
+
+long luaL_optlong (lua_State *L, int narg, long d);
+如果函数参数narg是数字，则把该数字转型为long返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optlstring
+[-0, +0, v] 
+
+const char *luaL_optlstring (lua_State *L,
+                             int narg,
+                             const char *d,
+                             size_t *l);
+如果函数参数narg是字符串则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+如果l不为NULL，则用结果的长度填充位置*l。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optnumber
+[-0, +0, v] 
+
+lua_Number luaL_optnumber (lua_State *L, int narg, lua_Number d);
+如果函数参数narg是数字则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optstring
+[-0, +0, v] 
+
+const char *luaL_optstring (lua_State *L,
+                            int narg,
+                            const char *d);
+如果函数参数narg是字符串则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_prepbuffer
+[-0, +0, -] 
+
+char *luaL_prepbuffer (luaL_Buffer *B);
+返回尺寸为LUAL_BUFFERSIZE的空间的地址，你能把要被加入缓冲器B的字符串拷贝到其中（见luaL_Buffer）。在把字符串拷贝到该空间中以后，你必须用字符串的尺寸调用luaL_addsize来把它加入缓冲器中。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_pushresult
+[-?, +1, m] 
+
+void luaL_pushresult (luaL_Buffer *B);
+结束对缓冲器B的使用，把最终字符串留在栈顶。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_ref
+[-1, +0, m] 
+
+int luaL_ref (lua_State *L, int t);
+在索引t处的表中为栈顶的对象创建一个引用（reference）并返回（而且弹出该对象）。 
+
+引用是唯一的整数键。只要你不手工向表t中加入整数键，luaL_ref保证它返回的键的唯一性。你可通过调用lua_rawgeti(L, t, r)取回被r引用的对象。函数luaL_unref释放引用及其关联的对象。 
+
+如果栈顶的对象是nil，luaL_ref返回常量LUA_REFNIL。常量LUA_NOREF被确保与luaL_ref返回的任何引用都不同。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_Reg
+typedef struct luaL_Reg {
+  const char *name;
+  lua_CFunction func;
+} luaL_Reg;
+用于要被luaL_register注册的函数数组的类型。name是函数名，func是函数指针。任何luaL_Reg数组必须以name和func都为NULL的标记项结尾。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_register
+[-(0|1), +1, m] 
+
+void luaL_register (lua_State *L,
+                    const char *libname,
+                    const luaL_Reg *l);
+打开一个库。 
+
+当以libname等于NULL调用时，它只是注册列表l中的所有函数（见luaL_Reg）到栈顶的表中。 
+
+当以非空的libname调用时，luaL_register创建新表t，把它设为全局变量libname的值，和package.loaded[libname]的值，并把列表l中的所有函数注册到该表。如果package.loaded[libname]中或变量libname中有个表，则重用该表而不是创建一个新的。 
+
+无论如何函数都把表留在栈顶。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_typename
+[-0, +0, -] 
+
+const char *luaL_typename (lua_State *L, int index);
+返回给定索引处的值的类型名。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_typerror
+[-0, +0, v] 
+
+int luaL_typerror (lua_State *L, int narg, const char *tname);
+用类似下面的消息产生一个错误： 
+
+     location: bad argument narg to 'func' (tname expected, got rt)
+
+其中location由luaL_where产生，func是当前函数名，且rt是实际参数的类型名。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_unref
+[-0, +0, -] 
+
+void luaL_unref (lua_State *L, int t, int ref);
+解除来自索引t处的表的引用ref（见luaL_ref）。该项从表中删除，所以被引用的对象可被回收。引用ref也被释放以备再次使用。 
+
+如果ref是LUA_NOREF或LUA_REFNIL，luaL_unref什么也不做。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_where
+[-0, +1, m] 
+
+void luaL_where (lua_State *L, int lvl);
+把调用栈中lvl级的控制的当前位置的字符串标识压栈。典型地，该字符串具有如下格式： 
+
+     单元名:当前行:
+
+0级是正在运行的函数，1级是调用正在运行函数的函数，依次类推。 
+
+本函数用于为错误消息构建前缀。 
+
+5 - 标准库
+Lua标准库提供直接通过C API实现的有用的函数。其中一些函数提供语言的核心服务（例如type和getmetatable）；其他的提供对“外”访问服务（例如I/O）；还有一些能用Lua自身实现，但是非常有用或者有关键的性能要求以致需要C实现（例如table.sort）。 
+
+所有库通过官方C API实现并且作为独立的C 模块提供。当前Lua拥有如下标准库： 
+
+基础库；包括协程子程序库； 
+打包库； 
+字符串操作； 
+表操作； 
+数学运算函数（sin、log等等）； 
+输入输出； 
+操作系统设备； 
+调试设备。 
+除了基础库和打包库，每个库提供其所有函数作为一个全局表的字段或作为其对象的方法。 
+
+要访问这些库，C宿主程序应该调用luaL_openlibs函数，它打开所有的标准库。另外，可以分别打开他们，方法是调用luaopen_base（用于基础库）、luaopen_package（用于打包库）、luaopen_string（用于字符串库）、luaopen_table（用于表库）、luaopen_math（用于数学运算库）、luaopen_io (用于I/O库)、luaopen_os（用于操作系统库）和luaopen_debug（用于调试库）。这些函数在lualib.h中声明并且不能直接调用：你必须像任何其他的C函数一样调用他们，例如，通过使用lua_call。 
+
+5.1 - 基础函数
+基础库给Lua提供一些核心函数。如果你的程序中没有包含该库，你需要仔细检查是否需要为一些它的设备提供实现。 
+
+
+
+--------------------------------------------------------------------------------
+
+assert (v [, message])
+当参数v的值为假（例如nil或false）时放出一个错误；否则，返回它的所有参数。message是条错误消息；忽略时，缺省为“assertion failed!”。 
+
+
+--------------------------------------------------------------------------------
+
+collectgarbage (opt [, arg])
+该函数是垃圾收集器的通用接口。它根据第一参数提供不同的功能，opt： 
+
+"stop": 停止垃圾收集器。 
+"restart": 重新启动垃圾收集器。 
+"collect": 执行一个完整的垃圾收集周期。 
+"count": 返回Lua中已用内存总量（以Kbyte为单位）。 
+"step": 执行一个垃圾收集step。step“尺寸”由arg（值越大意味着越多的step）以一种未指定的方式控制。如果要控制step尺寸，必须以实验的方式调整arg的值。如果step完成一个收集周期则返回true。 
+"setpause": 设置收集器的pause（见§2.10）的新值为arg。返回前一个pause值。 
+"setstepmul": 设置收集器的step multiplier（见§2.10）的新值为arg。返回前一个tep值。 
+
+
+--------------------------------------------------------------------------------
+
+dofile (filename)
+打开命名文件并将其内容作为一个Lua单元执行。当空参调用时，dofile执行标准输入（stdin）的内容。返回单元返回的所有值。在发生错误的情况下，dofile将错误传播到其调用者（即dofile不是运行于保护模式）。 
+
+
+--------------------------------------------------------------------------------
+
+error (message [, level])
+终止最近的受保护的函数调用并返回message作为错误消息。函数error决不返回。 
+通常，error在消息的开头增加关于错误位置的信息。level参数指定如何获得错误位置。用级别1（缺省的）时，错误位置是error函数被调用处。级别2指向调用error的函数的调用处。传递级别0避免向消息附加错误位置信息。 
+
+
+
+--------------------------------------------------------------------------------
+
+_G
+持有全局环境的全局变量（非函数）（即_G._G = _G）。Lua自身并不使用该变量；改变其值不影响任何环境，反之亦然。（使用setfenv来改变环境。） 
+
+
+--------------------------------------------------------------------------------
+
+getfenv ([f])
+返回函数的当前环境。f可以是Lua函数或指定调用栈级别的数字：级别1是调用getfenv的函数。如果给出的函数不是Lua函数或者f为0，getfenv返回全局环境。f缺省为1。 
+
+
+--------------------------------------------------------------------------------
+
+getmetatable (object)
+如果object没有元表，返回nil。否则，如果对象的元表具有"__metatable"字段，返回关联的值。否则返回给定对象的元表。 
+
+
+
+--------------------------------------------------------------------------------
+
+ipairs (t)
+返回三个值：迭代器函数、表t和0，所以结构 
+
+     for i,v in ipairs(t) do body end
+
+将迭代键值对（1,t[1]）、（2,t[2]）、···，直到第一个不存在于表中的整数键。 
+
+
+
+--------------------------------------------------------------------------------
+
+load (func [, chunkname])
+通过用func函数获取代码片的方式载入单元。对func的每次调用必须返回一个与先前的结果串联的字符串。返回空串、nil或无值告知单元结束。 
+
+如果没有错误，将编译的单元作为函数返回；否则返回nil以及错误消息。被返回的函数的环境是全局环境。 
+
+chunkname作为单元名用于错误消息和调试信息。当省略时，缺省委“=(load)”。 
+
+
+
+--------------------------------------------------------------------------------
+
+loadfile ([filename])
+与load类似，但是从文件filename中获取单元，如果未给出文件名则从标准输入获取。 
+
+
+
+--------------------------------------------------------------------------------
+
+loadstring (string [, chunkname])
+与load类似，但是从给定的字符串获得单元。 
+
+要载入并运行给定的字符串，使用惯用法： 
+
+     assert(loadstring(s))()
+
+当省略时，chunkname缺省为给定的字符串。 
+
+
+
+--------------------------------------------------------------------------------
+
+next (table [, index])
+允许程序遍历标的所有字段。它的第一参数是表，第二参数是该表中的索引。next返回表的下一个索引及其关联的值。当以nil作为第二参数调用时，next返回初始索引和关联的值。当以最后的索引调用或以nil调用空表时，next返回nil。如果省略第二参数，它被解释为nil。特别地，可用next(t)测试表是否为空。 
+
+索引被列举的顺序是未指定的，即使是数字索引。（要以数字顺序遍历表，使用数字for或ipairs函数。） 
+
+如果在遍历期间给表中不存在的字段赋任意值，则next的行为是未定义的。然而，你可以修改已经存在的字段。特别地，你可以清空已经存在的字段。 
+
+
+
+--------------------------------------------------------------------------------
+
+pairs (t)
+返回三个值：next函数、表t和nil，所以结构 
+
+     for k,v in pairs(t) do body end
+
+将迭代表t的所有键-值对。 
+
+参阅函数next关于其遍历期间对表修改的警告。 
+
+
+
+--------------------------------------------------------------------------------
+
+pcall (f, arg1, ···)
+用给定参数以保护模式（protected mode）调用函数f。这意味着f内的任何错误都不被传播；代替的做法是，pcall捕获错误并返回一个状态码。它的第一结果是状态码（布尔），如果调用成功无误则为true。在这种情况下，pcall也在第一结果之后返回来自调用的所有结果。在任何错误的情况下，pcall返回false以及错误消息。 
+
+
+
+--------------------------------------------------------------------------------
+
+print (···)
+接受任意数量的参数，打印它们的值到标准输出（stdout），方式是利用tostring函数将他们转换为字符串。print不是打算给格式化的输出使用的，而是作为一种快速显示值的方式，特别是对调试。对于格式化的输出，使用string.format。 
+
+
+--------------------------------------------------------------------------------
+
+rawequal (v1, v2)
+检查v1与v2是否相等，不会调用任何元方法。返回布尔值。 
+
+
+--------------------------------------------------------------------------------
+
+rawget (table, index)
+获取table[index]的实际值，不会调用任何元方法。table必须是个表；index可以是任何值。 
+
+
+--------------------------------------------------------------------------------
+
+rawset (table, index, value)
+设置table[index]的实际值为value，不会调用任何元方法。table必须是个表，index可以是任何非nil值，并且value可以是任何Lua值。 
+该函数返回表。 
+
+
+
+--------------------------------------------------------------------------------
+
+select (index, ···)
+如果index是数字，返回参数数字index之后的所有参数。否则，index必须是字符串"#"，并且select返回它收到的而外参数的总数。 
+
+
+
+--------------------------------------------------------------------------------
+
+setfenv (f, table)
+设置给定函数要用的环境。f可以是Lua函数或栈中指定级别的函数：级别1是调用setfenv的函数。setfenv返回给定的函数。 
+
+作为特例，当f为0时setfenv改变当前运行线程的环境。在该情况下，setfenv不返回值。 
+
+
+
+--------------------------------------------------------------------------------
+
+setmetatable (table, metatable)
+为给定表设置元表。（你不能从Lua中改变其他类型的元表，只能从C中。）如果metatable为空nil，移除给定表的元表。如果原始元表具有"__metatable"字段，产生一个错误。 
+
+该函数返回表。 
+
+
+
+--------------------------------------------------------------------------------
+
+tonumber (e [, base])
+尝试将参数转换为数字。如果参数已经是数字或可转换为数字的字符串，则tonumber返回该数字；否则返回nil。 
+可选参数指定如何解释数字的基数。基数可以是2和36之间的任何整数，也包括它们。在高于10的基数中，字母'A'（大小写皆可）表示10，'B'表示11，依次类推，直到'Z'表示35。在基数为10（缺省）时，数字可有小数部分，也可有可选的指数部分（见§2.1）。其他基数只接受无符号整数。 
+
+
+
+--------------------------------------------------------------------------------
+
+tostring (e)
+接受任意类型的参数并以合理的格式将其转换为字符串。对于完全控制数字如何转换，使用string.format。 
+如果e的元表有"__tostring"字段，则tostring以e为参数调用相应的值，并用调用的结果为其结果。 
+
+
+
+--------------------------------------------------------------------------------
+
+type (v)
+返回其仅有参数的类型，编码为一个字符串。该函数的可能结果是"nil"（字符串，不是值nil）、"number"、"string"、"boolean"、"table"、"function"、"thread"和"userdata"。 
+
+
+--------------------------------------------------------------------------------
+
+unpack (list [, i [, j]])
+返回给定标的元素。该函数等价于 
+     return list[i], list[i+1], ···, list[j]
+
+除了上面的代码只能用在元素数量固定的情况。缺省时，i是1而j是列表的长度，就像取长操作符（见§2.5.5）定义的那样。 
+
+
+
+--------------------------------------------------------------------------------
+
+_VERSION
+保存含有当前解释器版本的字符串的全局变量（非函数）。该变量的当前内容是“Lua 5.1”。 
+
+
+--------------------------------------------------------------------------------
+
+xpcall (f, err)
+该函数类似pcall，除了可以设置新的错误处理器。 
+
+xpcall用err作为错误处理器，在保护模式中调用函数f。f内的错误不被传播；代替做法是，xpcall捕获错误，以原始错误对象调用err函数，并返回一个状态码。它的第一结果是状态码（布尔值），如果调用成功无误则为true。在该情况下，xpcall也在该第一结果后面返回来自调用的所有结果。在错误的情况下，xpcall返回false以及来自err的结果。 
+
+5.2 - 协程操作
+涉及协程的操作由基础库的一个子库组成，并且出现在表coroutine内。关于协程的全面描述见§2.11。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.create (f)
+用f主体创建一个新协程。f必须是Lua函数。返回该新协程，它是类型为“thread”的对象。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.resume (co [, val1, ···])
+启动或继续协程co的执行。首次恢复协程时，它启动运行协程主体。值val1, ···是传入主体函数的参数。如果协程被中断了，resume重新启动它；值val1, ···是从yield传来的结果。 
+
+如果协程运行无误，resume返回true以及传入yield（如果协程中断）的任何值或由主体函数（如果协程结束）返回的任何值。如果有任何错误，resume返回false以及错误消息。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.running ()
+返回运行的协程，或者当被主线程调用时返回nil。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.status (co)
+返回协程co的状态，以字符串的方式：如果协程正在运行（即是它调用了status）则为“running”；如果协程被yield调用暂停或还未启动运行则为“suspended”；如果协程是活动的但不在运行中（即它恢复了另一个协程）则为“normal”；如果协程结束了它的主体函数或出错停止则为"dead"。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.wrap (f)
+用f主体创建一个新协程。f必须是Lua函数。返回一个函数，每次调用它会恢复协程。传入该函数的任何参数都作为resume的额外参数。返回值同resume相同，除了第一个布尔值。在发生错误情况下传播错误。 
+
+
+
+--------------------------------------------------------------------------------
+
+coroutine.yield (···)
+暂停调用者协程的执行。协程不能正在运行C函数、元方法或迭代器。yield的任何参数被传为resume的结果。 
+
+5.3 - 模块
+打包库为在Lua中加载和创建模块提供基础设备。它直接导出两个函数到全局环境中：require和module。其他东西都导出到表package中。 
+
+
+
+--------------------------------------------------------------------------------
+
+module (name [, ···])
+创建一个模块。如果在package.loaded[name]中有个表，该表就是模块。否则，如果有个给定名字的全局表t，该表就是模块。否则创建新表t并把它设为全局name和package.loaded[name]的值。该函数也用给定的名字初始化t._NAME，用模块（t自身）设置t._M，并用包名设置t._PACKAGE（完整模块名减去最后部分；见下）。最后，module设置t为当前函数的新环境和package.loaded[name]的新值，因此require返回t。 
+
+如果name是个复合名字（即用点号分隔的几个部分），module为每个部分创建（或重用，如果它们已经存在）表。例如，如果name是a.b.c，则module在全局a的字段b的字段c中存储模块表。 
+
+该函数可接受模块名后可选的options，其中每个选项是要加入模块的函数。 
+
+
+
+--------------------------------------------------------------------------------
+
+require (modname)
+加载给定模块。该函数先浏览表package.loaded确认modname是否已经加载了。如果是，require返回存储在package.loaded[modname]中的值。否则，它尝试为模块找到一个加载器（loader）。 
+
+数组package.loaders指示require如何寻找加载器。通过改变该数组，我们可以改变require如何寻找模块。下面的解释基于package.loaders的缺省配置。 
+
+require首先查询package.preload[modname]。如果它有值，该值（应是个函数）就是加载器。否则require使用存储在package.path中的路径搜索一个Lua加载器。如果那也失败了，它用存储在package.cpath中的路径搜索一个C加载器。如果也失败了，它尝试一个一体化（all-in-one）加载器（见package.loaders）。 
+
+一旦找到，require用单个参数modname调用这个加载器。如果加载器返回任何值，require把返回值赋给package.loaded[modname]。如果加载器不返回值而且没有赋给package.loaded[modname]任何值，require把true赋给该条目。在任何情况下，require返回package.loaded[modname]的最终值。 
+
+如果加载或运行模块时发生任何错误，或者如果不能为模块找到任何加载器，require导致一个错误。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.cpath
+该路径被require用于搜索一个C加载器。 
+
+Lua用同初始化Lua路径package.path一样的方式初始化C路径package.cpath，利用环境变量LUA_CPATH或一个定义在luaconf.h中的缺省路径。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.loaded
+被require用来控制已经加载了哪些模块。当你require一个模块modname而且package.loaded[modname]不为假时，require只是返回存储在那儿的值。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.loaders
+被require用来控制如何加载模块的表。 
+
+该表的每个条目是个搜索器函数（searcher function）。当查找模块时，require按照升序逐个调用这些搜索器，并用模块名（传给require的参数）作为它的唯一参数。该函数可返回另一个函数（模块加载器）或一条解释为何没找到模块的字符串（或nil，如果没话可说）。Lua用四个函数初始化该表。 
+
+第一个搜索器只是在表package.preload中查找加载器。 
+
+第二个搜索器（把模块）作为Lua库使用存储于package.path中的路径查找加载器。路径是由分号分隔的一系列模板（template）。对每个模板，搜索器将模板中的每个问号改为filename，后者是模块名，它的每个点号都被替换为“目录分隔符（directory separator）”（例如Unix中的/）；然后它将尝试打开合成的文件名。因此，例如，如果Lua路径是字符串 
+
+     "./?.lua;./?.lc;/usr/local/?/init.lua"
+
+对模块foo的Lua文件的搜索将尝试按顺序打开文件./foo.lua、./foo.lc和/usr/local/foo/init.lua。 
+
+第三个搜索器（把模块）作为C库用变量package.cpath给出的路径查找加载器。例如，如果C路径是字符串 
+
+     "./?.so;./?.dll;/usr/local/?/init.so"
+
+对模块foo的搜索将尝试按顺序打开文件./foo.so、./foo.dll和/usr/local/foo/init.so。一旦找到C库，该搜索器首先用动态链接设备链接应用和库。然后尝试在库内查找一个将用作加载器的C函数。该C函数的名字是“luaopen_”同模块名的拷贝连接得到的字符串，模块名的每个点号被下划线替换。此外，如果模块名有个连字符，它的直到（并且包括）第一个连字符的前缀被移除。例如，如果模块名是a.v1-b.c，函数名将是luaopen_b_c。 
+
+第四个搜索器尝试一个一体化加载器。它在C路径中为给定模块的根名搜索库。例如，当请求a.b.c时，它将为a搜索C库。如果找到了，在其中为子模块查找打开函数；在我们的例子中是luaopen_a_b_c。利用该设备，包可以将若干C子模块打包在单个库中，其中的每个子模块持有自己的原始打开函数。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.loadlib (libname, funcname)
+把C库libname动态链接到宿主程序。在库内查找函数funcname并作为C函数返回。（所以，funcname必须遵循协议（见lua_CFunction））。 
+
+这是个低级函数。它完全绕过包和模块系统。不像require，它不执行任何陆路径搜索也不会自动地增加扩展名。libname必须是C库的完全文件名，如果需要还包括路径和扩展名。funcname必须是确切的C库导出的名字（依赖C编译器和链接器）。 
+
+该函数不被ANSI C支持。同样，它只在某些平台可用（Windows、Linux、Mac OS X、Solaris、BSD，以及支持dlfcn标准的其他Unix系统）。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.path
+该路径被require用来搜索一个Lua加载器。 
+
+Lua在启动时用环境变量LUA_PATH的值初始化该变量，或者如果该环境变量未定义则用定义在luaconf.h中的缺省路径。环境变量的值中的任何“;;”都被替换为缺省路径。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.preload
+用于特定模块存储加载器的表。（见require）。 
+
+
+
+--------------------------------------------------------------------------------
+
+package.seeall (module)
+为module设置元表，其__index字段引用全局变量，所以该模块继承全局变量的值。将要被用作函数module的一个选项。 
+
+5.4 - 字符串操作
+该库为字符串操作提供常规函数，例如查找和抽取子串以及模式匹配。在Lua中索引字符串时，第一个字符在位置1（不像C是在0处）。索引允许为负数，被解释为从字符串末尾往回索引。因此，最后一个字符在-1位置，依此类推。 
+
+字符串库在表string内提供所有函数。它也给字符串设置元表，其中的__index字段指向string表。因此，你可以使用面向对象风格的字符串函数。例如，string.byte(s, i)可写为s:byte(i)。 
+
+字符串库采取单字节字符编码方式。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.byte (s [, i [, j]])
+返回字符s[i], s[i+1], ···, s[j]的内部数字代码。i缺省为1；j缺省为i。 
+注意数字代码不一定是跨平台可移植的。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.char (···)
+接受0获多个整数。返回一个字符串，其长度等于参数个数，其中的每个字符的内部数字代码等于相应的参数。 
+注意数字代码不一定是跨平台可移植的。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.dump (function)
+返回给定函数的二进制表示的字符串，之后在其上应用loadstring返回函数的拷贝。function必须是不带upvalueLua函数。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.find (s, pattern [, init [, plain]])
+在字符串s中查找pattern的第一个匹配。如果找到则返回它开始和结束处在s中的索引；否则，返回nil。可选的第三参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负数。如果真值作为可选的第四参数plain，则关闭模式匹配设备，所以函数执行无格式的“查找子串”操作，pattern中的字符并不被认为是“魔术的（magic）”。注意，如果给出了plain，则init也必须给出。 
+如果模式具有捕获（capture），则在成功的匹配中被捕获的值也在两个索引后面返回。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.format (formatstring, ···)
+Returns a formatted version of its variable number of arguments following the description given in its first argument (which must be a string). 格式字符串遵循同printf族标准C函数同样的规则。仅有的区别是不支持*、l、L、n、p和h等选项/修饰符，而且有个额外选项q。q选项以可安全地为Lua解释器读取的适当形式格式化字符串：字符串被写在双引号之间，而且字符串中的所有双引号、换行、内嵌的0和反斜杠被恰当地转义。例如，调用 
+     string.format('%q', 'a string with "quotes" and \n new line')
+
+产生字符串： 
+
+     "a string with \"quotes\" and \
+      new line"
+
+选项c、d、E、e、f, g、G、i、o、u、X和x都预期得到数字作为参数，然而q和s期望得到字符串。 
+
+该函数不接受含有内嵌的0的字符串值，除了作为q选项的参数。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.gmatch (s, pattern)
+返回一个迭代器函数，每次调用返回来自pattern的下一个捕获，从字符串s开头直到结尾。如果pattern没指定捕获则每次调用产生整个匹配。 
+作为例子，下面的循环 
+
+     s = "hello world from Lua"
+     for w in string.gmatch(s, "%a+") do
+       print(w)
+     end
+
+将迭代来自字符串s的所有单词，每行打印一个。下一个例子从给定的字符串收集所有的键=值对放在表中： 
+
+     t = {}
+     s = "from=world, to=Lua"
+     for k, v in string.gmatch(s, "^(%w+)=(%w+)") do
+       t[k] = v
+     end
+
+对于该函数，模式起始处的‘^’不能作为锚点，因为这会阻止迭代。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.gsub (s, pattern, repl [, n])
+返回s的拷贝，其中出现的所有（或前n个，如果指定）pattern被替换为repl——可以是字符串、表或函数，指定的替换串。gsub也返回出现的匹配的总数作为第二个值。 
+如果repl是字符串，它的值被用作替换式。字符%用作转义字符：repl中的任何形如%n的序列代表第n个捕获的子串（见下面），其中n在1和9之间。序列%0代表整个匹配。序列%%代表单个%。 
+
+如果repl是表，则对于每个匹配，用第一个捕获作为键查询表；如果模式未指定捕获，则整个匹配被用作键。 
+
+如果repl是函数，则每次匹配发生时都按顺序传入所有捕获的子串作为参数调用该函数；如果模式没指定捕获，则整个匹配作为单个参数传入。 
+
+如果表查询或函数调用返回的结果是个字符串或数字，则被用作替换串；否则，如果是false或nil，则不发生替换（即原始匹配被保持在字符串中）。 
+
+这里有一些例子： 
+
+     x = string.gsub("hello world", "(%w+)", "%1 %1")
+     --> x="hello hello world world"
+     
+     x = string.gsub("hello world", "%w+", "%0 %0", 1)
+     --> x="hello hello world"
+     
+     x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
+     --> x="world hello Lua from"
+     
+     x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
+     --> x="home = /home/roberto, user = roberto"
+     
+     x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
+           return loadstring(s)()
+         end)
+     --> x="4+5 = 9"
+     
+     local t = {name="lua", version="5.1"}
+     x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
+     --> x="lua-5.1.tar.gz"
+
+
+
+--------------------------------------------------------------------------------
+
+string.len (s)
+接受字符串并返回其长度。空串""长度为0。内嵌的0被计算在内，所以"a\000bc\000"长度为5。 
+
+
+--------------------------------------------------------------------------------
+
+string.lower (s)
+接受字符串并返回其所有大写字母变为小写的拷贝。所有其他字符不变。大写字母的定义依赖于当前locale。 
+
+
+--------------------------------------------------------------------------------
+
+string.match (s, pattern [, init])
+在字符串s中查找pattern的首次匹配。如果找到一个，则返回来自模式的捕获；否则返回nil。如果pattern未指定捕获则返回整个匹配。可选的第三个参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负。 
+
+
+--------------------------------------------------------------------------------
+
+string.rep (s, n)
+返回字符串s的n个拷贝拼接字符串。 
+
+
+--------------------------------------------------------------------------------
+
+string.reverse (s)
+返回字符串s的颠倒的字符串。 
+
+
+--------------------------------------------------------------------------------
+
+string.sub (s, i [, j])
+返回s的子串，它起始于i并延续到j；i和j可为负数。如果省略j，则它被假定为-1（同字符串长度一样）。特别地，调用string.sub(s,1,j)返回s长为j的前缀，而且string.sub(s, -i)返回s长为i的后缀。 
+
+
+--------------------------------------------------------------------------------
+
+string.upper (s)
+接受字符串并返回其所有小写字母变为大写的拷贝。所有其他字符不变。小写字母的定义依赖于当前locale。 
+5.4.1 - 模式
+字符类（Character Class）：
+一个字符类被用于表示一组字符。允许用下面的组合描述字符类： 
+
+x: （此处x不是魔术字符^$()%.[]*+-?中的一个）表示字符x本身。 
+.: （一个点）表示所有字符。 
+%a: 表示所有字母。 
+%c: 表示所有控制字符。 
+%d: 表示所有十进制数字。 
+%l: 表示所有小写字母。 
+%p: 表示所有标点符号。 
+%s: 表示所有空白字符。 
+%u: 表示所有大写字母。 
+%w: 表示所有字母数字字符。 
+%x: 表示所有十六进制数字。 
+%z: 表示0值字符。 
+%x: （此处x是任何非字母数字字符）表示字符x。这是转义魔术字符的标准方式。当被用于在模式中表示自身时，任何标点符号（甚至非魔术的）都能前缀一个‘%’。 
+[set]: 表示set中的所有字符的联合构成的分类。通过用‘-’分隔截止字符可以指定某个范围的字符。上面描述的所有种类的%x都可用作set的部件。set中的所有其他字符表示它们自身。例如[%w_]（或[_%w]）表示所有字母数字字符和下划线，[0-7]表示八进制数字，[0-7%l%-]表示八进制数字和小写字母以及‘-’字符。 
+字符范围和字符类之间的相互作用是未定义的。因此类似[%a-z]或[a-%%]的模式没有意义。 
+
+[^set]: 表示set的补集，其中的set在上面解释了。 
+所有单字母表示的字符类（%a、%c，等等），相应的大写字母表示该字符类的补集。例如，%S表示所有非空白符。 
+
+字母、空白和其他字符组合的定义依赖于当前locale。特别地，字符类[a-z]可能不等于%l。 
+
+模式项（Pattern Item）:
+模式项可为 
+
+单个字符类，它匹配该类中的任意单个字符； 
+后跟‘*’的单个字符类，它匹配该类中的0或多个字符。这些重复项将总是匹配最长的可能序列； 
+后跟‘+’的单个字符类，它匹配该类中的1或多个字符。这些重复项将总是匹配最长的可能序列； 
+后跟‘-’的单个字符类，它也匹配该类中的0或多个字符。与‘*’不同，这些重复项将总是匹配最短的可能序列； 
+后跟‘?’的单个字符类，它匹配出现0或1次该类中的字符； 
+%n，其中n在1和9之间；这种项匹配一个等价于捕获的字符串的第n个子串（见下面）； 
+%bxy其中x和y是两个不同的字符；这种项匹配始于x终于y的字符串，并且x和y是对称的。这表示，如果一个人从左到右读字符串，对x计数为+1，对y计数为-1，结尾的y是第一个遇到计数为0的y 。例如，项%b()匹配带有平衡的圆括号的表达式。 
+模式（Pattern）:
+模式是一系列的模式项。在模式开头的‘^’将匹配固定在源串的开头。 在模式结尾的‘$’将匹配固定在源串的结尾。在其他位置上，‘^’和‘$’没有特殊含义，表示它们自身。 
+
+捕获（Captures）:
+模式可以含有括在圆括号内的子模式；它们描述捕获。当成功进行一个匹配，源串中匹配捕获的子串被存储（捕获）以便将来使用。捕获根据它们的左圆括号进行编号。例如，在模式"(a*(.)%w(%s*))"中，字符串的匹配"a*(.)%w(%s*)"的部分作为第一个捕获被存储（因此被编号为1）；匹配“.”的字符被捕获并编号为2，匹配“%s*”的部分被编号为3。 
+
+作为一种特殊情况，空捕获()捕获当前字符串位置（一个数字）。例如，如果我们把模式"()aa()"用于字符串"flaaap"，将有两个捕获：3和5。 
+
+模式不能含有内嵌的0。使用%z代替。 
+
+5.5 - 表操作
+该库为表操作处理提供常规函数。它在表table内提供其所有函数。 
+
+表中的多数函数假定给定的表表示数组或列表。对于这些函数，当我们谈到表的“长度”时，我们意指取长操作符的结果。 
+
+
+
+--------------------------------------------------------------------------------
+
+table.concat (table [, sep [, i [, j]]])
+给定一个数组，其所有元素是字符串或数字，返回table[i]..sep..table[i+1] ··· sep..table[j]。sep的缺省值是空字符串，i的缺省值是1，j的缺省值是表的长度。如果i比j大，返回空字符串。 
+
+
+--------------------------------------------------------------------------------
+
+table.insert (table, [pos,] value)
+在表table的pos位置插入元素value，如果需要将其他元素上移到开放空间。pos的缺省值是n+1，其中n是表的长度（见§2.5.5），所以调用table.insert(t,x)在表t结尾插入x。 
+
+
+
+--------------------------------------------------------------------------------
+
+table.maxn (table)
+返回给定表的最大正数索引，如果没有正数索引则返回0。（该函数执行一次整个表的线性遍历来做这个工作。） 
+
+
+
+--------------------------------------------------------------------------------
+
+table.remove (table [, pos])
+从table中删除在位置pos处的元素，如果需要会下移其他元素以缩紧空格。返回被删除的值。pos的缺省值是表的长度n，所以调用table.remove(t)删除表t的最后一个元素。 
+
+
+
+--------------------------------------------------------------------------------
+
+table.sort (table [, comp])
+从table[1]到table[n]将表元素排序为给定顺序的适当位置，其中n是表的长度。如果给出了comp，它必须是个函数，接受两个表元素并当第一个小于第二个时返回true（所以排序后not comp(a[i+1],a[i])将为true）。如果未给出comp，则使用标准的Lua操作符<代替。 
+排序算法不稳定；就是说，被指定顺序认为相等的元素可能被排序改变相对位置。 
+
+5.6 - 数学运算函数
+该库是标准C数学库的接口。它在表math中提供所有函数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.abs (x)
+返回x的绝对值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.acos (x)
+返回x（弧度）的反余弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.asin (x)
+返回x（弧度）的反正弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.atan (x)
+返回x（弧度）的反正切值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.atan2 (y, x)
+返回y/x（弧度）的反正切值，但用两个参数的正负号找到结果的象限。（它也能正确地处理x为0的情况。） 
+
+
+
+--------------------------------------------------------------------------------
+
+math.ceil (x)
+返回大于或等于x的最小整数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.cos (x)
+返回x（假定用弧度）反余弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.cosh (x)
+返回x的双曲余弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.deg (x)
+返回角x（以弧度给出）的角度值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.exp (x)
+返回值ex。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.floor (x)
+返回小于或等于x的最大整数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.fmod (x, y)
+返回x被y除的余数，向0的方向对商四舍五入。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.frexp (x)
+返回m和e使得x = m2e，e是整数，m的绝对值在[0.5, 1)区间内（当x是0时则为0）。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.huge
+值HUGE_VAL，大于或等于其他数字值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.ldexp (m, e)
+返回m2e（e应为整数）。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.log (x)
+返回x的自然对数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.log10 (x)
+返回x以10为底的对数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.max (x, ···)
+返回其参数中的最大值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.min (x, ···)
+返回其参数中的最小值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.modf (x)
+返回两个数，x的正数部分和小数部分。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.pi
+值pi。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.pow (x, y)
+返回xy。（也能用表达式x^y计算该值。） 
+
+
+
+--------------------------------------------------------------------------------
+
+math.rad (x)
+返回角x（以角度给出）的弧度值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.random ([m [, n]])
+该函数是ANSI C提供的简单的伪随机产生器函数rand的接口。（不担保其统计特性。） 
+
+当不带参数调用时，返回[0,1)区间内的一致的伪随机实数。当带一个整数m调用时，返回[1, m]区间内的一致的伪随机实数。当带两个整数m和n调用时，返回[m, n]区间内的一致的伪随机实数。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.randomseed (x)
+设置x为伪随机产生器的“种子”：相等的种子产生相等的数字序列。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.sin (x)
+返回x（假定用弧度）的正弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.sinh (x)
+返回x的双曲正弦值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.sqrt (x)
+返回x的平方根。（也能用表达式x^0.5计算该值。） 
+
+
+
+--------------------------------------------------------------------------------
+
+math.tan (x)
+返回x（假定用弧度）的正切值。 
+
+
+
+--------------------------------------------------------------------------------
+
+math.tanh (x)
+返回x的双曲正切值。 
+
+5.7 - 输入输出设备
+I/O库提供两种不同风格的文件处理。第一种使用隐式文件描述符；即提供操作设置缺省的输入文件和缺省的输出文件，并且所有输入/输出操作都用在这些缺省文件上。第二中风格使用显式的文件描述符。 
+
+当使用隐式文件描述符时，所有操作通过表io提供。当使用显式文件描述符时，操作io.open返回一个文件描述符，然后所有操作作为它的方法提供。 
+
+表io也提供三个预定义的文件描述符，具有来自于C的通常含义：io.stdin、io.stdout和io.stderr。I/O库从不关闭这些文件。 
+
+除非另作说明，否则所有I/O在函数失败时返回nil（以及一条错误消息作为第二结果和一个依赖系统的错误代码作为第三结果）并在成功时返回不同于nil的某个值。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.close ([file])
+相当于file:close()。不带file则关闭缺省的输出文件。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.flush ()
+相当于file:flush，作用于缺省得输出文件。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.input ([file])
+用文件名调用时，它打开该命名文件（以文本模式），并设置其句柄为缺省的输入文件。用文件句柄调用时，它只是设置该文件句柄为缺省的输入文件。不带参数调用时，它返回当前的缺省的输入文件。 
+
+在错误的情况下，该函数抛出错误而不是返回错误代码。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.lines ([filename])
+以读取模式打开给定的文件名并返回一个迭代函数，每次调用会返回来自文件的新行。因此，结构 
+
+     for line in io.lines(filename) do body end
+
+会迭代文件的所有行。当迭代函数监测到文件结尾时，返回nil（以结束循环）并自动关闭文件。 
+
+调用io.lines()（不带参数）等价于io.input():lines()；即迭代缺省输入文件的所有行。该情况下当循环结束时不会关闭文件。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.open (filename [, mode])
+该函数以字符串mode指定的模式打开文件。它返回新文件句柄，或者错误时返回nil以及一条错误消息。 
+
+mode字符串可为下面的任意一个： 
+
+"r": 读模式（缺省）； 
+"w": 写模式； 
+"a": 附加模式； 
+"r+": 更新模式，保留所有以前的数据； 
+"w+": 更新模式，擦除所有以前的数据； 
+"a+": 附加更新模式，保留所有以前的数据，只允许在文件结尾写。 
+mode字符串也可在结尾有个‘b’，在某些系统中需要它以二进制模式打开文件。该字符串恰是用在标准C函数fopen中的。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.output ([file])
+类似io.input，但操作的是缺省输出文件。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.popen (prog [, mode])
+在独立进程中打开程序prog并返回文件句柄，可用它从该程序中读取数据（如果mode是"r"，缺省）或向该程序写入数据（如果mode是"w"）。 
+
+该函数是系统依赖的而且并非可用于所有平台。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.read (···)
+等价于io.input():read。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.tmpfile ()
+返回一个临时文件的句柄。该文件以更新模式打开，并在程序结束时自动删除。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.type (obj)
+检查obj是否可用的文件句柄。如果是打开的文件句柄则返回字符串"file"，如果是打开的文件句柄则返回"closed file"，或者如果不是文件句柄则返回nil if obj。 
+
+
+
+--------------------------------------------------------------------------------
+
+io.write (···)
+等价于io.output():write。 
+
+
+
+--------------------------------------------------------------------------------
+
+file:close ()
+关闭file。注意，当其句柄被垃圾收集时，文件被自动关闭，但那需要不可预知的漫长时间才会发生。 
+
+
+
+--------------------------------------------------------------------------------
+
+file:flush ()
+把任何已写数据存入file。 
+
+
+
+--------------------------------------------------------------------------------
+
+file:lines ()
+返回迭代器函数，每次调用返回来自文件的新行。因此，结构 
+
+     for line in file:lines() do body end
+
+会迭代文件的所有行。（与io.lines不同，当循环结束时该函数不会关闭文件。） 
+
+
+
+--------------------------------------------------------------------------------
+
+file:read (···)
+依照给定格式读取文件file，该格式制定要读取什么。对于每种格式，该函数返回读取得字符串（或数字），或者如果不能读取指定格式的数据则返回nil。当不带格式调用时，它用读取整个下一行的缺省格式（见下面）。 
+
+可用格式是 
+
+"*n": 读取一个数字；这是返回数字而非字符串的唯一格式。 
+"*a": 从当前位置开始读取整个文件。在文件结尾时返回空串。 
+"*l": 读取下一行（跳过行尾），在文件结尾时返回nil。这是缺省格式。 
+number: 读取字符串直到该数量的字符串，在文件结尾时返回nil。如果数字是0，它什么也不读并返回空串，或在文件结尾时返回nil。 
+
+
+--------------------------------------------------------------------------------
+
+file:seek ([whence] [, offset])
+设置和获取由文件开头开始量度的文件位置，目标位置由offset加字符串whence指定的基点给出。如下： 
+
+"set": 基点是位置0（文件开头）； 
+"cur": 基点是当前位置； 
+"end": 基点是文件结尾； 
+成功返回由文件开头开始亮度以字节为单位的最终文件位置。失败则返回nil以及一个描述错误的字符串。 
+
+whence的缺省值是"cur"，offset是0。因此调用file:seek()返回当前文件位置而不改变它；调用file:seek("set")设置位置到文件开头（并返回0）；调用file:seek("end")设置位置到文件结尾，并返回其尺寸。 
+
+
+
+--------------------------------------------------------------------------------
+
+file:setvbuf (mode [, size])
+设置输出文件的缓冲模式。有三种可用模式： 
+
+"no": 无缓冲；任何输出操作的结果立刻出现。 
+"full": 完全缓冲；只在缓冲区满时（或者当你显式flush文件（见io.flush））执行输出操作。 
+"line": 行缓冲；缓冲输出直到输出了换行或有来自某些特定文件（例如终端设备）的任何输入。 
+对于最后两种情况，size指定缓冲区大小，以字节为单位。缺省是个适当的大小。 
+
+
+
+--------------------------------------------------------------------------------
+
+file:write (···)
+将每个参数的值写入file。参数必须是字符串或数字。要写其他值，在write之前使用tostring或string.format。 
+
+5.8 - 操作系统设备
+该库通过表os实现。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.clock ()
+返回程序已用的CPU时间的近似值，以秒为单位。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.date ([format [, time]])
+返回含有日期和时间的字符串或表，依据给定字符串format格式化。 
+
+如果存在参数time，这是要被格式化的时间（对该值的描述间os.time函数）。否则，date格式化当前时间。 
+
+如果format以‘!’开头，则日期被格式化为CUT（Coordinated Universal Time）。在该可选的字符后，如果format是字符串“*t”，则date返回带有下面的字段的表：year （四位数字），month （1--12），day （1--31），hour （0--23），min （0--59），sec （0--61），wday （一周中的第几天，周日是1），yday （年中的第几天）和isdst （日光节约时间标记，布尔值）。 
+
+如果format不是*t”，则date返回日期字符串，依据同C函数strftime一样的规则格式化。 
+
+当不带参数调用时，date返回一个合理的日期和时间表示，依赖于主机系统和当前locale（就是说，os.date()等价于os.date("%c")）。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.difftime (t2, t1)
+返回从时间t1到时间t2的秒数。在POSIX、Windows和一些其他系统中，该值恰是t2-t1。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.execute ([command])
+该函数等价于C函数system。它传入command给操作系统的shell执行。它返回一个依赖系统的状态码。如果省略command，则如果shell可用会返回非0值否则否则返回0。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.exit ([code])
+调用C函数exit结束宿主程序，可带个可选的code。code的缺省值是成功代码。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.getenv (varname)
+返回进程环境变量varname的值，如果变量未定义则返回nil。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.remove (filename)
+删除给定名字的文件或目录。要删除的目录必须为空。如果失败，该函数返回nil以及一条描述错误的字符串。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.rename (oldname, newname)
+把名为oldname文件或目录重命名为newname。如果失败，该函数返回nil以及一条描述错误的字符串。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.setlocale (locale [, category])
+设置程序的当前locale。locale是个指定locale的字符串；category是可选的字符串，描述了要变更哪个类别："all"、"collate"、"ctype"、"monetary"、"numeric"或"time"；缺省 category 是"all"。函数返回新locale的名字，如果请求不被认可则返回nil。 
+
+如果locale是空字符串，当前locale被设为定义了本地locale的实现。如果locale是字符串“C”，当前locale被设为标准的C locale。 
+
+当以nil作为第一参数调用时，该函数只返回给定类别的当前locale的名字。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.time ([table])
+当无参调用时返回当前时间，或者返回表示了给定表指定的日期和时间的时间。该表必须具有字段year、month和day，并且可以具有字段hour、min、sec和isdst（对于这些字段的描述，见os.date函数）。 
+
+返回值是个数字，它的含义依赖于你的系统。在POSIX、Windows和某些其他系统中，该数计数自某个给定起始时间（epoch）以来的秒数。在其他系统中，含义是未指定的，而且time返回的数字只能用作date和difftime的参数。 
+
+
+
+--------------------------------------------------------------------------------
+
+os.tmpname ()
+返回一个带文件名的字符串，该名字可被用于临时文件。文件在使用前必须显式地打开，并且必须在不再需要时显式地删除。 
+
+在某些系统上（POSIX），该函数也创建那个名字的文件以避免安全风险。（其他人可能在获取名字和创建文件之间的时间内创建带有错误权限的该文件。）你还必须打开该文件来使用它以及删除它（即使你没用它）。 
+
+如果可能，你也许更喜欢使用io.tmpfile，它在程序结束时自动删除文件。 
+
+5.9 - 调试库
+该库向Lua程序提供调试接口功能。使用该库时你应该异常小心。这儿提供的函数应该专门用于调试和类似的任务，比如profiling。请忍住把它们用作一般编程工具的诱惑：它们非常的慢。而且，这些函数中的一些违反了关于Lua代码的某些假定（例如，函数的局部变量不能从外面访问，或者，用户数据的元表不能被Lua代码改变）并且因此会损害其他的安全代码。 
+
+该库的所有函数在表debug中提供。所有操作一个线程的函数具有可选的第一参数，它是被操作的线程。缺省总是当前线程。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.debug ()
+进入同用户的交互模式，运行用户输入的每个字符串。使用简单的命令和其他调试设备，用户能够检查全局和局部变量，改变它们的值，计算表达式，等等。只含有单词cont的行终止该函数，这样调用者继续它的执行。 
+
+注意，debug.debug的命令不是任何函数的内部词汇，因此没有对本地变量的直接访问。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getfenv (o)
+返回对象o的环境。 
+
+
+--------------------------------------------------------------------------------
+
+debug.gethook ([thread])
+返回线程的当前hook设定，作为三个值：当前hook函数、当前hook掩码和当前hook计数（由函数debug.sethook设置）。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getinfo ([thread,] function [, what])
+返回带有函数信息的表。你可直接给出函数，或者给出一个数字作为function的值，它表示给定线程的调用栈中运行于级别function的函数：级别0是当前函数（getinfo自己）；级别1是调用getinfo的函数；依次类推。如果function是个比活动的函数数量大的数字，则getinfo返回nil。 
+
+返回的表可包含lua_getinfo返回的所有字段，字符串what描述要填充的字段。what默认获取所有可用信息，除了有效行的表。如果提供，选项‘f’增加名为func的字段，值为函数自己。如果存在，选项‘L’增加名为activelines的字段，值为有效行的表。 
+
+例如，表达式debug.getinfo(1,"n").name返回一个表，其中含有当前函数的名字——如果可以找到合理的名字；表达式debug.getinfo(print)返回带有函数print的所有可用信息的表。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getlocal ([thread,] level, local)
+该函数返回栈中level级处的函数的索引为local的局部变量的名字和值。（第一个参数或局部变量索引为1，依次类推，直到最后一个活动的局部变量。）如果没有给定索引的局部变量，该函数返回nil，并且当以超出范围的level调用时抛出错误。（可调用debug.getinfo来检查级别是否有效。） 
+
+以‘(’（开圆括号）开头的变量名表示内部变量（循环控制变量、临时变量和C函数局部变量）。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getmetatable (object)
+返回给定对象object的元表，或者如果没有元表返回nil。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getregistry ()
+返回注册表（见§3.5）。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.getupvalue (func, up)
+该函数返回函数func的索引为up的upvalue的名字和值。如果没有给定索引的upvalue则返回nil。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.setfenv (object, table)
+设置给定object的环境为给定的table。返回object。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.sethook ([thread,] hook, mask [, count])
+设置给定函数作为hook。字符串mask和数字count描述hook何时被调用。字符串掩码可具有下面带有给定含义的字符： 
+
+"c": 每次Lua调用函数时hook被调用； 
+"r": 每次Lua从函数返回时hook被调用； 
+"l": 每次Lua进入代码的新行时hook被调用。 
+带非0的count时，hook在每count条指令后被调用。 
+
+当无参调用时，debug.sethook关闭hook。 
+
+当hook被调用时，其第一参数是描述触发其调用的事件的字符串："call"、"return"（或"tail return"，当模拟从尾调用中返回时）、"line"和"count"。对于行事件，hook也获得新行数为其第二参数。在hook内部，你可以级别2调用getinfo来获得正运行的函数的信息（级别0是函数getinfo并且级别1是hook函数），除非事件是"tail return"。该情况下，Lua只是模拟返回，而且调用getinfo将返回无效数据。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.setlocal ([thread,] level, local, value)
+该函数把栈中level级函数中索引为local的局部变量赋值为value。如果没有给定索引的局部变量则返回nil，并且当以超出范围的level调用时抛出错误。（你可调用getinfo检查级别是否有效。）否则返回局部变量的名字。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.setmetatable (object, table)
+设置给定object的元表为给定table（可为nil）。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.setupvalue (func, up, value)
+该函数给func函数中索引为up的upvalue赋值value。如果没有给定索引的upvalue则返回nil。否则返回upvalue的名字。 
+
+
+
+--------------------------------------------------------------------------------
+
+debug.traceback ([thread,] [message] [, level])
+返回带有调用栈的回溯的字符串。可选的字符串message被附加到回溯的开头。可选的数字level表明在哪个级别开始回溯（缺省是1，调用traceback的函数）。 
+
+6 - 单独使用Lua
+虽然Lua被设计为要嵌入宿主C程序的扩展式语言，它也常被用作独立的语言。随标准分发包提供了Lua作为独立语言的解释器，简单地称为lua。该独立解释器包括含有调试库的所有标准库。它的用法是： 
+
+     lua [options] [script [args]]
+
+选项是： 
+
+-e stat: 执行字符串stat； 
+-l mod: “require”mod； 
+-i: 运行script后进入交互模式； 
+-v: 输出版本信息； 
+--: 终止处理选项； 
+-: 将stdin作为文件执行并终止处理选项。 
+在处理它的选项之后，lua传入给定的args作为字符串参数并运行给定script。当无参调用时，lua行为同标准输入（stdin）是终端时的lua -v -i一样，否则同lua -一样。 
+
+在运行任何参数前，解释器检查环境变量LUA_INIT。如果它的格式是@filename，则lua执行这个文件。否则，lua执行字符串自身。 
+
+除了-i所有选项被顺序处理。例如，类似这样的调用 
+
+     $ lua -e'a=1' -e 'print(a)' script.lua
+
+将首先设置a为1，然后输出a的值（‘1’），并且最后不带参数运行文件script.lua。（此处$是shell提示符。你的提示符可能不同。） 
+
+在运行脚本（文件）以前，lua收集命令行中的所有参数放在称为arg的全局表中。脚本名被存储在索引0处，脚本名后的第一参数定位于索引1，依次类推。（即解释器名以及选项被定位于负数索引。例如，在调用 
+
+     $ lua -la b.lua t1 t2
+
+中，解释器首先运行文件a.lua，然后创建一个表 
+
+     arg = { [-2] = "lua", [-1] = "-la",
+             [0] = "b.lua",
+             [1] = "t1", [2] = "t2" }
+
+最后运行文件b.lua。脚本以arg[1], arg[2], ···为参数被调用；也能用可变参数表达式‘...’访问这些参数。 
+
+在交互模式中，如果你写了一条未完成的语句，解释器通过发出一个不同的提示符等待其完成。 
+
+如果全局变量_PROMPT包含一个字符串，则其值被用作提示符。类似地，如果全局变量_PROMPT2包含一个字符串，其值被用作辅助提示符（在未完成的语句间提示）。因此，两个提示符能通过在命令行上或任何Lua程序中给_PROMPT赋值直接改变。见下一个例子： 
+
+     $ lua -e"_PROMPT='myprompt> '" -i
+
+（外层的引号对用于shell，内层的用于Lua。）注意-i的用处是进入交互模式。否则，程序会在给_PROMPT赋值后安静地终止。 
+
+要允许Lua用作Unix系统中的脚本解释器，如果（代码）单元的第一行以#开头，独立的解释器跳过会跳过它。因此。Lua脚本可通过使用chmod +x和下面的#!形式被做成可执行程序： 
+
+     #!/usr/local/bin/lua
+
+（当然，你的机器中Lua解释器的位置可能不同。如果lua在你的PATH中，则 
+
+     #!/usr/bin/env lua
+
+是更具移植性的解决方式。） 
+
+7 - 与之前版本的不兼容
+我们在这儿列出了当你将程序从Lua 5.0迁移到Lua 5.1时可能发现的不兼容。你能用适当的选项（见文件luaconf.h）编译Lua以避免大多数不兼容。然而，在下一版Lua中所有这些不兼容选项将被移除。 
+
+7.1 - 语言变化
+可变参数系统从含有附加参数的表的伪参数arg改为可变参数表达式。（见luaconf.h中的编译时选项LUA_COMPAT_VARARG。） 
+在for语句的隐式变量的作用域方面以及对于repeat语句有细微的改动。 
+长字符串/长注释语法（[[string]]）不允许嵌套。这些情况下可用新语法（[=[string]=]）。（见luaconf.h中的编译时选项LUA_COMPAT_LSTR。） 
+7.2 - 库的变化
+函数string.gfind重命名为string.gmatch。（见luaconf.h中的编译时选项LUA_COMPAT_GFIND。） 
+当string.gsub以函数为其第三参数调用时，只要该函数返回nil或false，则替换串是整个匹配而不是空串。 
+不赞成使用函数table.setn。函数table.getn对应新的取长操作符（#）；使用操作符代替函数。（见luaconf.h中的编译时选项LUA_COMPAT_GETN。） 
+函数loadlib重命名为package.loadlib。（见luaconf.h中的编译时选项LUA_COMPAT_LOADLIB。） 
+函数math.mod重命名为math.fmod。（见luaconf.h中的编译时选项LUA_COMPAT_MOD。） 
+不赞成使用函数table.foreach和table.foreachi。可用for循环pairs或ipairs代替。 
+由于新模块系统，函数require中有实质的改变。然而，新行为很大程度上兼容旧的，除了require从package.path获取路径而不是从LUA_PATH。 
+函数collectgarbage具有不同的参数。不赞成使用函数gcinfo；使用collectgarbage("count")代替。 
+7.3 - API变化
+luaopen_*函数（打开库）不能像常规C函数那样直接调用。它们必须像Lua函数那样通过Lua调用。 
+lua_open函数被lua_newstate取代以允许用户设置内存分配函数。你能用来自标准库的luaL_newstate创建带标准分配函数（基于realloc）的状态机。 
+不赞成使用函数luaL_getn和luaL_setn（来自辅助库）。使用lua_objlen代替luaL_getn，并且没有luaL_setn的替代物。 
+函数luaL_openlib被luaL_register取代。 
+现在，当给定值不是预期类型的用户数据时，函数luaL_checkudata抛出错误。（在Lua 5.0中返回NULL。） 
+8 - Lua的完整语法
+这儿是用扩展BNF描述的Lua的完整语法。（它没有说明操作符优先级。） 
+
+
+	chunk ::= {stat [`;′]} [laststat [`;′]]
+
+	block ::= chunk
+
+	stat ::=  varlist `=′ explist | 
+		 functioncall | 
+		 do block end | 
+		 while exp do block end | 
+		 repeat block until exp | 
+		 if exp then block {elseif exp then block} [else block] end | 
+		 for Name `=′ exp `,′ exp [`,′ exp] do block end | 
+		 for namelist in explist do block end | 
+		 function funcname funcbody | 
+		 local function Name funcbody | 
+		 local namelist [`=′ explist] 
+
+	laststat ::= return [explist] | break
+
+	funcname ::= Name {`.′ Name} [`:′ Name]
+
+	varlist ::= var {`,′ var}
+
+	var ::=  Name | prefixexp `[′ exp `]′ | prefixexp `.′ Name 
+
+	namelist ::= Name {`,′ Name}
+
+	explist ::= {exp `,′} exp
+
+	exp ::=  nil | false | true | Number | String | `...′ | function | 
+		 prefixexp | tableconstructor | exp binop exp | unop exp 
+
+	prefixexp ::= var | functioncall | `(′ exp `)′
+
+	functioncall ::=  prefixexp args | prefixexp `:′ Name args 
+
+	args ::=  `(′ [explist] `)′ | tableconstructor | String 
+
+	function ::= function funcbody
+
+	funcbody ::= `(′ [parlist] `)′ block end
+
+	parlist ::= namelist [`,′ `...′] | `...′
+
+	tableconstructor ::= `{′ [fieldlist] `}′
+
+	fieldlist ::= field {fieldsep field} [fieldsep]
+
+	field ::= `[′ exp `]′ `=′ exp | Name `=′ exp | exp
+
+	fieldsep ::= `,′ | `;′
+
+	binop ::= `+′ | `-′ | `*′ | `/′ | `^′ | `%′ | `..′ | 
+		 `<′ | `<=′ | `>′ | `>=′ | `==′ | `~=′ | 
+		 and | or
+
+	unop ::= `-′ | not | `#′
+
+--------------------------------------------------------------------------------
+最近更新：巴西利亚时间2008/08/18 周一 13:25:46 
+

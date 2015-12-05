@@ -1,0 +1,141 @@
+digraph luasyntax {
+//http://www.lua.org/manual/5.1/manual.html
+
+rankdir=LR; //TB
+
+//node[fontname="PMingLiu"]
+//edge[fontname="PMingLiu"]
+
+"chunk" -> "stat"
+"chunk" -> "laststat"
+
+"block" -> "chunk"
+
+"stat" -> "varlist"
+"stat" -> "="
+"stat" -> "explist"
+"stat" -> "functioncall"
+"stat" -> "do"
+"stat" -> "block"
+"stat" -> "end"
+"stat" -> "while"
+"stat" -> "exp"
+"stat" -> "repeat"
+"stat" -> "until"
+"stat" -> "if"
+"stat" -> "then"
+"stat" -> "elseif"
+"stat" -> "else"
+"stat" -> "for"
+"stat" -> "Name"
+"stat" -> ","
+"stat" -> "namelist"
+"stat" -> "in"
+"stat" -> "function"
+"stat" -> "funcname"
+"stat" -> "funcbody"
+"stat" -> "local"
+
+"laststat" -> "return"
+"laststat" -> "explist"
+"laststat" -> "break"
+
+"funcname" -> "Name"
+"funcname" -> "."
+"funcname" -> ":"
+
+"varlist" -> "var"
+"varlist" -> ","
+
+"var" -> "Name"
+"var" -> "prefixexp"
+"var" -> "["
+"var" -> "exp"
+"var" -> "]"
+"var" -> "."
+
+"namelist" -> "Name"
+"namelist" -> ","
+
+"explist" -> "exp"
+"explist" -> ","
+
+"exp" -> "nil"
+"exp" -> "false"
+"exp" -> "true"
+"exp" -> "Number"
+"exp" -> "String"
+"exp" -> "..."
+"exp" -> "function "
+"exp" -> "prefixexp"
+"exp" -> "tableconstructor"
+"exp" -> "exp"
+"exp" -> "binop"
+"exp" -> "unop"
+
+"prefixexp" -> "var"
+"prefixexp" -> "functioncall"
+"prefixexp" -> "("
+"prefixexp" -> "exp"
+"prefixexp" -> ")"
+
+"functioncall" -> "prefixexp"
+"functioncall" -> "args"
+"functioncall" -> ":"
+"functioncall" -> "Name"
+
+"args" -> "("
+"args" -> "explist"
+"args" -> ")"
+"args" -> "tableconstructor"
+"args" -> "String"
+
+"function " -> "function"
+"function " -> "funcbody"
+
+"funcbody" -> "("
+"funcbody" -> "parlist"
+"funcbody" -> ")"
+"funcbody" -> "block"
+"funcbody" -> "end"
+
+"parlist" -> "namelist"
+"parlist" -> ","
+"parlist" -> "..."
+
+"tableconstructor" -> "{"
+"tableconstructor" -> "fieldlist"
+"tableconstructor" -> "}"
+
+"fieldlist" -> "field"
+"fieldlist" -> "fieldsep"
+
+"field" -> "["
+"field" -> "exp"
+"field" -> "]"
+"field" -> "="
+"field" -> "Name"
+
+"fieldsep" -> ","
+"fieldsep" -> ";"
+
+"binop" -> "+"
+"binop" -> "-"
+"binop" -> "*"
+"binop" -> "/"
+"binop" -> "^"
+"binop" -> "%"
+"binop" -> ".."
+"binop" -> "<"
+"binop" -> "<="
+"binop" -> ">"
+"binop" -> ">="
+"binop" -> "=="
+"binop" -> "~="
+"binop" -> "and"
+"binop" -> "or"
+
+"unop" -> "-"
+"unop" -> "not"
+"unop" -> "#"
+}

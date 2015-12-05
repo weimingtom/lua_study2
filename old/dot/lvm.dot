@@ -1,0 +1,75 @@
+digraph lvm {
+rankdir=LR; //TB
+
+node[fontname="PMingLiu"]
+edge[fontname="PMingLiu"]
+
+"luaV_execute" -> "arith_op"
+
+"luaV_execute" -> "Protect"
+"arith_op" -> "Protect"
+
+"luaV_execute" -> "dojump"
+
+"luaV_execute" -> "KBx"
+
+"luaV_execute" -> "RKC"
+"arith_op" -> "RKC"
+
+"luaV_execute" -> "RKB"
+"arith_op" -> "RKB"
+
+"luaV_execute" -> "RB"
+
+"luaV_execute" -> "RA"
+"luaV_execute" -> "runtime_check"
+
+"arith_op" -> "Arith"
+"luaV_execute" -> "Arith"
+
+"luaV_execute" -> "luaV_concat"
+
+"equalobj" -> "luaV_equalval"
+
+"luaV_execute" -> "lessequal"
+
+"luaV_execute" -> "luaV_lessthan"
+
+"luaV_lessthan" -> "l_strcmp"
+"lessequal" -> "l_strcmp"
+
+"luaV_lessthan" -> "call_orderTM"
+"lessequal" -> "call_orderTM"
+
+"luaV_equalval" -> "get_compTM"
+
+"luaV_concat" -> "call_binTM"
+"Arith" -> "call_binTM"
+"luaV_execute" -> "call_binTM"
+
+"luaV_execute" -> "luaV_settable"
+
+"luaV_execute" -> "luaV_gettable"
+
+"luaV_settable" -> "callTM"
+
+"luaV_gettable" -> "callTMres"
+"call_binTM" -> "callTMres"
+"call_orderTM" -> "callTMres"
+"luaV_equalval" -> "callTMres"
+
+"luaV_execute" -> "traceexec"
+
+"tostring" -> "luaV_tostring"
+
+"Arith" -> "luaV_tonumber"
+"tonumber" -> "luaV_tonumber"
+
+"luaV_execute" -> "equalobj"
+
+"luaV_execute" -> "tonumber"
+
+"luaV_concat" -> "tostring"
+
+}
+

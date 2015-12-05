@@ -1,0 +1,1218 @@
+
+
+3.8 - The Debug Interface
+Lua has no built-in debugging facilities. Instead, it offers a special interface by means of functions and hooks. This interface allows the construction of different kinds of debuggers, profilers, and other tools that need "inside information" from the interpreter. 
+
+3.8 - 调试界面
+Lua没有内置的调试工具。
+取而代之，它通过函数和钩子提供一个特殊的界面。
+这个界面兼容不同种类的调试器，性能剖析工具，以及其它需要从及解析器内部“内幕信息”的工具的结构。
+
+--------------------------------------------------------------------------------
+
+lua_Debug
+typedef struct lua_Debug {
+  int event;
+  const char *name;           /* (n) */
+  const char *namewhat;       /* (n) */
+  const char *what;           /* (S) */
+  const char *source;         /* (S) */
+  int currentline;            /* (l) */
+  int nups;                   /* (u) number of upvalues */
+  int linedefined;            /* (S) */
+  int lastlinedefined;        /* (S) */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* private part */
+  other fields
+} lua_Debug;
+A structure used to carry different pieces of information about an active function. lua_getstack fills only the private part of this structure, for later use. To fill the other fields of lua_Debug with useful information, call lua_getinfo. 
+
+The fields of lua_Debug have the following meaning: 
+
+source: If the function was defined in a string, then source is that string. If the function was defined in a file, then source starts with a '@' followed by the file name. 
+short_src: a "printable" version of source, to be used in error messages. 
+linedefined: the line number where the definition of the function starts. 
+lastlinedefined: the line number where the definition of the function ends. 
+what: the string "Lua" if the function is a Lua function, "C" if it is a C function, "main" if it is the main part of a chunk, and "tail" if it was a function that did a tail call. In the latter case, Lua has no other information about the function. 
+currentline: the current line where the given function is executing. When no line information is available, currentline is set to -1. 
+name: a reasonable name for the given function. Because functions in Lua are first-class values, they do not have a fixed name: some functions can be the value of multiple global variables, while others can be stored only in a table field. The lua_getinfo function checks how the function was called to find a suitable name. If it cannot find a name, then name is set to NULL. 
+namewhat: explains the name field. The value of namewhat can be "global", "local", "method", "field", "upvalue", or "" (the empty string), according to how the function was called. (Lua uses the empty string when no other option seems to apply.) 
+nups: the number of upvalues of the function. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_Debug
+typedef struct lua_Debug {
+  int event;
+  const char *name;           /* (n) */
+  const char *namewhat;       /* (n) */
+  const char *what;           /* (S) */
+  const char *source;         /* (S) */
+  int currentline;            /* (l) */
+  int nups;                   /* (u) upvalue的数量 */
+  int linedefined;            /* (S) */
+  int lastlinedefined;        /* (S) */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* 专用部分 */
+  其他字段
+} lua_Debug;
+用于持有关于活动函数的信息的不同事项的结构。lua_getstack只填充本结构的专用部分，留作后用。要用有用的信息填充lua_Debug的其他字段，调用lua_getinfo。 
+
+lua_Debug的字段具有下面的含义： 
+
+source: 如果函数在字符串中定义，则source就是那个字符串。如果函数在文件中定义，则source以‘@’开头后跟文件名。 
+short_src: 一个source的“可打印”版本，将用于错误消息中。 
+linedefined: 函数定义开始的行号。 
+lastlinedefined: 函数定义结束的行号。 
+what: 如果函数是Lua函数则为字符串"Lua"，如果是C函数则为"C"，如果是单元的主体部分则为"main"，并且如果是执行了尾调用的函数则为 "tail"。最后一种情况，Lua没有关于函数的其他信息。 
+currentline: 给定函数正执行的当前行。当没有行信息可用时，currentline被设为-1。 
+name: 给定函数的合适的名字。因为Lua函数是第一类值，所以它们没有固定的名字：一些函数可为多个全局变量的值，然而其他的可只存储于一个表字段中。函数lua_getinfo检查函数是如何被调用的以找到合适的名字。如果找不到，则name被设为NULL。 
+namewhat: 解释name字段。依据函数被如何调用，namewhat的值可为"global"、"local"、"method"、"field"、"upvalue"或""（空字符串）。（当看似没有其他选项可用时Lua使用空串。） 
+nups: 函数的upvalue的数量。 
+
+
+--------------------------------------------------------------------------------
+
+lua_gethook
+[-0, +0, -] 
+
+lua_Hook lua_gethook (lua_State *L);
+Returns the current hook function. 
+
+--------------------------------------------------------------------------------
+
+lua_gethook
+[-0, +0, -] 
+
+lua_Hook lua_gethook (lua_State *L);
+返回当前钩子函数。 
+
+--------------------------------------------------------------------------------
+
+lua_gethookcount
+[-0, +0, -] 
+
+int lua_gethookcount (lua_State *L);
+Returns the current hook count. 
+
+--------------------------------------------------------------------------------
+
+lua_gethookcount
+[-0, +0, -] 
+
+int lua_gethookcount (lua_State *L);
+返回当前钩子个数
+
+--------------------------------------------------------------------------------
+
+lua_gethookmask
+[-0, +0, -] 
+
+int lua_gethookmask (lua_State *L);
+Returns the current hook mask. 
+
+
+--------------------------------------------------------------------------------
+
+lua_gethookmask
+[-0, +0, -] 
+
+int lua_gethookmask (lua_State *L);
+返回当前钩子掩码。 
+
+--------------------------------------------------------------------------------
+
+lua_getinfo
+[-(0|1), +(0|1|2), m] 
+
+int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
+Returns information about a specific function or function invocation. 
+
+To get information about a function invocation, the parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). 
+
+To get information about a function you push it onto the stack and start the what string with the character '>'. (In that case, lua_getinfo pops the function in the top of the stack.) For instance, to know in which line a function f was defined, you can write the following code: 
+
+     lua_Debug ar;
+     lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* get global 'f' */
+     lua_getinfo(L, ">S", &ar);
+     printf("%d\n", ar.linedefined);
+
+Each character in the string what selects some fields of the structure ar to be filled or a value to be pushed on the stack: 
+
+'n': fills in the field name and namewhat; 
+'S': fills in the fields source, short_src, linedefined, lastlinedefined, and what; 
+'l': fills in the field currentline; 
+'u': fills in the field nups; 
+'f': pushes onto the stack the function that is running at the given level; 
+'L': pushes onto the stack a table whose indices are the numbers of the lines that are valid on the function. (A valid line is a line with some associated code, that is, a line where you can put a break point. Non-valid lines include empty lines and comments.) 
+This function returns 0 on error (for instance, an invalid option in what). 
+
+
+--------------------------------------------------------------------------------
+
+lua_getinfo
+[-(0|1), +(0|1|2), m] 
+
+int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
+返回关于特定函数或函数调用的信息。
+要获得函数调用的信息，参数ar必须是被前一个调用lua_getstack填充的合法的激活记录，或者是作为参数传给hook（参考lua_Hook）。
+为了获得函数信息，你可以把它压入堆栈然后启动带字符'>'开头的字符串what。
+（这种情况下，lua_getinfo会弹出栈顶的函数。）
+例如，为了指导哪一行定义了函数f，你可以写如下代码：
+lua_Debug ar;
+lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* 获取全局'f' */
+lua_getinfo(L, ">S", &ar);
+printf("%d\n", ar.linedefined);
+字符串what的每个字符选择了结构体ar要填充的域或者是压入堆栈的值：
+'n': 填充域name和namewhat； 
+'S': 填充域source, short_src, linedefined, lastlinedefined, 和what； 
+'l': 填充域currentline； 
+'u': 填充域nups；
+'f': 把运行于所给层的函数压入栈顶； 
+'L': 把一个索引是函数合法行号的表压入堆栈（一个合法行是带有关联代码的行，所以一行中可以放置一个断点。不合法的行包括空行和注释。）
+这个函数在错误时返回0（例如，what的一个不合法选项）
+
+--------------------------------------------------------------------------------
+
+lua_getlocal
+[-0, +(0|1), -] 
+
+const char *lua_getlocal (lua_State *L, lua_Debug *ar, int n);
+Gets information about a local variable of a given activation record. The parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). The index n selects which local variable to inspect (1 is the first parameter or active local variable, and so on, until the last active local variable). lua_getlocal pushes the variable's value onto the stack and returns its name. 
+
+Variable names starting with '(' (open parentheses) represent internal variables (loop control variables, temporaries, and C function locals). 
+
+Returns NULL (and pushes nothing) when the index is greater than the number of active local variables. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_getlocal
+[-0, +(0|1), -] 
+
+const char *lua_getlocal (lua_State *L, lua_Debug *ar, int n);
+获得给定的活动记录的一个局部变量的信息。参数ar必须是有效的活动记录，它被之前的lua_getstack调用填充，或者作为hook的参数（见lua_Hook）。索引n选取要检阅哪个局部变量（1是第一个参数或活动的局部变量，以此类推，直到最后一个活动的局部变量）。lua_getlocal将变量的值压栈并返回其名字。 
+
+‘(’（开圆括号）开头的变量表示内部变量（循环控制变量、临时变量和C函数局部变量）。 
+
+当索引比活动的局部变量的数量大时返回NULL（且不压栈任何东西）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getstack
+[-0, +0, -] 
+
+int lua_getstack (lua_State *L, int level, lua_Debug *ar);
+Get information about the interpreter runtime stack. 
+
+This function fills parts of a lua_Debug structure with an identification of the activation record of the function executing at a given level. Level 0 is the current running function, whereas level n+1 is the function that has called level n. When there are no errors, lua_getstack returns 1; when called with a level greater than the stack depth, it returns 0. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_getstack
+[-0, +0, -] 
+
+int lua_getstack (lua_State *L, int level, lua_Debug *ar);
+得到关于解释器运行时的栈信息。 
+
+本函数用执行于给定级别的函数的活动记录的标识符填充部分lua_Debug结构。0级是当前运行的函数，而n+1级是调用n级的函数。无错误时lua_getstack返回1；当以超过栈深度的级别调用时返回0。 
+
+
+--------------------------------------------------------------------------------
+
+lua_getupvalue
+[-0, +(0|1), -] 
+
+const char *lua_getupvalue (lua_State *L, int funcindex, int n);
+Gets information about a closure's upvalue. (For Lua functions, upvalues are the external local variables that the function uses, and that are consequently included in its closure.) lua_getupvalue gets the index n of an upvalue, pushes the upvalue's value onto the stack, and returns its name. funcindex points to the closure in the stack. (Upvalues have no particular order, as they are active through the whole function. So, they are numbered in an arbitrary order.) 
+
+Returns NULL (and pushes nothing) when the index is greater than the number of upvalues. For C functions, this function uses the empty string "" as a name for all upvalues. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_getupvalue
+[-0, +(0|1), -] 
+
+const char *lua_getupvalue (lua_State *L, int funcindex, int n);
+得到闭包的一个upvalue的信息。（对于Lua函数，upvalue是函数用到因而被包含在其闭包内的外部局部变量。）lua_getupvalue得到索引n处的upvalue，将其值压栈并返回其名。funcindex指向栈中的闭包。（upvalue没有特定的顺序，因为它们在整个函数中从头至尾都是活动的，所以它们以任意顺序被编号。） 
+
+当索引比upvalue的数量大时返回NULL（且不压栈任何东西）。对于C函数，本函数用空串""作为所有upvalue的名字。 
+
+--------------------------------------------------------------------------------
+
+lua_Hook
+typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
+Type for debugging hook functions. 
+
+Whenever a hook is called, its ar argument has its field event set to the specific event that triggered the hook. Lua identifies these events with the following constants: LUA_HOOKCALL, LUA_HOOKRET, LUA_HOOKTAILRET, LUA_HOOKLINE, and LUA_HOOKCOUNT. Moreover, for line events, the field currentline is also set. To get the value of any other field in ar, the hook must call lua_getinfo. For return events, event can be LUA_HOOKRET, the normal value, or LUA_HOOKTAILRET. In the latter case, Lua is simulating a return from a function that did a tail call; in this case, it is useless to call lua_getinfo. 
+
+While Lua is running a hook, it disables other calls to hooks. Therefore, if a hook calls back Lua to execute a function or a chunk, this execution occurs without any calls to hooks. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_Hook
+typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
+调试的hook函数类型。 
+
+当hook被调用时，其ar参数将其字段event设为触发该hook的特定事件。Lua用下面的常量标识这些事件：LUA_HOOKCALL、LUA_HOOKRET、LUA_HOOKTAILRET、LUA_HOOKLINE和LUA_HOOKCOUNT。此外，对于行事件，也会设置字段currentline。要得到ar中其他字段的值，hook必须调用lua_getinfo。对于返回事件，event可以是普通值LUA_HOOKRET或LUA_HOOKTAILRET。对于后者，Lua将模拟从执行了尾调用的函数中的返回；这种情况下，调用lua_getinfo是无用的。 
+
+当Lua运行hook时，它禁止其他的hook调用。因此，如果hook回调Lua来执行函数或单元，该次执行不带任何hook调用。 
+
+
+--------------------------------------------------------------------------------
+
+lua_sethook
+[-0, +0, -] 
+
+int lua_sethook (lua_State *L, lua_Hook f, int mask, int count);
+Sets the debugging hook function. 
+
+Argument f is the hook function. mask specifies on which events the hook will be called: it is formed by a bitwise or of the constants LUA_MASKCALL, LUA_MASKRET, LUA_MASKLINE, and LUA_MASKCOUNT. The count argument is only meaningful when the mask includes LUA_MASKCOUNT. For each event, the hook is called as explained below: 
+
+The call hook: is called when the interpreter calls a function. The hook is called just after Lua enters the new function, before the function gets its arguments. 
+The return hook: is called when the interpreter returns from a function. The hook is called just before Lua leaves the function. You have no access to the values to be returned by the function. 
+The line hook: is called when the interpreter is about to start the execution of a new line of code, or when it jumps back in the code (even to the same line). (This event only happens while Lua is executing a Lua function.) 
+The count hook: is called after the interpreter executes every count instructions. (This event only happens while Lua is executing a Lua function.) 
+A hook is disabled by setting mask to zero. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_sethook
+[-0, +0, -] 
+
+int lua_sethook (lua_State *L, lua_Hook f, int mask, int count);
+设置调试的hook函数。 
+
+参数f是hook函数。mask规定发生哪个事件时hook将被调用：它由常量LUA_MASKCALL、LUA_MASKRET、LUA_MASKLINE和LUA_MASKCOUNT按位或组成。只当掩码含有LUA_MASKCOUNT时，count参数才有意义。对于每个事件，hook如下面解释的那样被调用： 
+
+call hook: 当解释器调用函数时被调用。hook在Lua刚进入新函数后、在函数得到其参数前被调用。 
+return hook: 当解释器从函数返回时被调用。hook在Lua正要离开函数前被调用。你不能访问要被函数返回的值。 
+line hook: 当解释器将要开始新行代码的执行或跳回到代码中（甚至是同一行）时被调用。（该事件只在Lua正执行Lua函数时发生。） 
+count hook: 在解释器执行每count条指令后被调用。（该事件只在Lua正执行Lua函数时发生。） 
+通过设定mask为0禁用hook。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setlocal
+[-(0|1), +0, -] 
+
+const char *lua_setlocal (lua_State *L, lua_Debug *ar, int n);
+Sets the value of a local variable of a given activation record. Parameters ar and n are as in lua_getlocal (see lua_getlocal). lua_setlocal assigns the value at the top of the stack to the variable and returns its name. It also pops the value from the stack. 
+
+Returns NULL (and pops nothing) when the index is greater than the number of active local variables. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_setlocal
+[-(0|1), +0, -] 
+
+const char *lua_setlocal (lua_State *L, lua_Debug *ar, int n);
+设置给定的活动记录的一个局部变量的值。参数ar和n与lua_getlocal中一样（见lua_getlocal）。lua_setlocal把栈顶的值赋给变量并返回其名字。它也将值从栈中弹出。 
+
+当索引超过活动的局部变量的数量时返回NULL（且不出栈任何东西）。 
+
+
+--------------------------------------------------------------------------------
+
+lua_setupvalue
+[-(0|1), +0, -] 
+
+const char *lua_setupvalue (lua_State *L, int funcindex, int n);
+Sets the value of a closure's upvalue. It assigns the value at the top of the stack to the upvalue and returns its name. It also pops the value from the stack. Parameters funcindex and n are as in the lua_getupvalue (see lua_getupvalue). 
+
+Returns NULL (and pops nothing) when the index is greater than the number of upvalues. 
+
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+lua_setupvalue
+[-(0|1), +0, -] 
+
+const char *lua_setupvalue (lua_State *L, int funcindex, int n);
+设置闭包的upvalue的值。它把栈顶的值赋给upvalue并返回其名字。它也把值从栈中弹出。参数funcindex和n同lua_getupvalue中一样（见lua_getupvalue）。 
+
+当索引超过upvalue的数量时返回NULL（且不出栈任何东西）。 
+
+
+
+
+
+
+
+4 - The Auxiliary Library
+The auxiliary library provides several convenient functions to interface C with Lua. While the basic API provides the primitive functions for all interactions between C and Lua, the auxiliary library provides higher-level functions for some common tasks. 
+
+All functions from the auxiliary library are defined in header file lauxlib.h and have a prefix luaL_. 
+
+All functions in the auxiliary library are built on top of the basic API, and so they provide nothing that cannot be done with this API. 
+
+Several functions in the auxiliary library are used to check C function arguments. Their names are always luaL_check* or luaL_opt*. All of these functions throw an error if the check is not satisfied. Because the error message is formatted for arguments (e.g., "bad argument #1"), you should not use these functions for other stack values. 
+
+
+（注：TODO）
+4 - 辅助库
+辅助库为连接C和Lua提供若干便利的函数。基础API为C和Lua间的所有交互提供基本功能，而辅助库为一些通用任务提供高级功能。 
+
+所有来自辅助库的函数在头文件lauxlib.h中定义并具有前缀luaL_。 
+
+辅助库中的所有函数建立于基础API的顶层，所以该API做不了的它们也不提供。 
+
+辅助库中的一些函数用于检查C函数的参数。它们的名字总是luaL_check*或luaL_opt*。如果未满足检查条件，所有这些函数会抛出错误。因为错误消息是为参数格式化的（例如“bad argument #1”），所以不能把这些函数用于其它栈值。 
+
+
+
+
+
+
+
+
+
+
+
+4.1 - Functions and Types
+Here we list all functions and types from the auxiliary library in alphabetical order. 
+
+
+（注：TODO）
+4.1 - 函数与类型
+这儿我们以字母顺序列出来自辅助库的所有函数和类型。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addchar
+[-0, +0, m] 
+
+void luaL_addchar (luaL_Buffer *B, char c);
+Adds the character c to the buffer B (see luaL_Buffer). 
+
+--------------------------------------------------------------------------------
+
+luaL_addchar
+[-0, +0, m] 
+
+void luaL_addchar (luaL_Buffer *B, char c);
+把字符c加入缓冲区B（参考luaL_Buffer）。
+
+--------------------------------------------------------------------------------
+
+luaL_addlstring
+[-0, +0, m] 
+
+void luaL_addlstring (luaL_Buffer *B, const char *s, size_t l);
+Adds the string pointed to by s with length l to the buffer B (see luaL_Buffer). The string may contain embedded zeros. 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addlstring
+[-0, +0, m] 
+
+void luaL_addlstring (luaL_Buffer *B, const char *s, size_t l);
+把指向s的长度l的字符串加入缓冲区B（参考luaL_Buffer）。
+这个字符串可以包含嵌入的0。
+
+
+--------------------------------------------------------------------------------
+
+luaL_addsize
+[-0, +0, m] 
+
+void luaL_addsize (luaL_Buffer *B, size_t n);
+Adds to the buffer B (see luaL_Buffer) a string of length n previously copied to the buffer area (see luaL_prepbuffer). 
+
+
+--------------------------------------------------------------------------------
+
+luaL_addsize
+[-0, +0, m] 
+
+void luaL_addsize (luaL_Buffer *B, size_t n);
+把前一个复制到缓冲区（参考luaL_prepbuffer）的长度n的字符串加入缓冲B（参考luaL_Buffer）
+
+
+--------------------------------------------------------------------------------
+
+luaL_addstring
+[-0, +0, m] 
+
+void luaL_addstring (luaL_Buffer *B, const char *s);
+Adds the zero-terminated string pointed to by s to the buffer B (see luaL_Buffer). The string may not contain embedded zeros. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_addstring
+[-0, +0, m] 
+
+void luaL_addstring (luaL_Buffer *B, const char *s);
+把s指向的0结尾的字符串添加到缓冲器B（见luaL_Buffer）。字符串不可包含内嵌的0。 
+
+
+
+--------------------------------------------------------------------------------
+
+luaL_addvalue
+[-1, +0, m] 
+
+void luaL_addvalue (luaL_Buffer *B);
+Adds the value at the top of the stack to the buffer B (see luaL_Buffer). Pops the value. 
+
+This is the only function on string buffers that can (and must) be called with an extra element on the stack, which is the value to be added to the buffer. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_addvalue
+[-1, +0, m] 
+
+void luaL_addvalue (luaL_Buffer *B);
+把栈顶的值添加到缓冲器B（见luaL_Buffer）。弹出该值。 
+
+这是仅有能（且必须）用栈上的一个额外元素调用的关于字符串缓冲器的函数，该元素是要被添加到缓冲器的值。 
+
+
+
+
+--------------------------------------------------------------------------------
+
+luaL_argcheck
+[-0, +0, v] 
+
+void luaL_argcheck (lua_State *L,
+                    int cond,
+                    int narg,
+                    const char *extramsg);
+Checks whether cond is true. If not, raises an error with the following message, where func is retrieved from the call stack: 
+
+     bad argument #<narg> to <func> (<extramsg>)
+
+--------------------------------------------------------------------------------
+
+luaL_argcheck
+[-0, +0, v] 
+
+void luaL_argcheck (lua_State *L,
+                    int cond,
+                    int narg,
+                    const char *extramsg);
+检查条件是否为真。
+如果不是，用下面的信息引发一个错误，其中func是从调用堆栈中重新取得。
+bad argument #<narg> to <func> (<extramsg>)
+
+--------------------------------------------------------------------------------
+
+luaL_argerror
+[-0, +0, v] 
+
+int luaL_argerror (lua_State *L, int narg, const char *extramsg);
+Raises an error with the following message, where func is retrieved from the call stack: 
+
+     bad argument #<narg> to <func> (<extramsg>)
+
+This function never returns, but it is an idiom to use it in C functions as return luaL_argerror(args). 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_argerror
+[-0, +0, v] 
+
+int luaL_argerror (lua_State *L, int narg, const char *extramsg);
+抛出带下面的消息的错误，其中func是取自调用栈： 
+
+     bad argument #<narg> to <func> (<extramsg>)
+
+本函数决不返回，但是像return luaL_argerror(args)这样是用在C函数中的习惯用法。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_Buffer
+typedef struct luaL_Buffer luaL_Buffer;
+Type for a string buffer. 
+
+A string buffer allows C code to build Lua strings piecemeal. Its pattern of use is as follows: 
+
+First you declare a variable b of type luaL_Buffer. 
+Then you initialize it with a call luaL_buffinit(L, &b). 
+Then you add string pieces to the buffer calling any of the luaL_add* functions. 
+You finish by calling luaL_pushresult(&b). This call leaves the final string on the top of the stack. 
+During its normal operation, a string buffer uses a variable number of stack slots. So, while using a buffer, you cannot assume that you know where the top of the stack is. You can use the stack between successive calls to buffer operations as long as that use is balanced; that is, when you call a buffer operation, the stack is at the same level it was immediately after the previous buffer operation. (The only exception to this rule is luaL_addvalue.) After calling luaL_pushresult the stack is back to its level when the buffer was initialized, plus the final string on its top. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_Buffer
+typedef struct luaL_Buffer luaL_Buffer;
+字符串缓冲器类型。 
+
+字符串缓冲器允许C代码逐段地构建Lua字符串。其使用模式如下： 
+
+首先声明luaL_Buffer类型的变量b。 
+接着调用luaL_buffinit(L, &b)初始化它。 
+然后调用luaL_add*函数把字符串片断添加到缓冲器。 
+通过调用luaL_pushresult(&b)结束。该调用把最终的字符串放在栈顶。 
+在字符串缓冲器的常规操作期间，它占用的栈槽数量不固定。所以，使用缓冲器时，你不能假定知道栈顶在哪儿。只要用法是对称的，你就能在连续的对缓冲器操作的调用之间使用栈；就是说，当你调用缓冲器操作时，栈处于前一个缓冲器操作后立刻得到的水平。（该规则的唯一例外是luaL_addvalue。）调用luaL_pushresult之后，栈回到缓冲器被初始化时的水平，加上栈顶的最终字符串。 
+
+
+
+--------------------------------------------------------------------------------
+
+luaL_buffinit
+[-0, +0, -] 
+
+void luaL_buffinit (lua_State *L, luaL_Buffer *B);
+Initializes a buffer B. This function does not allocate any space; the buffer must be declared as a variable (see luaL_Buffer). 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_buffinit
+[-0, +0, -] 
+
+void luaL_buffinit (lua_State *L, luaL_Buffer *B);
+初始化缓冲器B。本函数不分配任何空间；缓冲器必须已被声明为变量（见luaL_Buffer）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_callmeta
+[-0, +(0|1), e] 
+
+int luaL_callmeta (lua_State *L, int obj, const char *e);
+Calls a metamethod. 
+
+If the object at index obj has a metatable and this metatable has a field e, this function calls this field and passes the object as its only argument. In this case this function returns 1 and pushes onto the stack the value returned by the call. If there is no metatable or no metamethod, this function returns 0 (without pushing any value on the stack). 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_callmeta
+[-0, +(0|1), e] 
+
+int luaL_callmeta (lua_State *L, int obj, const char *e);
+调用一个元方法。 
+
+如果索引obj处的对象具有元表且该元表具有字段e，本函数调用该字段并传入该对象为其唯一参数。这种情况下，本函数返回1并将该调用返回的值压栈。如果没有元表或没有元方法，本函数返回0（不将任何值压栈）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkany
+[-0, +0, v] 
+
+void luaL_checkany (lua_State *L, int narg);
+Checks whether the function has an argument of any type (including nil) at position narg. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_checkany
+[-0, +0, v] 
+
+void luaL_checkany (lua_State *L, int narg);
+检查函数是否在位置narg处有个任意类型（包括nil）的参数。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkint
+[-0, +0, v] 
+
+int luaL_checkint (lua_State *L, int narg);
+Checks whether the function argument narg is a number and returns this number cast to an int. 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkint
+[-0, +0, v] 
+
+int luaL_checkint (lua_State *L, int narg);
+检查函数参数narg是否为一个数，并且把这个数转换为整数然后返回。
+
+--------------------------------------------------------------------------------
+
+luaL_checkinteger
+[-0, +0, v] 
+
+lua_Integer luaL_checkinteger (lua_State *L, int narg);
+Checks whether the function argument narg is a number and returns this number cast to a lua_Integer. 
+
+--------------------------------------------------------------------------------
+
+luaL_checkinteger
+[-0, +0, v] 
+
+lua_Integer luaL_checkinteger (lua_State *L, int narg);
+检查函数参数narg是否是一个数，并且把这个数转换为lua_Integer然后返回。
+
+
+--------------------------------------------------------------------------------
+
+luaL_checklong
+[-0, +0, v] 
+
+long luaL_checklong (lua_State *L, int narg);
+Checks whether the function argument narg is a number and returns this number cast to a long. 
+
+--------------------------------------------------------------------------------
+
+luaL_checklong
+[-0, +0, v] 
+
+long luaL_checklong (lua_State *L, int narg);
+检查函数参数narg是否是一个数，并且把这个数转换为长整型然后返回。
+
+
+--------------------------------------------------------------------------------
+
+luaL_checklstring
+[-0, +0, v] 
+
+const char *luaL_checklstring (lua_State *L, int narg, size_t *l);
+Checks whether the function argument narg is a string and returns this string; if l is not NULL fills *l with the string's length. 
+
+This function uses lua_tolstring to get its result, so all conversions and caveats of that function apply here. 
+
+--------------------------------------------------------------------------------
+
+luaL_checklstring
+[-0, +0, v] 
+
+const char *luaL_checklstring (lua_State *L, int narg, size_t *l);
+检查函数参数narg是否是一个字符串，然后返回这个字符串；如果l不是NULL则填充*l为字符串的长度。
+这个函数使用lua_tolstring获得结果，所以那个函数的所有转换和注意事项都适用于此。
+
+--------------------------------------------------------------------------------
+
+luaL_checknumber
+[-0, +0, v] 
+
+lua_Number luaL_checknumber (lua_State *L, int narg);
+Checks whether the function argument narg is a number and returns this number. 
+
+--------------------------------------------------------------------------------
+
+luaL_checknumber
+[-0, +0, v] 
+
+lua_Number luaL_checknumber (lua_State *L, int narg);
+检查函数参数narg是否是一个数，并且返回这个数。
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkoption
+[-0, +0, v] 
+
+int luaL_checkoption (lua_State *L,
+                      int narg,
+                      const char *def,
+                      const char *const lst[]);
+Checks whether the function argument narg is a string and searches for this string in the array lst (which must be NULL-terminated). Returns the index in the array where the string was found. Raises an error if the argument is not a string or if the string cannot be found. 
+
+If def is not NULL, the function uses def as a default value when there is no argument narg or if this argument is nil. 
+
+This is a useful function for mapping strings to C enums. (The usual convention in Lua libraries is to use strings instead of numbers to select options.) 
+
+--------------------------------------------------------------------------------
+
+luaL_checkoption
+[-0, +0, v] 
+
+int luaL_checkoption (lua_State *L,
+                      int narg,
+                      const char *def,
+                      const char *const lst[]);
+检查函数参数narg是否是一个字符串并且在数组lst中搜索这个字符串（必须是NULL结束）。
+返回数组中所找到字符串的索引。
+如果参数不是一个字符串或字符串找不到则引发错误。
+如果def不是NULL，当没有narg参数或者这个参数为空时，这个函数使用def作为默认值
+这个函数对匹配字符串为C枚举值时很有用。
+（在Lua库中普遍的约定是使用字符串代替数字去选择选项）
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkstack
+[-0, +0, v] 
+
+void luaL_checkstack (lua_State *L, int sz, const char *msg);
+Grows the stack size to top + sz elements, raising an error if the stack cannot grow to that size. msg is an additional text to go into the error message. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_checkstack
+[-0, +0, v] 
+
+void luaL_checkstack (lua_State *L, int sz, const char *msg);
+增长栈尺寸到top + sz个元素，如果不能增长到那个尺寸则引发错误。msg是加入错误消息的补充文本。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checkstring
+[-0, +0, v] 
+
+const char *luaL_checkstring (lua_State *L, int narg);
+Checks whether the function argument narg is a string and returns this string. 
+
+This function uses lua_tolstring to get its result, so all conversions and caveats of that function apply here. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_checkstring
+[-0, +0, v] 
+
+const char *luaL_checkstring (lua_State *L, int narg);
+检查函数参数narg是否字符串并返回它。 
+
+本函数用lua_tolstring取得其结果，所以那个函数的所有变换和警告也适用于此处。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checktype
+[-0, +0, v] 
+
+void luaL_checktype (lua_State *L, int narg, int t);
+Checks whether the function argument narg has type t. See lua_type for the encoding of types for t. 
+
+
+--------------------------------------------------------------------------------
+
+luaL_checktype
+[-0, +0, v] 
+
+void luaL_checktype (lua_State *L, int narg, int t);
+检查函数参数narg是否拥有类型t。
+参考lua_type获得t的类型编码。
+
+--------------------------------------------------------------------------------
+
+luaL_checkudata
+[-0, +0, v] 
+
+void *luaL_checkudata (lua_State *L, int narg, const char *tname);
+Checks whether the function argument narg is a userdata of the type tname (see luaL_newmetatable). 
+
+--------------------------------------------------------------------------------
+
+luaL_checkudata
+[-0, +0, v] 
+
+void *luaL_checkudata (lua_State *L, int narg, const char *tname);
+检查函数参数narg是否是类型tname的用户定义类型（参考luaL_newmetatable）
+
+
+--------------------------------------------------------------------------------
+
+luaL_dofile
+[-0, +?, m] 
+
+int luaL_dofile (lua_State *L, const char *filename);
+Loads and runs the given file. It is defined as the following macro: 
+
+     (luaL_loadfile(L, filename) || lua_pcall(L, 0, LUA_MULTRET, 0))
+
+It returns 0 if there are no errors or 1 in case of errors. 
+
+--------------------------------------------------------------------------------
+
+
+luaL_dofile
+[-0, +?, m] 
+
+int luaL_dofile (lua_State *L, const char *filename);
+加载并运行所给的文件，定义为如下宏
+(luaL_loadfile(L, filename) || lua_pcall(L, 0, LUA_MULTRET, 0))
+如果没有错误则返回0，如果出错返回1。
+
+--------------------------------------------------------------------------------
+
+luaL_dostring
+[-0, +?, m] 
+
+int luaL_dostring (lua_State *L, const char *str);
+Loads and runs the given string. It is defined as the following macro: 
+     (luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
+It returns 0 if there are no errors or 1 in case of errors. 
+
+--------------------------------------------------------------------------------
+
+luaL_dostring
+[-0, +?, m] 
+
+int luaL_dostring (lua_State *L, const char *str);
+加载并运行所给的字符串。定义为如下宏：
+(luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
+如果没有错误则返回0，如果出错返回1。
+
+--------------------------------------------------------------------------------
+
+luaL_error
+[-0, +0, v] 
+
+int luaL_error (lua_State *L, const char *fmt, ...);
+Raises an error. The error message format is given by fmt plus any extra arguments, following the same rules of lua_pushfstring. It also adds at the beginning of the message the file name and the line number where the error occurred, if this information is available. 
+
+This function never returns, but it is an idiom to use it in C functions as return luaL_error(args). 
+
+--------------------------------------------------------------------------------
+
+luaL_error
+[-0, +0, v] 
+
+int luaL_error (lua_State *L, const char *fmt, ...);
+引发错误。
+错误信息的格式由fmt指定，外加额外的参数，遵循与lua_pushfstring相同的规则。
+它还会在信息的开头加上文件名和发生错误的行号，如果这类信息可用的话。
+这个函数从不返回，但习惯在C函数内以return luaL_error(args)方式使用。
+
+--------------------------------------------------------------------------------
+
+luaL_getmetafield
+[-0, +(0|1), m] 
+
+int luaL_getmetafield (lua_State *L, int obj, const char *e);
+Pushes onto the stack the field e from the metatable of the object at index obj. If the object does not have a metatable, or if the metatable does not have this field, returns 0 and pushes nothing. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_getmetafield
+[-0, +(0|1), m] 
+
+int luaL_getmetafield (lua_State *L, int obj, const char *e);
+把来自索引obj处的对象的元表的字段e压栈。如果对象没有元表或其元表没有该字段，则返回0且不会压栈任何东西。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_getmetatable
+[-0, +1, -] 
+
+void luaL_getmetatable (lua_State *L, const char *tname);
+Pushes onto the stack the metatable associated with name tname in the registry (see luaL_newmetatable). 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_getmetatable
+[-0, +1, -] 
+
+void luaL_getmetatable (lua_State *L, const char *tname);
+把与注册表中的名字tname相关联的元表压栈。（见luaL_newmetatable）。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_gsub
+[-0, +1, m] 
+
+const char *luaL_gsub (lua_State *L,
+                       const char *s,
+                       const char *p,
+                       const char *r);
+Creates a copy of string s by replacing any occurrence of the string p with the string r. Pushes the resulting string on the stack and returns it. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_gsub
+[-0, +1, m] 
+
+const char *luaL_gsub (lua_State *L,
+                       const char *s,
+                       const char *p,
+                       const char *r);
+通过把出现的任何字符串p替换为字符串r来创建字符串s的拷贝。把结果字符串压栈并返回它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadbuffer
+[-0, +1, m] 
+
+int luaL_loadbuffer (lua_State *L,
+                     const char *buff,
+                     size_t sz,
+                     const char *name);
+Loads a buffer as a Lua chunk. This function uses lua_load to load the chunk in the buffer pointed to by buff with size sz. 
+
+This function returns the same results as lua_load. name is the chunk name, used for debug information and error messages. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_loadbuffer
+[-0, +1, m] 
+
+int luaL_loadbuffer (lua_State *L,
+                     const char *buff,
+                     size_t sz,
+                     const char *name);
+载入缓冲器并作为一个Lua单元。本函数用lua_load来加载缓冲器中由buff指向且长度为sz的单元。 
+
+本函数返回同lua_load一样的结果。name是单元名字，用于调试信息和错误消息。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadfile
+[-0, +1, m] 
+
+int luaL_loadfile (lua_State *L, const char *filename);
+Loads a file as a Lua chunk. This function uses lua_load to load the chunk in the file named filename. If filename is NULL, then it loads from the standard input. The first line in the file is ignored if it starts with a #. 
+
+This function returns the same results as lua_load, but it has an extra error code LUA_ERRFILE if it cannot open/read the file. 
+
+As lua_load, this function only loads the chunk; it does not run it. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_loadfile
+[-0, +1, m] 
+
+int luaL_loadfile (lua_State *L, const char *filename);
+载入文件作为一个Lua单元。本函数用lua_load来载入名为filename的文件中的单元。如果filename是NULL，则从标准输入载入。文件中的第一行如果以#开头则被忽略。 
+
+本函数返回同lua_load一样的结果，除了有个额外的错误代码LUA_ERRFILE，用于不能打开/读取文件的情况。 
+
+同lua_load一样，本函数只载入单元；不会运行它。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_loadstring
+[-0, +1, m] 
+
+int luaL_loadstring (lua_State *L, const char *s);
+Loads a string as a Lua chunk. This function uses lua_load to load the chunk in the zero-terminated string s. 
+
+This function returns the same results as lua_load. 
+
+Also as lua_load, this function only loads the chunk; it does not run it. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_loadstring
+[-0, +1, m] 
+
+int luaL_loadstring (lua_State *L, const char *s);
+载入字符串作为一个Lua单元。本函数用lua_load来载入以0结尾的字符串s中的单元。 
+
+本函数返回同lua_load一样的结果。 
+
+本函数只载入单元，这也同lua_load一样；不会运行它。 
+
+
+
+--------------------------------------------------------------------------------
+
+luaL_newmetatable
+[-0, +1, m] 
+
+int luaL_newmetatable (lua_State *L, const char *tname);
+If the registry already has the key tname, returns 0. Otherwise, creates a new table to be used as a metatable for userdata, adds it to the registry with key tname, and returns 1. 
+
+In both cases pushes onto the stack the final value associated with tname in the registry. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_newmetatable
+[-0, +1, m] 
+
+int luaL_newmetatable (lua_State *L, const char *tname);
+如果注册表已经有了键tname则返回0。否则，创建将用作用户数据的元表的新表，把它同键tname一起加入注册表，并且返回1。 
+
+两种情况都把注册表中与tname相关联的最终值压栈。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_newstate
+[-0, +0, -] 
+
+lua_State *luaL_newstate (void);
+Creates a new Lua state. It calls lua_newstate with an allocator based on the standard C realloc function and then sets a panic function (see lua_atpanic) that prints an error message to the standard error output in case of fatal errors. 
+
+Returns the new state, or NULL if there is a memory allocation error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_newstate
+[-0, +0, -] 
+
+lua_State *luaL_newstate (void);
+创建新的Lua状态机。它用基于标准C的realloc函数的分配器调用lua_newstate，然后设置一个在发生重大错误时向标准错误输出打印一条错误消息的应急函数（见lua_atpanic）。 
+
+返回新的状态机，如果发生内存分配错误则返回NULL。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_openlibs
+[-0, +0, m] 
+
+void luaL_openlibs (lua_State *L);
+Opens all standard Lua libraries into the given state. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_openlibs
+[-0, +0, m] 
+
+void luaL_openlibs (lua_State *L);
+打开所有的标准Lua库到给定的状态机中。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optint
+[-0, +0, v] 
+
+int luaL_optint (lua_State *L, int narg, int d);
+If the function argument narg is a number, returns this number cast to an int. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optint
+[-0, +0, v] 
+
+int luaL_optint (lua_State *L, int narg, int d);
+如果函数参数narg是数字，则把该数字转型为int返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optinteger
+[-0, +0, v] 
+
+lua_Integer luaL_optinteger (lua_State *L,
+                             int narg,
+                             lua_Integer d);
+If the function argument narg is a number, returns this number cast to a lua_Integer. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optinteger
+[-0, +0, v] 
+
+lua_Integer luaL_optinteger (lua_State *L,
+                             int narg,
+                             lua_Integer d);
+如果函数参数narg是数字，则把该数字转型为lua_Integer返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+--------------------------------------------------------------------------------
+
+luaL_optlong
+[-0, +0, v] 
+
+long luaL_optlong (lua_State *L, int narg, long d);
+If the function argument narg is a number, returns this number cast to a long. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optlong
+[-0, +0, v] 
+
+long luaL_optlong (lua_State *L, int narg, long d);
+如果函数参数narg是数字，则把该数字转型为long返回。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optlstring
+[-0, +0, v] 
+
+const char *luaL_optlstring (lua_State *L,
+                             int narg,
+                             const char *d,
+                             size_t *l);
+If the function argument narg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+If l is not NULL, fills the position *l with the results's length. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optlstring
+[-0, +0, v] 
+
+const char *luaL_optlstring (lua_State *L,
+                             int narg,
+                             const char *d,
+                             size_t *l);
+如果函数参数narg是字符串则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+如果l不为NULL，则用结果的长度填充位置*l。 
+
+
+
+--------------------------------------------------------------------------------
+
+luaL_optnumber
+[-0, +0, v] 
+
+lua_Number luaL_optnumber (lua_State *L, int narg, lua_Number d);
+If the function argument narg is a number, returns this number. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optnumber
+[-0, +0, v] 
+
+lua_Number luaL_optnumber (lua_State *L, int narg, lua_Number d);
+如果函数参数narg是数字则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+--------------------------------------------------------------------------------
+
+luaL_optstring
+[-0, +0, v] 
+
+const char *luaL_optstring (lua_State *L,
+                            int narg,
+                            const char *d);
+If the function argument narg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+luaL_optstring
+[-0, +0, v] 
+
+const char *luaL_optstring (lua_State *L,
+                            int narg,
+                            const char *d);
+如果函数参数narg是字符串则返回它。如果该参数不存在或为nil则返回d。否则引发错误。 
+
+
+
+--------------------------------------------------------------------------------
+
+
+
