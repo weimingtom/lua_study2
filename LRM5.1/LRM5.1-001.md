@@ -149,7 +149,7 @@ Lua中所有值都是第一类值。这意味着所有的值都可以存储变�
 
 There are eight basic types in Lua: nil, boolean, number, string, function, userdata, thread, and table. Nil is the type of the value nil, whose main property is to be different from any other value; it usually represents the absence of a useful value. Boolean is the type of the values false and true. Both nil and false make a condition false; any other value makes it true. Number represents real (double-precision floating-point) numbers. (It is easy to build Lua interpreters that use other internal representations for numbers, such as single-precision float or long integers; see file luaconf.h.) String represents arrays of characters. Lua is 8-bit clean: strings can contain any 8-bit character, including embedded zeros ('\0') (see §2.1).   
 
-Lua有八种基本类型：nil，boolean，number，string，function，userdata，thread，和table。类型nil是nil的类型，其主要属性是不同于其它任何值，它通常代表缺少一个有用的值。类型boolean是值false和true的类型。nil和false使条件为假；其他任何值都使条件为真。类型number表示实数（双精度浮点数）。（在构建Lua解释器时很容易为类型number使用其他内部表示，例如单精度浮点数或者长整数。参考文件luaconf.h。）类型string表示字符数组。Lua对8位字符是干净的（注：纯8位）：字符串可以包含任何8位字符，包括内嵌零（'\0'）（见§2.1）。  
+Lua有八种基本类型：nil，boolean，number，string，function，userdata，thread，和table。类型nil是nil的类型，其主要属性是不同于其它任何值，它通常代表缺少一个有用的值。类型boolean是值false和true的类型。nil和false使条件为假；其他任何值都使条件为真。类型number表示实数（双精度浮点数）。（在构建Lua解释器时很容易为类型number使用其他内部表示，例如单精度浮点数或者长整数。参考文件luaconf.h。）类型string表示字符数组。Lua对8位字符是干净的**（注：纯8位）**：字符串可以包含任何8位字符，包括内嵌零（'\0'）（见§2.1）。  
 
 Lua can call (and manipulate) functions written in Lua and functions written in C (see §2.5.8).   
 
@@ -245,8 +245,9 @@ where _env is the environment of the running function. (See §2.8 for a complete
 
 -----------------------------------------
 
-参考自：  
+## 参考自：  
 1. Lua 5.1 参考手册 （云风译）  
 http://www.codingnow.com/2000/download/lua_manual.html  
+
 2. hshqcn  
 http://hshqcn.iteye.com/blog/284901  
