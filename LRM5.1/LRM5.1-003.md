@@ -18,7 +18,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license.   
 
-版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地（注：免费）可用  
+版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地**（注：免费）**可用  
 
 -----------------------------------------  
 
@@ -165,7 +165,7 @@ The negation operator not always returns false or true. The conjunction operator
 
 (In this manual, --> indicates the result of the preceding expression.)   
 
-（在本手册中，-->表示前面表达式的结果。）（注：同时也是注释的写法）  
+（在本手册中，-->表示前面表达式的结果。）**（注：同时也是注释的写法）**  
 
 ## 2.5.4 - Concatenation  
 
@@ -324,7 +324,7 @@ Lua会把它视为一个单一语句a = f(g).x(a)。所以，如果你希望是�
 
 A call of the form return functioncall is called a tail call. Lua implements proper tail calls (or proper tail recursion): in a tail call, the called function reuses the stack entry of the calling function. Therefore, there is no limit on the number of nested tail calls that a program can execute. However, a tail call erases any debug information about the calling function. Note that a tail call only happens with a particular syntax, where the return has one single function call as argument; this syntax makes the calling function return exactly the returns of the called function. So, none of the following examples are tail calls:   
 
-调用形式return functioncall被称为尾调用。Lua实现合适的尾调用（或者说尾递归）：在一个尾调用中，被调用的函数重用调用方函数的堆栈入口。因此，一个程序可以执行的嵌套尾调用数目没有限制。然而，尾调用清除任何关于调用方函数的调试信息。注意尾调用只出现在特定语法，其中return只以一个单一函数调用作为参数（注：这里return关键字被看成是函数调用）；这种语法使调用方函数准确地返回被调用函数的返回值。所以，下面的例子都不是尾调用：  
+调用形式return functioncall被称为尾调用。Lua实现合适的尾调用（或者说尾递归）：在一个尾调用中，被调用的函数重用调用方函数的堆栈入口。因此，一个程序可以执行的嵌套尾调用数目没有限制。然而，尾调用清除任何关于调用方函数的调试信息。注意尾调用只出现在特定语法，其中return只以一个单一函数调用作为参数**（注：这里return关键字被看成是函数调用）**；这种语法使调用方函数准确地返回被调用函数的返回值。所以，下面的例子都不是尾调用：  
 
      return (f(x))        -- results adjusted to 1  
      return 2 * f(x)  
@@ -407,7 +407,7 @@ not to
 
 A function definition is an executable expression, whose value has type function. When Lua pre-compiles a chunk, all its function bodies are pre-compiled too. Then, whenever Lua executes the function definition, the function is instantiated (or closed). This function instance (or closure) is the final value of the expression. Different instances of the same function can refer to different external local variables and can have different environment tables.   
 
-一个函数定义是一个可执行的表达式，其值拥有function类型。当Lua预编译chunk块时，它的所有函数体都会被预编译。然后，每当执行Lua的函数定义时，函数会被实例化（或被关闭（注：这里的关闭可能是指闭包定义））。这个函数的实例（或闭包）是表达式的最终值。相同函数的不同实例可以引用不同的外部局部变量和拥有不同的环境表。（注：可能指upvalue）  
+一个函数定义是一个可执行的表达式，其值拥有function类型。当Lua预编译chunk块时，它的所有函数体都会被预编译。然后，每当执行Lua的函数定义时，函数会被实例化（或被关闭**（注：这里的关闭可能是指闭包定义）**）。这个函数的实例（或闭包）是表达式的最终值。相同函数的不同实例可以引用不同的外部局部变量和拥有不同的环境表。**（注：可能指upvalue）**  
 
 Parameters act as local variables that are initialized with the argument values:   
 
