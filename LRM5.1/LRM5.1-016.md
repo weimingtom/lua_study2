@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-13)表操纵(5.5)、数学运算函数(5.6)
+﻿【翻译】(LRM5.1-16)表操纵(5.5)、数学运算函数(5.6)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html

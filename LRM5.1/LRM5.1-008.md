@@ -1,4 +1,4 @@
-﻿## 【翻译】(LRM5.1-7)函数和类型(3.7)(lua_getallocf - lua_next)
+﻿## 【翻译】(LRM5.1-8)函数和类型(3.7)(lua_getallocf - lua_next)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html  

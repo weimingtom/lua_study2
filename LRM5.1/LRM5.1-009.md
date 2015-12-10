@@ -1,4 +1,4 @@
-﻿## 【翻译】(LRM5.1-7)函数和类型(3.7)(lua_Number - lua_rawseti)
+﻿## 【翻译】(LRM5.1-9)函数和类型(3.7)(lua_Number - lua_rawseti)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html  

@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-10)标准库的基础函数(5.1)  
+﻿【翻译】(LRM5.1-13)标准库的基础函数(5.1)  
 
 See also:
 http://www.lua.org/manual/5.1/manual.html  

@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-12)字符串操纵(5.4)、模式（5.4.1）
+﻿【翻译】(LRM5.1-15)字符串操纵(5.4)、模式（5.4.1）
 
 See also:
 http://www.lua.org/manual/5.1/manual.html

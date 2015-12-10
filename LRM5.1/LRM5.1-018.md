@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-15)调试库(5.9)、Lua的独立程序(6)  
+﻿【翻译】(LRM5.1-18)调试库(5.9)、Lua的独立程序(6)  
 
 See also:
 http://www.lua.org/manual/5.1/manual.html

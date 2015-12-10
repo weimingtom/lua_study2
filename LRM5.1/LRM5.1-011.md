@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-8)调试接口(3.8)
+﻿【翻译】(LRM5.1-11)调试接口(3.8)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html

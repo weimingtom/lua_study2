@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-11)协程操纵(5.2)、模块(5.3)
+﻿【翻译】(LRM5.1-14)协程操纵(5.2)、模块(5.3)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html

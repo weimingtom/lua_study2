@@ -1,4 +1,4 @@
-﻿## 【翻译】(LRM5.1-7)函数和类型(3.7)(lua_Reader - lua_yield)
+﻿## 【翻译】(LRM5.1-10)函数和类型(3.7)(lua_Reader - lua_yield)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html  

@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-9)辅助库(4)
+﻿【翻译】(LRM5.1-12)辅助库(4)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html
