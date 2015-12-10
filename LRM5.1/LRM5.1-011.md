@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-11)协程操纵(5.2)、模块(5.3)
+﻿【翻译】(LRM5.1-8)调试接口(3.8)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html
@@ -22,217 +22,321 @@ Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the 
 
 -----------------------------------------
 
-5.2 - Coroutine Manipulation
+3.8 - The Debug Interface
 
-5.2 - 协程操纵
+3.8 - 调试接口
 
-The operations related to coroutines comprise a sub-library of the basic library and come inside the table coroutine. See §2.11 for a general description of coroutines. 
+Lua has no built-in debugging facilities. Instead, it offers a special interface by means of functions and hooks. This interface allows the construction of different kinds of debuggers, profilers, and other tools that need "inside information" from the interpreter. 
 
-与协程相关的操作由基础库的一个子库组成且来自表coroutine内。见§2.11获取协程的一般描述。
-
---------------------------------------------------------------------------------
-
-coroutine.create (f)
-
-Creates a new coroutine, with body f. f must be a Lua function. Returns this new coroutine, an object with type "thread". 
-
-一个新协程，带函数体f。f必须是一个Lua函数。返回这个新的协程，一个类型为"thread"的对象。
+Lua没有内置的调试设施。取而代之，它通过一些函数和钩子来提供一个特殊接口。这个接口允许不同种类的调试器、性能剖析工具，以及其它需要解析器中“内部信息”的工具的构造。
 
 --------------------------------------------------------------------------------
 
-coroutine.resume (co [, val1, ···])
+lua_Debug
 
-Starts or continues the execution of coroutine co. The first time you resume a coroutine, it starts running its body. The values val1, ··· are passed as the arguments to the body function. If the coroutine has yielded, resume restarts it; the values val1, ··· are passed as the results from the yield. 
+typedef struct lua_Debug {
+  int event;
+  const char *name;           /* (n) */
+  const char *namewhat;       /* (n) */
+  const char *what;           /* (S) */
+  const char *source;         /* (S) */
+  int currentline;            /* (l) */
+  int nups;                   /* (u) number of upvalues */
+  int linedefined;            /* (S) */
+  int lastlinedefined;        /* (S) */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* private part */
+  other fields
+} lua_Debug;
 
-启动或继续协程co的执行。你第一次恢复一个协程时，它开始运行它的函数体。值val1，……被传递作为主体函数的参数。如果协程被挂起，resume重新启动它；值val1，……被传递作为来自yield的结果。 
+（注：翻译如下：
+typedef struct lua_Debug {
+  int event;
+  const char *name;           /* (n) */
+  const char *namewhat;       /* (n) */
+  const char *what;           /* (S) */
+  const char *source;         /* (S) */
+  int currentline;            /* (l) */
+  int nups;                   /* (u) 上值的数量 */
+  int linedefined;            /* (S) */
+  int lastlinedefined;        /* (S) */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* 私有部分 */
+  其它字段
+} lua_Debug;
+）
 
-If the coroutine runs without any errors, resume returns true plus any values passed to yield (if the coroutine yields) or any values returned by the body function (if the coroutine terminates). If there is any error, resume returns false plus the error message. 
+A structure used to carry different pieces of information about an active function. lua_getstack fills only the private part of this structure, for later use. To fill the other fields of lua_Debug with useful information, call lua_getinfo. 
 
-如果协程不带任意错误地运行，resume返回true和被传递到yield的任意值（如果协程挂起）或被主体函数返回的任意值（如果协程终结）。如果有任意错误，resume返回false和错误消息。 
+用于携带关于一个激活函数的不同信息的一个结构体。lua_getstack只填充这个结构体的私有部分，供以后使用。要想用有用的信息填充lua_Debug的其它字段，请调用lua_getinfo。 
 
---------------------------------------------------------------------------------
+The fields of lua_Debug have the following meaning: 
 
-coroutine.running ()
+lua_Debug的字段拥有以下含义： 
 
-Returns the running coroutine, or nil when called by the main thread. 
+source: If the function was defined in a string, then source is that string. If the function was defined in a file, then source starts with a '@' followed by the file name. 
 
-返回正在运行的协程，或nil当被主线程调用时。
+source: 如果该函数被定义在一个字符串中，则source是那个字符串。如果该函数被定义在一个文件中，则source以'@'开头后跟文件名。 
 
---------------------------------------------------------------------------------
+short_src: a "printable" version of source, to be used in error messages. 
 
-coroutine.status (co)
+short_src：source字段的“可打印”版本，被用在错误消息中。 
 
-Returns the status of coroutine co, as a string: "running", if the coroutine is running (that is, it called status); "suspended", if the coroutine is suspended in a call to yield, or if it has not started running yet; "normal" if the coroutine is active but not running (that is, it has resumed another coroutine); and "dead" if the coroutine has finished its body function, or if it has stopped with an error. 
+linedefined: the line number where the definition of the function starts. 
 
-返回协程co的状态，作为一个字符串："running"如果该协程正在运行（就是说，它调用了status）；"suspended"，如果该协程被暂停在一个对yield的调用，或者它还没有开始运行；"normal"如果协程是激活的但不是正在运行（就是说，它已经恢复另一个协程）；以及"dead"如果该协程已经完成它的主体函数，或者如果它已经带一个错误地停止。 
+linedefined：函数定义开始所在的行号。 
 
---------------------------------------------------------------------------------
+lastlinedefined: the line number where the definition of the function ends. 
 
-coroutine.wrap (f)
+lastlinedefined：函数定义结束所在的行号。 
 
-Creates a new coroutine, with body f. f must be a Lua function. Returns a function that resumes the coroutine each time it is called. Any arguments passed to the function behave as the extra arguments to resume. Returns the same values returned by resume, except the first boolean. In case of error, propagates the error. 
+what: the string "Lua" if the function is a Lua function, "C" if it is a C function, "main" if it is the main part of a chunk, and "tail" if it was a function that did a tail call. In the latter case, Lua has no other information about the function. 
 
-创建一个新的协程，使用一个函数体f。f必须是一个Lua函数。返回一个函数，每当它被调用时它恢复该协程。被传递给该函数的任意参数的行为如同传给resume的额外参数。返回被resume所返回的相同值，除了第一个boolean值。在出错的情况下，传播该错误。 
+what：字符串"Lua"如果该函数是一个Lua函数，"C"如果它是一个C函数，"main"如果它是一个chunk块的主要部分，以及"tail"如果它是一个执行尾调用的函数。在最后一种情况下，Lua没有关于该函数的其它信息。 
 
---------------------------------------------------------------------------------
+currentline: the current line where the given function is executing. When no line information is available, currentline is set to -1. 
 
-coroutine.yield (···)
+currentline：给定函数正在执行在的当前行。当没有可用的行信息时，currentline被设置为-1。 
 
-Suspends the execution of the calling coroutine. The coroutine cannot be running a C function, a metamethod, or an iterator. Any arguments to yield are passed as extra results to resume. 
+name: a reasonable name for the given function. Because functions in Lua are first-class values, they do not have a fixed name: some functions can be the value of multiple global variables, while others can be stored only in a table field. The lua_getinfo function checks how the function was called to find a suitable name. If it cannot find a name, then name is set to NULL. 
 
-暂停调用方协程的执行。协程不能正在运行一个C函数，一个元方法，或一个迭代器。传给yield的任意参数被传递作为给resume的额外结果。 
+name：给定函数的合适名称。因为在Lua中函数是第一类值，所以它们没有一个固定的名称：一些函数可以是多个全局变量的值，而其它可以只存储于一个表的字段中。lua_getinfo函数检查该函数是如何被调用的以找到一个适合的名称。如果它无法找到一个名称，则name被设置为NULL。 
 
-5.3 - Modules
+namewhat: explains the name field. The value of namewhat can be "global", "local", "method", "field", "upvalue", or "" (the empty string), according to how the function was called. (Lua uses the empty string when no other option seems to apply.) 
 
-5.3 - 模块
+namewhat：解释name字段。namewhat的值可以是"global"，"local"，"method"，"field"，"upvalue"，或""（空字符串），根据函数是如何被调用的。（Lua使用空串，当似乎没有其它选项要应用时。） 
 
-The package library provides basic facilities for loading and building modules in Lua. It exports two of its functions directly in the global environment: require and module. Everything else is exported in a table package. 
+nups: the number of upvalues of the function. 
 
-包库提供加载和创建Lua中模块的基础工具。它直接地导出它的其中两个函数在全局环境中：require和module。其它所有东西被导出在一个表package中。 
-
---------------------------------------------------------------------------------
-
-module (name [, ···])
-
-Creates a module. If there is a table in package.loaded[name], this table is the module. Otherwise, if there is a global table t with the given name, this table is the module. Otherwise creates a new table t and sets it as the value of the global name and the value of package.loaded[name]. This function also initializes t._NAME with the given name, t._M with the module (t itself), and t._PACKAGE with the package name (the full module name minus last component; see below). Finally, module sets t as the new environment of the current function and the new value of package.loaded[name], so that require returns t. 
-
-创建一个模块。如果在package.loaded[name]中存在一个表，那么这个表是该模块。否则，如果存在一个全局表t带有给定的名字，那么这个表是该模块。否则，创建一个新表t并设置它作为全局变量name的值和package.loaded[name]的值。这个函数还用给定名称初始化t._NAME，用该模块（t自身）初始化t._M，且用包名初始化t._PACKAGE（完全模块名减去最后部分；见下）。最后，module设置t作为当前函数的新环境和package.loaded[name]的新值，致使require返回t。 
-
-If name is a compound name (that is, one with components separated by dots), module creates (or reuses, if they already exist) tables for each component. For instance, if name is a.b.c, then module stores the module table in field c of field b of global a. 
-
-如果name是个一个复合名字（就是说，被点号分隔成几个部分的名称），那么module为每个部分创建（或重用，如果它们已经存在）表。例如，如果name是a.b.c，那么module在全局变量a的域b的域c中存储模块表。 
-
-This function can receive optional options after the module name, where each option is a function to be applied over the module. 
-
-这个函数可以在模块名后接收可选的选项，其中每个选项是要被应用在模块上的一个函数。 
-
---------------------------------------------------------------------------------
-
-require (modname)
-
-Loads the given module. The function starts by looking into the package.loaded table to determine whether modname is already loaded. If it is, then require returns the value stored at package.loaded[modname]. Otherwise, it tries to find a loader for the module. 
-
-加载给定模块。这个函数开始的时候查看package.loaded表的内容以确认modname是否已经被加载。如果是，那么require返回存储在package.loaded[modname]中的值。否则，它尝试为该模块寻找一个加载器。 
-
-To find a loader, require is guided by the package.loaders array. By changing this array, we can change how require looks for a module. The following explanation is based on the default configuration for package.loaders. 
-
-为了找到一个加载器，require被package.loaders数组指引。通过改变这个数组，我们可以改变require如何寻找一个模块。以下解释是基于package.loaders的默认配置。 
-
-First require queries package.preload[modname]. If it has a value, this value (which should be a function) is the loader. Otherwise require searches for a Lua loader using the path stored in package.path. If that also fails, it searches for a C loader using the path stored in package.cpath. If that also fails, it tries an all-in-one loader (see package.loaders). 
-
-首先require查询package.preload[modname]。如果它拥有一个值，这个值（它应该是一个函数）是该加载器。否则，require搜索一个Lua加载器，通过使用存储在package.path中的路径。如果那也失败了，它搜索一个C加载器，通过使用存储在package.cpath中的路径。如果那也失败了，它尝试一个一体化加载器（见package.loaders）。 
-
-Once a loader is found, require calls the loader with a single argument, modname. If the loader returns any value, require assigns the returned value to package.loaded[modname]. If the loader returns no value and has not assigned any value to package.loaded[modname], then require assigns true to this entry. In any case, require returns the final value of package.loaded[modname]. 
-
-一旦一个加载器被找到，require用一个单一参数，modname，调用该加载器。如果该加载器返回任意值，那么require赋予返回的值给package.loaded[modname]。如果该加载器不返回值，且不曾赋任意值给package.loaded[modname]，那么require赋予true给这个记录。在任意情况下，require返回package.loaded[modname]的最终值。
-
-If there is any error loading or running the module, or if it cannot find any loader for the module, then require signals an error. 
-
-如果加载或运行该模块出现任意错误，或者如果它无法为该模块找到任意加载器，那么require发出一个错误。 
+nups：函数的上值的数量。 
 
 --------------------------------------------------------------------------------
 
-package.cpath
+lua_gethook
+[-0, +0, -] 
 
-The path used by require to search for a C loader. 
+lua_Hook lua_gethook (lua_State *L);
 
-路径，被require用于搜索一个C加载器。 
+Returns the current hook function. 
 
-Lua initializes the C path package.cpath in the same way it initializes the Lua path package.path, using the environment variable LUA_CPATH or a default path defined in luaconf.h. 
-
-Lua以它初始化Lua路径package.path的相同方式初始化C路径package.cpath，通过使用环境变量LUA_CPATH或被定义在luaconf.h中的一个默认路径。 
-
---------------------------------------------------------------------------------
-
-package.loaded
-
-A table used by require to control which modules are already loaded. When you require a module modname and package.loaded[modname] is not false, require simply returns the value stored there. 
-
-一个表，被require用于控制哪些模块已经被加载。当你包含一个模块modname而package.loaded[modname]不是false时，require简单地返回存储在那里的值。 
+返回当前钩子函数。 
 
 --------------------------------------------------------------------------------
 
-package.loaders
+lua_gethookcount
+[-0, +0, -] 
 
-A table used by require to control how to load modules. 
+int lua_gethookcount (lua_State *L);
 
-一个被require用于控制如何加载模块的表。 
+Returns the current hook count. 
 
-Each entry in this table is a searcher function. When looking for a module, require calls each of these searchers in ascending order, with the module name (the argument given to require) as its sole parameter. The function can return another function (the module loader) or a string explaining why it did not find that module (or nil if it has nothing to say). Lua initializes this table with four functions. 
-
-这个表的每一个记录是一个搜索器函数。当查找一个模块时，require以升序调用这些搜索器中的每个，使用模块名（传给require的参数）作为它的唯一参数。该函数可以返回另一个函数（模块加载器）或一个解释它为什么没找到那个模块的字符串（或nil，如果没东西要说）。Lua用四个函数初始化这个表。 
-
-The first searcher simply looks for a loader in the package.preload table. 
-
-第一个搜索器简单地在package.preload表中查找一个加载器。
-
-The second searcher looks for a loader as a Lua library, using the path stored at package.path. A path is a sequence of templates separated by semicolons. For each template, the searcher will change each interrogation mark in the template by filename, which is the module name with each dot replaced by a "directory separator" (such as "/" in Unix); then it will try to open the resulting file name. So, for instance, if the Lua path is the string 
-
-第二个搜索器查找加载器作为一个Lua库，通过使用存储在package.path中的路径。一个路径是被分号分隔的一连串模板。对于每个模板，搜索器将用filename改变模板中的每个问号，它是其每个点号被一个“目录分隔符”（诸如Unix中的"/"）替换的模块名；然后，它将尝试打开结果文件名。因此，例如，如果Lua路径是字符串 
-
-     "./?.lua;./?.lc;/usr/local/?/init.lua"
-
-the search for a Lua file for module foo will try to open the files ./foo.lua, ./foo.lc, and /usr/local/foo/init.lua, in that order. 
-
-那么对模块foo的一个Lua文件的搜索将尝试以那个顺序打开文件./foo.lua，./foo.lc，和/usr/local/foo/init.lua。 
-
-The third searcher looks for a loader as a C library, using the path given by the variable package.cpath. For instance, if the C path is the string 
-
-第三个搜索器查找加载器作为一个C库，通过使用被变量package.cpath给定的路径。例如，如果C路径是字符串 
-
-     "./?.so;./?.dll;/usr/local/?/init.so"
-
-the searcher for module foo will try to open the files ./foo.so, ./foo.dll, and /usr/local/foo/init.so, in that order. Once it finds a C library, this searcher first uses a dynamic link facility to link the application with the library. Then it tries to find a C function inside the library to be used as the loader. The name of this C function is the string "luaopen_" concatenated with a copy of the module name where each dot is replaced by an underscore. Moreover, if the module name has a hyphen, its prefix up to (and including) the first hyphen is removed. For instance, if the module name is a.v1-b.c, the function name will be luaopen_b_c. 
-
-那么模块foo的搜索器将尝试以那个顺序打开文件./foo.so，./foo.dll和/usr/local/foo/init.so。一旦它找到一个C库，这个搜索器首先用一个动态链接工具来链接应用程序和该库。然后它尝试在该库内找到一个C函数以被使用作为加载器。这个C函数的名称是字符串"luaopen_"拼接模块名的副本，其中每个点号被下划线替换。此外，如果模块名有一个连字符，它的直至（且包括）第一个连字符的前缀被移除。例如，如果模块名是a.v1-b.c，那么函数名将是luaopen_b_c。 
-
-The fourth searcher tries an all-in-one loader. It searches the C path for a library for the root name of the given module. For instance, when requiring a.b.c, it will search for a C library for a. If found, it looks into it for an open function for the submodule; in our example, that would be luaopen_a_b_c. With this facility, a package can pack several C submodules into one single library, with each submodule keeping its original open function. 
-
-第四个搜索器尝试一个一体化加载器。它为一个给定模块的根名称的库查找C路径。例如，当包含a.b.c时，它将为a搜索一个C库。如果找到的话，它在其中为子模块查找一个open函数；在我们的例子中，那将是luaopen_a_b_c。使用这个工具，一个包可以打包几个C子模块进一个单一库中，它的每个子模块保持有它原来的open函数。 
+返回当前钩子数量。
 
 --------------------------------------------------------------------------------
 
-package.loadlib (libname, funcname)
+lua_gethookmask
+[-0, +0, -] 
 
-Dynamically links the host program with the C library libname. Inside this library, looks for a function funcname and returns this function as a C function. (So, funcname must follow the protocol (see lua_CFunction)). 
+int lua_gethookmask (lua_State *L);
 
-动态地链接宿主程序与C库libname。在该库内，查找一个函数funcname并返回这个函数作为一个C函数。（所以，funcname必须遵循协议（见lua_CFunction））。 
+Returns the current hook mask. 
 
-This is a low-level function. It completely bypasses the package and module system. Unlike require, it does not perform any path searching and does not automatically adds extensions. libname must be the complete file name of the C library, including if necessary a path and extension. funcname must be the exact name exported by the C library (which may depend on the C compiler and linker used). 
-
-这是一个低层次函数。它完全绕过包和模块系统。不像require，它不执行任意路径搜索并且不自动地增加扩展名。libname必须是C库的完整文件名，如果需要的话还包括一个路径和扩展名。funcname必须是被C库导出的精确名称（它可能依赖于所使用的C编译器和链接器）。 
-
-This function is not supported by ANSI C. As such, it is only available on some platforms (Windows, Linux, Mac OS X, Solaris, BSD, plus other Unix systems that support the dlfcn standard). 
-
-这个函数不被ANSI C支持。因此，它只在一些平台上可用（Windows，Linux，Mac OS X，Solaris，BSD，以及支持dlfcn标准的其它Unix系统）。 （注：这里的dlfcn应该是指dlfcn.h，它包含dlopen等函数的声明）
+返回当前钩子掩码。 
 
 --------------------------------------------------------------------------------
 
-package.path
+lua_getinfo
+[-(0|1), +(0|1|2), m] 
 
-The path used by require to search for a Lua loader. 
+int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
 
-路径，被require用于搜索一个Lua加载器。 
+Returns information about a specific function or function invocation. 
 
-At start-up, Lua initializes this variable with the value of the environment variable LUA_PATH or with a default path defined in luaconf.h, if the environment variable is not defined. Any ";;" in the value of the environment variable is replaced by the default path. 
+返回关于一个指定函数或函数调用的信息。
 
-在启动时，Lua用环境变量LUA_PATH的值初始化该变量，或者使用定义在luaconf.h中的一个缺省路径，如果该环境变量不被定义。在该环境变量的值中的任意";;"都被默认路径替换。 
+To get information about a function invocation, the parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). 
+
+想要获得关于一个函数调用的信息，参数ar必须是一个可用的激活记录，它被前一次对lua_getstack的调用填充或被给定作为传给一个钩子的参数（见lua_Hook）。
+
+To get information about a function you push it onto the stack and start the what string with the character '>'. (In that case, lua_getinfo pops the function in the top of the stack.) For instance, to know in which line a function f was defined, you can write the following code: 
+
+想要获得关于一个函数的信息，你压入它到栈上并让what字符串以字符'>'开始。（在那种情况下，lua_getinfo从栈顶中弹出该函数。）例如，想要知道一个函数f被定义在哪一行中，你可以编写以下代码：
+
+     lua_Debug ar;
+     lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* get global 'f' */
+     lua_getinfo(L, ">S", &ar);
+     printf("%d\n", ar.linedefined);
+
+（翻译如下：
+lua_Debug ar;
+lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* 获取全局变量'f' */
+lua_getinfo(L, ">S", &ar);
+printf("%d\n", ar.linedefined);
+）
+
+Each character in the string what selects some fields of the structure ar to be filled or a value to be pushed on the stack: 
+
+字符串what中的每个字符选择结构体ar中要被填充的一些字段或一个要被压入到栈上的值：
+
+'n': fills in the field name and namewhat; 
+
+'n': 填充字段name和namewhat； 
+
+'S': fills in the fields source, short_src, linedefined, lastlinedefined, and what; 
+
+'S': 填充字段source，short_src，linedefined，lastlinedefined，和what； 
+
+'l': fills in the field currentline; 
+
+'l': 填充字段currentline； 
+
+'u': fills in the field nups; 
+
+'u': 填充字段nups；
+
+'f': pushes onto the stack the function that is running at the given level; 
+
+'f': 压入函数到栈上，它正在运行在给定级别上； 
+
+'L': pushes onto the stack a table whose indices are the numbers of the lines that are valid on the function. (A valid line is a line with some associated code, that is, a line where you can put a break point. Non-valid lines include empty lines and comments.) 
+
+'L': 压入一个表到栈上，它的索引是在函数上可用的行数（一个可用行是一个带一些关联代码的行，就是说，你可以在它上面放置一个断点的行。非可用行包括空行和注释。）
+
+This function returns 0 on error (for instance, an invalid option in what). 
+
+这个函数在出错时返回0（例如，what中有一个不可用选项）
 
 --------------------------------------------------------------------------------
 
-package.preload
+lua_getlocal
+[-0, +(0|1), -] 
 
-A table to store loaders for specific modules (see require). 
+const char *lua_getlocal (lua_State *L, lua_Debug *ar, int n);
 
-一个表，存储特定模块的加载器（见require）。 
+Gets information about a local variable of a given activation record. The parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). The index n selects which local variable to inspect (1 is the first parameter or active local variable, and so on, until the last active local variable). lua_getlocal pushes the variable's value onto the stack and returns its name. 
+
+获得关于一个给定激活记录的一个局部变量的信息。参数ar必须是一个可用的激活记录，它被前一次对lua_getstack的调用所填充，或被给定作为一个钩子的参数（见lua_Hook）。索引n选择要检查哪个局部变量（1是第一个参数或激活的局部变量，如此类推，直至最后一个激活的局部变量）。lua_getlocal压入变量的值到栈上并返回它的名称。 
+
+Variable names starting with '(' (open parentheses) represent internal variables (loop control variables, temporaries, and C function locals). 
+
+以'('（左小括号）开头的变量名称代表内部变量（循环控制变量，临时变量，和C函数局部变量）。 
+
+Returns NULL (and pushes nothing) when the index is greater than the number of active local variables. 
+
+返回NULL（且不压入东西）当索引大于激活局部变量的数量时。 
 
 --------------------------------------------------------------------------------
 
-package.seeall (module)
+lua_getstack
+[-0, +0, -] 
 
-Sets a metatable for module with its __index field referring to the global environment, so that this module inherits values from the global environment. To be used as an option to function module. 
+int lua_getstack (lua_State *L, int level, lua_Debug *ar);
 
-为一个模块设置一个元表，它的__index域引用全局环境，致使这个模块继承自全局变量的值。被用于函数module的一个选项。 
+Get information about the interpreter runtime stack. 
+
+得到关于解释器运行时栈的信息。 
+
+This function fills parts of a lua_Debug structure with an identification of the activation record of the function executing at a given level. Level 0 is the current running function, whereas level n+1 is the function that has called level n. When there are no errors, lua_getstack returns 1; when called with a level greater than the stack depth, it returns 0. 
+
+这个函数填充一个lua_Debug结构体的部分，使用在一个给定级别上执行的函数的激活记录的一个标识符。级别0是当前正在运行的函数，而级别n+1是曾经调用级别n的函数。当没有错误时，lua_getstack返回1；当使用一个大于栈深度的级别来调用时，它返回0。
+
+--------------------------------------------------------------------------------
+
+lua_getupvalue
+[-0, +(0|1), -] 
+
+const char *lua_getupvalue (lua_State *L, int funcindex, int n);
+
+Gets information about a closure's upvalue. (For Lua functions, upvalues are the external local variables that the function uses, and that are consequently included in its closure.) lua_getupvalue gets the index n of an upvalue, pushes the upvalue's value onto the stack, and returns its name. funcindex points to the closure in the stack. (Upvalues have no particular order, as they are active through the whole function. So, they are numbered in an arbitrary order.) 
+
+得到关于一个闭包的上值的信息。（对于Lua函数，上值是函数使用的外部局部变量，并因此它被包含在它的闭包中）lua_getupvalue得到一个上值的索引n，压入上值的值在栈上，并返回它的名称。funcindex指向栈中的闭包。（上值没有特定的顺序，因为它们在整个函数中一直都是激活的，所以，它们按任意顺序被编号。） 
+
+Returns NULL (and pushes nothing) when the index is greater than the number of upvalues. For C functions, this function uses the empty string "" as a name for all upvalues. 
+
+返回NULL（且不压入东西）当索引大于上值的数量时。对于C函数，这个函数使用空字符串""作为所有上值的名称。 
+
+--------------------------------------------------------------------------------
+
+lua_Hook
+
+typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
+
+Type for debugging hook functions. 
+
+调试钩子函数的类型。 
+
+Whenever a hook is called, its ar argument has its field event set to the specific event that triggered the hook. Lua identifies these events with the following constants: LUA_HOOKCALL, LUA_HOOKRET, LUA_HOOKTAILRET, LUA_HOOKLINE, and LUA_HOOKCOUNT. Moreover, for line events, the field currentline is also set. To get the value of any other field in ar, the hook must call lua_getinfo. For return events, event can be LUA_HOOKRET, the normal value, or LUA_HOOKTAILRET. In the latter case, Lua is simulating a return from a function that did a tail call; in this case, it is useless to call lua_getinfo. 
+
+每当一个钩子被调用时，它的ar参数把它的字段event设置为触发该钩子的特定事件。Lua用以下常量标识这些事件：LUA_HOOKCALL、LUA_HOOKRET、LUA_HOOKTAILRET、LUA_HOOKLINE和LUA_HOOKCOUNT。此外，对于行事件，字段currentline也被设置。要想得到ar中其它任意字段的值，钩子必须调用lua_getinfo。对于返回事件，event可以是LUA_HOOKRET，通常的值，或是LUA_HOOKTAILRET。对于后者情况，Lua正在模拟一个来自执行一个尾调用的一个函数的返回；在这种情况下，调用lua_getinfo是无用的。 
+
+While Lua is running a hook, it disables other calls to hooks. Therefore, if a hook calls back Lua to execute a function or a chunk, this execution occurs without any calls to hooks. 
+
+当Lua正在运行一个钩子时，它禁用其它钩子调用。因此，如果一个钩子回调Lua以执行一个函数或一个chunk块，那么这个执行不带任何钩子地发生。 
+
+--------------------------------------------------------------------------------
+
+lua_sethook
+[-0, +0, -] 
+
+int lua_sethook (lua_State *L, lua_Hook f, int mask, int count);
+
+Sets the debugging hook function. 
+
+设置调试钩子函数。 
+
+Argument f is the hook function. mask specifies on which events the hook will be called: it is formed by a bitwise or of the constants LUA_MASKCALL, LUA_MASKRET, LUA_MASKLINE, and LUA_MASKCOUNT. The count argument is only meaningful when the mask includes LUA_MASKCOUNT. For each event, the hook is called as explained below: 
+
+参数f是钩子函数。参数mask指定hook将被调用在哪个事件上：它由常量LUA_MASKCALL、LUA_MASKRET、LUA_MASKLINE和LUA_MASKCOUNT的按位或组成。count参数才有意义，仅当mask包含LUA_MASKCOUNT。对于每个事件，该钩子被调用正如下面所解释的：
+
+The call hook: is called when the interpreter calls a function. The hook is called just after Lua enters the new function, before the function gets its arguments. 
+
+调用钩子：被调用当解释器调用一个函数时。钩子被调用，正好在Lua进入该新函数之后、在函数得到它的参数之前。 
+
+The return hook: is called when the interpreter returns from a function. The hook is called just before Lua leaves the function. You have no access to the values to be returned by the function. 
+
+返回钩子：被调用当解释器从一个函数中返回时。钩子被调用在Lua离开函数之前。你没有要被函数返回的值的访问权。 
+
+The line hook: is called when the interpreter is about to start the execution of a new line of code, or when it jumps back in the code (even to the same line). (This event only happens while Lua is executing a Lua function.) 
+
+行钩子：被调用当解释器打算开始一个新代码行的执行，或当它跳回到代码中（甚至是同一行）时。（这个事件只发生在当Lua正执行一个Lua函数时。） 
+
+The count hook: is called after the interpreter executes every count instructions. (This event only happens while Lua is executing a Lua function.) 
+
+个数（注：指令个数）钩子：被调用在解释器执行每count条指令后。（这个事件只发生在当Lua正在执行一个Lua函数时。） 
+
+A hook is disabled by setting mask to zero. 
+
+通过设定参数mask为0来禁用一个钩子。
+
+--------------------------------------------------------------------------------
+
+lua_setlocal
+[-(0|1), +0, -] 
+
+const char *lua_setlocal (lua_State *L, lua_Debug *ar, int n);
+
+Sets the value of a local variable of a given activation record. Parameters ar and n are as in lua_getlocal (see lua_getlocal). lua_setlocal assigns the value at the top of the stack to the variable and returns its name. It also pops the value from the stack. 
+
+设置一个局部变量的值为一个给定激活记录。参数ar和n与lua_getlocal中的相同（见lua_getlocal）。lua_setlocal赋予栈顶的值到该变量并返回它的名称。它还从栈中弹出值。 
+
+Returns NULL (and pops nothing) when the index is greater than the number of active local variables. 
+
+返回NULL（且不弹出东西）当索引大于激活局部变量的数量时。 
+
+--------------------------------------------------------------------------------
+
+lua_setupvalue
+[-(0|1), +0, -] 
+
+const char *lua_setupvalue (lua_State *L, int funcindex, int n);
+
+Sets the value of a closure's upvalue. It assigns the value at the top of the stack to the upvalue and returns its name. It also pops the value from the stack. Parameters funcindex and n are as in the lua_getupvalue (see lua_getupvalue). 
+
+设置一个闭包上值的值。它赋予栈顶的值给上值并返回它的名称。它还从栈中弹出值。参数funcindex和n和lua_getupvalue中的相同（见lua_getupvalue）。 
+
+Returns NULL (and pops nothing) when the index is greater than the number of upvalues. 
+
+返回NULL（且不弹出东西）当索引大于上值的数量时。 
 
 -----------------------------------------
 
@@ -241,3 +345,4 @@ Sets a metatable for module with its __index field referring to the global envir
 http://www.codingnow.com/2000/download/lua_manual.html
 2. hshqcn
 hshqcn  
+

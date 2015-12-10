@@ -1,348 +1,423 @@
-﻿【翻译】(LRM5.1-8)调试接口(3.8)
+﻿## 【翻译】(LRM5.1-7)函数和类型(3.7)(lua_getallocf - lua_next)
 
 See also:
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
 
 原文见
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
+
+-----------------------------------------  
+
+## Lua 5.1 Reference Manual   
+
+## Lua 5.1参考手册  
+
+by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes   
+
+作者：Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes  
+
+Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license.   
+
+版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地**（注：免费）**可用  
+
+-----------------------------------------  
+
+lua_getallocf  
+[-0, +0, -]   
+
+lua_Alloc lua_getallocf (lua_State *L, void **ud);  
+
+Returns the memory-allocation function of a given state. If ud is not NULL, Lua stores in *ud the opaque pointer passed to lua_newstate.   
+
+返回给定状态的内存分配函数。如果ud不是NULL，Lua把传递进lua_newstate的不透明指针存储进*ud。   
+
+--------------------------------------------------------------------------------  
+
+lua_getfenv  
+[-0, +1, -]   
+
+void lua_getfenv (lua_State *L, int index);  
+
+Pushes onto the stack the environment table of the value at the given index.   
+
+压入给定索引上的值的环境表到栈上。   
+
+--------------------------------------------------------------------------------  
+
+lua_getfield  
+[-0, +1, e]   
+ 
+void lua_getfield (lua_State *L, int index, const char *k);  
+
+Pushes onto the stack the value t[k], where t is the value at the given valid index. As in Lua, this function may trigger a metamethod for the "index" event (see §2.8).   
+
+压入值t[k]到栈上，这里t是给定可用索引上的值。如同Lua中那样，这个函数可能触发"index"事件的元方法（见§2.8）。   
+
+--------------------------------------------------------------------------------  
+
+lua_getglobal  
+[-0, +1, e]   
+
+void lua_getglobal (lua_State *L, const char *name);  
+
+Pushes onto the stack the value of the global name. It is defined as a macro:   
+
+压入全局变量name的值到栈上。它被定义为一个宏：   
+
+     #define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)  
+
+--------------------------------------------------------------------------------  
+
+lua_getmetatable  
+[-0, +(0|1), -]   
+
+int lua_getmetatable (lua_State *L, int index);  
+
+Pushes onto the stack the metatable of the value at the given acceptable index. If the index is not valid, or if the value does not have a metatable, the function returns 0 and pushes nothing on the stack.   
+
+压入给定可接受索引上的值的元表到栈上。如果索引是非可用的，或者如果该值没有元表，该函数返回0并且不压入东西到栈上。   
+
+--------------------------------------------------------------------------------  
+
+lua_gettable  
+[-1, +1, e]   
+
+void lua_gettable (lua_State *L, int index);  
+
+Pushes onto the stack the value t[k], where t is the value at the given valid index and k is the value at the top of the stack.   
+
+压入值t[k]到栈上，这里t是给定可用索引上的值而k是栈顶的值。   
+
+This function pops the key from the stack (putting the resulting value in its place). As in Lua, this function may trigger a metamethod for the "index" event (see §2.8).   
+
+这个函数从栈中弹出键（放置结果值在它的位置中）。如同在Lua中那样，这个函数可能触发一个"index"事件的元方法（见§2.8）。  
+
+--------------------------------------------------------------------------------  
+
+lua_gettop  
+[-0, +0, -]   
+
+int lua_gettop (lua_State *L);  
+
+Returns the index of the top element in the stack. Because indices start at 1, this result is equal to the number of elements in the stack (and so 0 means an empty stack).   
+
+返回栈顶元素的索引。因为索引从1开始，所以这个结果等于栈中元素的数量（所以0意味着一个空的栈）。   
+
+--------------------------------------------------------------------------------  
+
+lua_insert  
+[-1, +1, -]   
+
+void lua_insert (lua_State *L, int index);  
+
+Moves the top element into the given valid index, shifting up the elements above this index to open space. Cannot be called with a pseudo-index, because a pseudo-index is not an actual stack position.   
+
+移动栈顶元素进给定可用索引中，上移这个索引上方的元素以打开空间。不能使用伪索引调用它，因为一个伪索引不是一个实际栈位置。   
+
+--------------------------------------------------------------------------------  
+
+lua_Integer  
+
+typedef ptrdiff_t lua_Integer;  
+
+The type used by the Lua API to represent integral values.   
+
+被Lua APU使用的类型以代表整数值。  
+
+By default it is a ptrdiff_t, which is usually the largest signed integral type the machine handles "comfortably".   
+
+默认它是ptrdiff_t，它通常是机器“舒服地”处理的最大有符号整型。   
+
+--------------------------------------------------------------------------------  
+
+lua_isboolean  
+[-0, +0, -]   
+
+int lua_isboolean (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index has type boolean, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值拥有类型boolean，否则返回0。   
+
+--------------------------------------------------------------------------------  
+
+lua_iscfunction  
+[-0, +0, -]   
+
+int lua_iscfunction (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a C function, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个C函数，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isfunction  
+[-0, +0, -]   
+
+int lua_isfunction (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a function (either C or Lua), and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个函数（C或Lua），否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_islightuserdata  
+[-0, +0, -]   
+
+int lua_islightuserdata (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a light userdata, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个轻量级用户数据，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isnil  
+[-0, +0, -]   
+
+int lua_isnil (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is nil, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值为nil，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isnone  
+[-0, +0, -]   
+
+int lua_isnone (lua_State *L, int index);  
+
+Returns 1 if the given acceptable index is not valid (that is, it refers to an element outside the current stack), and 0 otherwise.   
+
+返回1如果给定可接受索引上的值不是可用的（就是说，它引用的元素在当前堆栈以外），否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isnoneornil  
+[-0, +0, -]   
+
+int lua_isnoneornil (lua_State *L, int index);  
+
+Returns 1 if the given acceptable index is not valid (that is, it refers to an element outside the current stack) or if the value at this index is nil, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值不是可用的（就是说，它引用的元素在当前堆栈以外）或者索引上的值为nil，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isnumber  
+[-0, +0, -]   
+
+int lua_isnumber (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a number or a string convertible to a number, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个数或一个可转换为数的字符串，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isstring  
+[-0, +0, -]   
+
+int lua_isstring (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a string or a number (which is always convertible to a string), and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个字符串或一个数（它总是可转换为字符串），否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_istable  
+[-0, +0, -]   
+
+int lua_istable (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a table, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个表，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isthread  
+[-0, +0, -]   
+
+int lua_isthread (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a thread, and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个线程，否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_isuserdata  
+[-0, +0, -]   
+
+int lua_isuserdata (lua_State *L, int index);  
+
+Returns 1 if the value at the given acceptable index is a userdata (either full or light), and 0 otherwise.   
+
+返回1如果给定可接受索引上的值是一个用户数据（完全或者轻量级），否则返回0。  
+
+--------------------------------------------------------------------------------  
+
+lua_lessthan  
+[-0, +0, e]   
+
+int lua_lessthan (lua_State *L, int index1, int index2);  
+
+Returns 1 if the value at acceptable index index1 is smaller than the value at acceptable index index2, following the semantics of the Lua < operator (that is, may call metamethods). Otherwise returns 0. Also returns 0 if any of the indices is non valid.   
+
+返回1如果给定可接受索引index1上的值小于索引index2上的值，根据Lua的小于操作符的语义（就是说，可能调用元方法）。否则返回0。也返回0，如果任意一个索引不是可用的。  
+
+
+--------------------------------------------------------------------------------  
+
+lua_load  
+[-0, +1, -]   
+
+int lua_load (lua_State *L,  
+              lua_Reader reader,  
+              void *data,  
+              const char *chunkname);  
+
+Loads a Lua chunk. If there are no errors, lua_load pushes the compiled chunk as a Lua function on top of the stack. Otherwise, it pushes an error message. The return values of lua_load are:   
+
+加载一个Lua数据块。如果没有错误，lua_load压入被编译的数据块作为一个Lua函数到栈顶。否则，它压入一个错误消息。lua_load的返回值有：  
+
+0: no errors;   
+
+0：无错误;   
+
+LUA_ERRSYNTAX: syntax error during pre-compilation;   
+
+LUA_ERRSYNTAX：在预编译期间有语法错误；   
+
+LUA_ERRMEM: memory allocation error.   
+
+LUA_ERRMEM: 内存分配错误。  
+
+This function only loads a chunk; it does not run it.   
+
+这个函数只加载一个数据块；它不运行它。  
+
+lua_load automatically detects whether the chunk is text or binary, and loads it accordingly (see program luac).   
+
+lua_load自动检测数据块是文本还是二进制的，并相应地加载它（见程序luac）。  
+
+The lua_load function uses a user-supplied reader function to read the chunk (see lua_Reader). The data argument is an opaque value passed to the reader function.   
+
+lua_load函数使用一个用户提供的读取器函数读取数据块（见lua_Reader）。data参数是传递给读取器函数的一个不透明值。  
+
+The chunkname argument gives a name to the chunk, which is used for error messages and in debug information (see §3.8).   
+
+chunkname参数给一个名称给数据块，它被用于错误消息和用在调试信息中（见§3.8）。   
+
+--------------------------------------------------------------------------------  
+
+lua_newstate  
+[-0, +0, -]   
+
+lua_State *lua_newstate (lua_Alloc f, void *ud);  
+
+Creates a new, independent state. Returns NULL if cannot create the state (due to lack of memory). The argument f is the allocator function; Lua does all memory allocation for this state through this function. The second argument, ud, is an opaque pointer that Lua simply passes to the allocator in every call.   
+
+创建一个新的、独立的状态。返回NULL如果无法创建状态（因为缺少内存）。参数f是分配器函数；Lua通过这个函数为这个状态执行所有内存分配。第二个参数，ud，是一个不透明指针。Lua在每次调用时简单地传递它给分配器函数。  
+
+--------------------------------------------------------------------------------  
+
+lua_newtable  
+[-0, +1, m]   
+
+void lua_newtable (lua_State *L);  
+
+Creates a new empty table and pushes it onto the stack. It is equivalent to lua_createtable(L, 0, 0).   
+
+创建一个新的空表并压入它到栈上。它等效于lua_createtable(L, 0, 0)。   
+
+--------------------------------------------------------------------------------  
+
+lua_newthread  
+[-0, +1, m]   
+
+lua_State *lua_newthread (lua_State *L);  
+
+Creates a new thread, pushes it on the stack, and returns a pointer to a lua_State that represents this new thread. The new state returned by this function shares with the original state all global objects (such as tables), but has an independent execution stack.   
+
+创建一个新线程，把它压到栈上，并返回一个指向一个lua_State的指针，它代表这个新的线程。被这个函数返回的新状态与原始状态共享所有全局对象（诸如表），但拥有一个独立的执行栈。   
+
+There is no explicit function to close or to destroy a thread. Threads are subject to garbage collection, like any Lua object.   
+
+没有显式函数关闭或销毁一个线程。像任意Lua对象那样，线程受控于垃圾回收。   
+
+--------------------------------------------------------------------------------  
+
+lua_newuserdata  
+[-0, +1, m]   
+
+void *lua_newuserdata (lua_State *L, size_t size);  
+
+This function allocates a new block of memory with the given size, pushes onto the stack a new full userdata with the block address, and returns this address.   
+
+这个函数用给定的大小分配一个新内存块，压入一个带块地址的新的完全用户数据到栈上，并返回这个地址。   
+
+Userdata represent C values in Lua. A full userdata represents a block of memory. It is an object (like a table): you must create it, it can have its own metatable, and you can detect when it is being collected. A full userdata is only equal to itself (under raw equality).   
+
+用户数据代表Lua中的C值。一个完全用户数据代表一个内存块。它是一个对象（像表那样）：你必须创建它，它可以有自己的元表，而且你能检测它何时被回收。一个完全用户数据只等于它自己（依照原始的相等比较）。  
+
+When Lua collects a full userdata with a gc metamethod, Lua calls the metamethod and marks the userdata as finalized. When this userdata is collected again then Lua frees its corresponding memory.   
+
+当Lua用一个gc元方法回收一个完全用户数据时，Lua调用该元方法并标记用户数据为已终结。当这个用户数据被再次回收时，Lua释放它对应的内存。   
+
+--------------------------------------------------------------------------------  
+
+lua_next  
+[-1, +(2|0), e]   
+
+int lua_next (lua_State *L, int index);  
+
+Pops a key from the stack, and pushes a key-value pair from the table at the given index (the "next" pair after the given key). If there are no more elements in the table, then lua_next returns 0 (and pushes nothing).   
+
+从栈中弹出一个键，并压入来自该表的一个键值对到给定索引上（在给定键后面的“下一个”对）。如果在该表里没有更多的元素，那么lua_next返回0（而且不压入东西）。  
+
+A typical traversal looks like this:   
+
+一个典型的遍历看起来像这样：   
+
+     /* table is in the stack at index 't' */  
+     lua_pushnil(L);  /* first key */  
+     while (lua_next(L, t) != 0) {  
+       /* uses 'key' (at index -2) and 'value' (at index -1) */  
+       printf("%s - %s\n",  
+              lua_typename(L, lua_type(L, -2)),  
+              lua_typename(L, lua_type(L, -1)));  
+       /* removes 'value'; keeps 'key' for next iteration */  
+       lua_pop(L, 1);  
+     }  
+
+（翻译如下：  
+/* 表位于栈中的索引't'上 */  
+lua_pushnil(L);  /* 第一个键 */  
+while (lua_next(L, t) != 0) {  
+	/* 使用“键”（在索引-2上）和‘值’(在索引-1上） */  
+	printf("%s - %s\n",  
+		lua_typename(L, lua_type(L, -2)),  
+		lua_typename(L, lua_type(L, -1)));  
+	/* 移除“值”；保留“键”给下一次迭代用 */  
+	lua_pop(L, 1);  
+}  
+）  
+
+While traversing a table, do not call lua_tolstring directly on a key, unless you know that the key is actually a string. Recall that lua_tolstring changes the value at the given index; this confuses the next call to lua_next.   
+
+当遍历一个表时，不要直接在一个键上调用lua_tolstring，除非你知道该键实际上是一个字符串。回想一下lua_tolstring改变给定索引上的值；这会搞乱对lua_next的下一次调用。   
 
 -----------------------------------------
 
-Lua 5.1 Reference Manual 
-
-Lua 5.1参考手册
-
-by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes 
-
-作者：Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
-
-Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license. 
-
-版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地（注：免费）可用
-
------------------------------------------
-
-3.8 - The Debug Interface
-
-3.8 - 调试接口
-
-Lua has no built-in debugging facilities. Instead, it offers a special interface by means of functions and hooks. This interface allows the construction of different kinds of debuggers, profilers, and other tools that need "inside information" from the interpreter. 
-
-Lua没有内置的调试设施。取而代之，它通过一些函数和钩子来提供一个特殊接口。这个接口允许不同种类的调试器、性能剖析工具，以及其它需要解析器中“内部信息”的工具的构造。
-
---------------------------------------------------------------------------------
-
-lua_Debug
-
-typedef struct lua_Debug {
-  int event;
-  const char *name;           /* (n) */
-  const char *namewhat;       /* (n) */
-  const char *what;           /* (S) */
-  const char *source;         /* (S) */
-  int currentline;            /* (l) */
-  int nups;                   /* (u) number of upvalues */
-  int linedefined;            /* (S) */
-  int lastlinedefined;        /* (S) */
-  char short_src[LUA_IDSIZE]; /* (S) */
-  /* private part */
-  other fields
-} lua_Debug;
-
-（注：翻译如下：
-typedef struct lua_Debug {
-  int event;
-  const char *name;           /* (n) */
-  const char *namewhat;       /* (n) */
-  const char *what;           /* (S) */
-  const char *source;         /* (S) */
-  int currentline;            /* (l) */
-  int nups;                   /* (u) 上值的数量 */
-  int linedefined;            /* (S) */
-  int lastlinedefined;        /* (S) */
-  char short_src[LUA_IDSIZE]; /* (S) */
-  /* 私有部分 */
-  其它字段
-} lua_Debug;
-）
-
-A structure used to carry different pieces of information about an active function. lua_getstack fills only the private part of this structure, for later use. To fill the other fields of lua_Debug with useful information, call lua_getinfo. 
-
-用于携带关于一个激活函数的不同信息的一个结构体。lua_getstack只填充这个结构体的私有部分，供以后使用。要想用有用的信息填充lua_Debug的其它字段，请调用lua_getinfo。 
-
-The fields of lua_Debug have the following meaning: 
-
-lua_Debug的字段拥有以下含义： 
-
-source: If the function was defined in a string, then source is that string. If the function was defined in a file, then source starts with a '@' followed by the file name. 
-
-source: 如果该函数被定义在一个字符串中，则source是那个字符串。如果该函数被定义在一个文件中，则source以'@'开头后跟文件名。 
-
-short_src: a "printable" version of source, to be used in error messages. 
-
-short_src：source字段的“可打印”版本，被用在错误消息中。 
-
-linedefined: the line number where the definition of the function starts. 
-
-linedefined：函数定义开始所在的行号。 
-
-lastlinedefined: the line number where the definition of the function ends. 
-
-lastlinedefined：函数定义结束所在的行号。 
-
-what: the string "Lua" if the function is a Lua function, "C" if it is a C function, "main" if it is the main part of a chunk, and "tail" if it was a function that did a tail call. In the latter case, Lua has no other information about the function. 
-
-what：字符串"Lua"如果该函数是一个Lua函数，"C"如果它是一个C函数，"main"如果它是一个chunk块的主要部分，以及"tail"如果它是一个执行尾调用的函数。在最后一种情况下，Lua没有关于该函数的其它信息。 
-
-currentline: the current line where the given function is executing. When no line information is available, currentline is set to -1. 
-
-currentline：给定函数正在执行在的当前行。当没有可用的行信息时，currentline被设置为-1。 
-
-name: a reasonable name for the given function. Because functions in Lua are first-class values, they do not have a fixed name: some functions can be the value of multiple global variables, while others can be stored only in a table field. The lua_getinfo function checks how the function was called to find a suitable name. If it cannot find a name, then name is set to NULL. 
-
-name：给定函数的合适名称。因为在Lua中函数是第一类值，所以它们没有一个固定的名称：一些函数可以是多个全局变量的值，而其它可以只存储于一个表的字段中。lua_getinfo函数检查该函数是如何被调用的以找到一个适合的名称。如果它无法找到一个名称，则name被设置为NULL。 
-
-namewhat: explains the name field. The value of namewhat can be "global", "local", "method", "field", "upvalue", or "" (the empty string), according to how the function was called. (Lua uses the empty string when no other option seems to apply.) 
-
-namewhat：解释name字段。namewhat的值可以是"global"，"local"，"method"，"field"，"upvalue"，或""（空字符串），根据函数是如何被调用的。（Lua使用空串，当似乎没有其它选项要应用时。） 
-
-nups: the number of upvalues of the function. 
-
-nups：函数的上值的数量。 
-
---------------------------------------------------------------------------------
-
-lua_gethook
-[-0, +0, -] 
-
-lua_Hook lua_gethook (lua_State *L);
-
-Returns the current hook function. 
-
-返回当前钩子函数。 
-
---------------------------------------------------------------------------------
-
-lua_gethookcount
-[-0, +0, -] 
-
-int lua_gethookcount (lua_State *L);
-
-Returns the current hook count. 
-
-返回当前钩子数量。
-
---------------------------------------------------------------------------------
-
-lua_gethookmask
-[-0, +0, -] 
-
-int lua_gethookmask (lua_State *L);
-
-Returns the current hook mask. 
-
-返回当前钩子掩码。 
-
---------------------------------------------------------------------------------
-
-lua_getinfo
-[-(0|1), +(0|1|2), m] 
-
-int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
-
-Returns information about a specific function or function invocation. 
-
-返回关于一个指定函数或函数调用的信息。
-
-To get information about a function invocation, the parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). 
-
-想要获得关于一个函数调用的信息，参数ar必须是一个可用的激活记录，它被前一次对lua_getstack的调用填充或被给定作为传给一个钩子的参数（见lua_Hook）。
-
-To get information about a function you push it onto the stack and start the what string with the character '>'. (In that case, lua_getinfo pops the function in the top of the stack.) For instance, to know in which line a function f was defined, you can write the following code: 
-
-想要获得关于一个函数的信息，你压入它到栈上并让what字符串以字符'>'开始。（在那种情况下，lua_getinfo从栈顶中弹出该函数。）例如，想要知道一个函数f被定义在哪一行中，你可以编写以下代码：
-
-     lua_Debug ar;
-     lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* get global 'f' */
-     lua_getinfo(L, ">S", &ar);
-     printf("%d\n", ar.linedefined);
-
-（翻译如下：
-lua_Debug ar;
-lua_getfield(L, LUA_GLOBALSINDEX, "f");  /* 获取全局变量'f' */
-lua_getinfo(L, ">S", &ar);
-printf("%d\n", ar.linedefined);
-）
-
-Each character in the string what selects some fields of the structure ar to be filled or a value to be pushed on the stack: 
-
-字符串what中的每个字符选择结构体ar中要被填充的一些字段或一个要被压入到栈上的值：
-
-'n': fills in the field name and namewhat; 
-
-'n': 填充字段name和namewhat； 
-
-'S': fills in the fields source, short_src, linedefined, lastlinedefined, and what; 
-
-'S': 填充字段source，short_src，linedefined，lastlinedefined，和what； 
-
-'l': fills in the field currentline; 
-
-'l': 填充字段currentline； 
-
-'u': fills in the field nups; 
-
-'u': 填充字段nups；
-
-'f': pushes onto the stack the function that is running at the given level; 
-
-'f': 压入函数到栈上，它正在运行在给定级别上； 
-
-'L': pushes onto the stack a table whose indices are the numbers of the lines that are valid on the function. (A valid line is a line with some associated code, that is, a line where you can put a break point. Non-valid lines include empty lines and comments.) 
-
-'L': 压入一个表到栈上，它的索引是在函数上可用的行数（一个可用行是一个带一些关联代码的行，就是说，你可以在它上面放置一个断点的行。非可用行包括空行和注释。）
-
-This function returns 0 on error (for instance, an invalid option in what). 
-
-这个函数在出错时返回0（例如，what中有一个不可用选项）
-
---------------------------------------------------------------------------------
-
-lua_getlocal
-[-0, +(0|1), -] 
-
-const char *lua_getlocal (lua_State *L, lua_Debug *ar, int n);
-
-Gets information about a local variable of a given activation record. The parameter ar must be a valid activation record that was filled by a previous call to lua_getstack or given as argument to a hook (see lua_Hook). The index n selects which local variable to inspect (1 is the first parameter or active local variable, and so on, until the last active local variable). lua_getlocal pushes the variable's value onto the stack and returns its name. 
-
-获得关于一个给定激活记录的一个局部变量的信息。参数ar必须是一个可用的激活记录，它被前一次对lua_getstack的调用所填充，或被给定作为一个钩子的参数（见lua_Hook）。索引n选择要检查哪个局部变量（1是第一个参数或激活的局部变量，如此类推，直至最后一个激活的局部变量）。lua_getlocal压入变量的值到栈上并返回它的名称。 
-
-Variable names starting with '(' (open parentheses) represent internal variables (loop control variables, temporaries, and C function locals). 
-
-以'('（左小括号）开头的变量名称代表内部变量（循环控制变量，临时变量，和C函数局部变量）。 
-
-Returns NULL (and pushes nothing) when the index is greater than the number of active local variables. 
-
-返回NULL（且不压入东西）当索引大于激活局部变量的数量时。 
-
---------------------------------------------------------------------------------
-
-lua_getstack
-[-0, +0, -] 
-
-int lua_getstack (lua_State *L, int level, lua_Debug *ar);
-
-Get information about the interpreter runtime stack. 
-
-得到关于解释器运行时栈的信息。 
-
-This function fills parts of a lua_Debug structure with an identification of the activation record of the function executing at a given level. Level 0 is the current running function, whereas level n+1 is the function that has called level n. When there are no errors, lua_getstack returns 1; when called with a level greater than the stack depth, it returns 0. 
-
-这个函数填充一个lua_Debug结构体的部分，使用在一个给定级别上执行的函数的激活记录的一个标识符。级别0是当前正在运行的函数，而级别n+1是曾经调用级别n的函数。当没有错误时，lua_getstack返回1；当使用一个大于栈深度的级别来调用时，它返回0。
-
---------------------------------------------------------------------------------
-
-lua_getupvalue
-[-0, +(0|1), -] 
-
-const char *lua_getupvalue (lua_State *L, int funcindex, int n);
-
-Gets information about a closure's upvalue. (For Lua functions, upvalues are the external local variables that the function uses, and that are consequently included in its closure.) lua_getupvalue gets the index n of an upvalue, pushes the upvalue's value onto the stack, and returns its name. funcindex points to the closure in the stack. (Upvalues have no particular order, as they are active through the whole function. So, they are numbered in an arbitrary order.) 
-
-得到关于一个闭包的上值的信息。（对于Lua函数，上值是函数使用的外部局部变量，并因此它被包含在它的闭包中）lua_getupvalue得到一个上值的索引n，压入上值的值在栈上，并返回它的名称。funcindex指向栈中的闭包。（上值没有特定的顺序，因为它们在整个函数中一直都是激活的，所以，它们按任意顺序被编号。） 
-
-Returns NULL (and pushes nothing) when the index is greater than the number of upvalues. For C functions, this function uses the empty string "" as a name for all upvalues. 
-
-返回NULL（且不压入东西）当索引大于上值的数量时。对于C函数，这个函数使用空字符串""作为所有上值的名称。 
-
---------------------------------------------------------------------------------
-
-lua_Hook
-
-typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
-
-Type for debugging hook functions. 
-
-调试钩子函数的类型。 
-
-Whenever a hook is called, its ar argument has its field event set to the specific event that triggered the hook. Lua identifies these events with the following constants: LUA_HOOKCALL, LUA_HOOKRET, LUA_HOOKTAILRET, LUA_HOOKLINE, and LUA_HOOKCOUNT. Moreover, for line events, the field currentline is also set. To get the value of any other field in ar, the hook must call lua_getinfo. For return events, event can be LUA_HOOKRET, the normal value, or LUA_HOOKTAILRET. In the latter case, Lua is simulating a return from a function that did a tail call; in this case, it is useless to call lua_getinfo. 
-
-每当一个钩子被调用时，它的ar参数把它的字段event设置为触发该钩子的特定事件。Lua用以下常量标识这些事件：LUA_HOOKCALL、LUA_HOOKRET、LUA_HOOKTAILRET、LUA_HOOKLINE和LUA_HOOKCOUNT。此外，对于行事件，字段currentline也被设置。要想得到ar中其它任意字段的值，钩子必须调用lua_getinfo。对于返回事件，event可以是LUA_HOOKRET，通常的值，或是LUA_HOOKTAILRET。对于后者情况，Lua正在模拟一个来自执行一个尾调用的一个函数的返回；在这种情况下，调用lua_getinfo是无用的。 
-
-While Lua is running a hook, it disables other calls to hooks. Therefore, if a hook calls back Lua to execute a function or a chunk, this execution occurs without any calls to hooks. 
-
-当Lua正在运行一个钩子时，它禁用其它钩子调用。因此，如果一个钩子回调Lua以执行一个函数或一个chunk块，那么这个执行不带任何钩子地发生。 
-
---------------------------------------------------------------------------------
-
-lua_sethook
-[-0, +0, -] 
-
-int lua_sethook (lua_State *L, lua_Hook f, int mask, int count);
-
-Sets the debugging hook function. 
-
-设置调试钩子函数。 
-
-Argument f is the hook function. mask specifies on which events the hook will be called: it is formed by a bitwise or of the constants LUA_MASKCALL, LUA_MASKRET, LUA_MASKLINE, and LUA_MASKCOUNT. The count argument is only meaningful when the mask includes LUA_MASKCOUNT. For each event, the hook is called as explained below: 
-
-参数f是钩子函数。参数mask指定hook将被调用在哪个事件上：它由常量LUA_MASKCALL、LUA_MASKRET、LUA_MASKLINE和LUA_MASKCOUNT的按位或组成。count参数才有意义，仅当mask包含LUA_MASKCOUNT。对于每个事件，该钩子被调用正如下面所解释的：
-
-The call hook: is called when the interpreter calls a function. The hook is called just after Lua enters the new function, before the function gets its arguments. 
-
-调用钩子：被调用当解释器调用一个函数时。钩子被调用，正好在Lua进入该新函数之后、在函数得到它的参数之前。 
-
-The return hook: is called when the interpreter returns from a function. The hook is called just before Lua leaves the function. You have no access to the values to be returned by the function. 
-
-返回钩子：被调用当解释器从一个函数中返回时。钩子被调用在Lua离开函数之前。你没有要被函数返回的值的访问权。 
-
-The line hook: is called when the interpreter is about to start the execution of a new line of code, or when it jumps back in the code (even to the same line). (This event only happens while Lua is executing a Lua function.) 
-
-行钩子：被调用当解释器打算开始一个新代码行的执行，或当它跳回到代码中（甚至是同一行）时。（这个事件只发生在当Lua正执行一个Lua函数时。） 
-
-The count hook: is called after the interpreter executes every count instructions. (This event only happens while Lua is executing a Lua function.) 
-
-个数（注：指令个数）钩子：被调用在解释器执行每count条指令后。（这个事件只发生在当Lua正在执行一个Lua函数时。） 
-
-A hook is disabled by setting mask to zero. 
-
-通过设定参数mask为0来禁用一个钩子。
-
---------------------------------------------------------------------------------
-
-lua_setlocal
-[-(0|1), +0, -] 
-
-const char *lua_setlocal (lua_State *L, lua_Debug *ar, int n);
-
-Sets the value of a local variable of a given activation record. Parameters ar and n are as in lua_getlocal (see lua_getlocal). lua_setlocal assigns the value at the top of the stack to the variable and returns its name. It also pops the value from the stack. 
-
-设置一个局部变量的值为一个给定激活记录。参数ar和n与lua_getlocal中的相同（见lua_getlocal）。lua_setlocal赋予栈顶的值到该变量并返回它的名称。它还从栈中弹出值。 
-
-Returns NULL (and pops nothing) when the index is greater than the number of active local variables. 
-
-返回NULL（且不弹出东西）当索引大于激活局部变量的数量时。 
-
---------------------------------------------------------------------------------
-
-lua_setupvalue
-[-(0|1), +0, -] 
-
-const char *lua_setupvalue (lua_State *L, int funcindex, int n);
-
-Sets the value of a closure's upvalue. It assigns the value at the top of the stack to the upvalue and returns its name. It also pops the value from the stack. Parameters funcindex and n are as in the lua_getupvalue (see lua_getupvalue). 
-
-设置一个闭包上值的值。它赋予栈顶的值给上值并返回它的名称。它还从栈中弹出值。参数funcindex和n和lua_getupvalue中的相同（见lua_getupvalue）。 
-
-Returns NULL (and pops nothing) when the index is greater than the number of upvalues. 
-
-返回NULL（且不弹出东西）当索引大于上值的数量时。 
-
------------------------------------------
-
-参考自：
-1. Lua 5.1 参考手册 （云风译）
-http://www.codingnow.com/2000/download/lua_manual.html
-2. hshqcn
+## 参考自：  
+1. Lua 5.1 参考手册 （云风译）  
+http://www.codingnow.com/2000/download/lua_manual.html  
+
+2. hshqcn  
 hshqcn  
-

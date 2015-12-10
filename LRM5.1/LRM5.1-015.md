@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-15)调试库(5.9)、Lua的独立程序(6)  
+﻿【翻译】(LRM5.1-12)字符串操纵(5.4)、模式（5.4.1）
 
 See also:
 http://www.lua.org/manual/5.1/manual.html
@@ -22,344 +22,414 @@ Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the 
 
 -----------------------------------------
 
-5.9 - The Debug Library
-This library provides the functionality of the debug interface to Lua programs. You should exert care when using this library. The functions provided here should be used exclusively for debugging and similar tasks, such as profiling. Please resist the temptation to use them as a usual programming tool: they can be very slow. Moreover, several of these functions violate some assumptions about Lua code (e.g., that variables local to a function cannot be accessed from outside or that userdata metatables cannot be changed by Lua code) and therefore can compromise otherwise secure code. 
+5.4 - String Manipulation
+This library provides generic functions for string manipulation, such as finding and extracting substrings, and pattern matching. When indexing a string in Lua, the first character is at position 1 (not at 0, as in C). Indices are allowed to be negative and are interpreted as indexing backwards, from the end of the string. Thus, the last character is at position -1, and so on. 
 
-All functions in this library are provided inside the debug table. All functions that operate over a thread have an optional first argument which is the thread to operate over. The default is always the current thread. 
+The string library provides all its functions inside the table string. It also sets a metatable for strings where the __index field points to the string table. Therefore, you can use the string functions in object-oriented style. For instance, string.byte(s, i) can be written as s:byte(i). 
+
+The string library assumes one-byte character encodings. 
+
+
+（注：TODO）
+5.4 - 字符串操作
+该库为字符串操作提供常规函数，例如查找和抽取子串以及模式匹配。在Lua中索引字符串时，第一个字符在位置1（不像C是在0处）。索引允许为负数，被解释为从字符串末尾往回索引。因此，最后一个字符在-1位置，依此类推。 
+
+字符串库在表string内提供所有函数。它也给字符串设置元表，其中的__index字段指向string表。因此，你可以使用面向对象风格的字符串函数。例如，string.byte(s, i)可写为s:byte(i)。 
+
+字符串库采取单字节字符编码方式。 
 
 
 
-5.9 - 调试库
-这个库提供Lua程序的调试界面工具。
-用这个库时应该尽量小心。
-这里提供的函数应该仅仅用于调试和相关的任务，例如性能剖析。
-请避免像普通的编程工具那样滥用它们：它们可能会变得非常慢。
-此外，这几个函数破坏关于Lua代码部分的假设（例如，函数的局部变量不能在外部访问，或者userdata的元表不能被Lua代码修改），并因此可能会危及其它安全的代码。
-这个库的所有函数在debug表中提供
-所有跨线程的函数带有一个可选的第一参数，允许传入需要操作的线程。
-默认总是当前线程。
+
+
 
 --------------------------------------------------------------------------------
 
-debug.debug ()
-Enters an interactive mode with the user, running each string that the user enters. Using simple commands and other debug facilities, the user can inspect global and local variables, change their values, evaluate expressions, and so on. A line containing only the word cont finishes this function, so that the caller continues its execution. 
-
-Note that commands for debug.debug are not lexically nested within any function, and so have no direct access to local variables. 
+string.byte (s [, i [, j]])
+Returns the internal numerical codes of the characters s[i], s[i+1], ···, s[j]. The default value for i is 1; the default value for j is i. 
+Note that numerical codes are not necessarily portable across platforms. 
 
 --------------------------------------------------------------------------------
 （注：TODO）
 
-debug.debug ()
-进入同用户的交互模式，运行用户输入的每个字符串。使用简单的命令和其他调试设备，用户能够检查全局和局部变量，改变它们的值，计算表达式，等等。只含有单词cont的行终止该函数，这样调用者继续它的执行。 
+string.byte (s [, i [, j]])
+返回字符s[i], s[i+1], ···, s[j]的内部数字代码。i缺省为1；j缺省为i。 
+注意数字代码不一定是跨平台可移植的。 
 
-注意，debug.debug的命令不是任何函数的内部词汇，因此没有对本地变量的直接访问。 
-
-
---------------------------------------------------------------------------------
-
-debug.getfenv (o)
-Returns the environment of object o. 
-
---------------------------------------------------------------------------------
-
-debug.getfenv (o)
-返回对象o的环境表。
 
 
 --------------------------------------------------------------------------------
 
-debug.gethook ([thread])
-Returns the current hook settings of the thread, as three values: the current hook function, the current hook mask, and the current hook count (as set by the debug.sethook function). 
+string.char (···)
+Receives zero or more integers. Returns a string with length equal to the number of arguments, in which each character has the internal numerical code equal to its corresponding argument. 
+Note that numerical codes are not necessarily portable across platforms. 
 
 --------------------------------------------------------------------------------
+（注：TODO）
 
-debug.gethook ([thread])
-返回线程的当前钩子设置，有三个值：当前钩子函数，当前钩子掩码，以及当前钩子数目（对应debug.sethook函数的设置）。
-
-
---------------------------------------------------------------------------------
-
-debug.getinfo ([thread,] function [, what])
-Returns a table with information about a function. You can give the function directly, or you can give a number as the value of function, which means the function running at level function of the call stack of the given thread: level 0 is the current function (getinfo itself); level 1 is the function that called getinfo; and so on. If function is a number larger than the number of active functions, then getinfo returns nil. 
-
-The returned table can contain all the fields returned by lua_getinfo, with the string what describing which fields to fill in. The default for what is to get all information available, except the table of valid lines. If present, the option 'f' adds a field named func with the function itself. If present, the option 'L' adds a field named activelines with the table of valid lines. 
-
-For instance, the expression debug.getinfo(1,"n").name returns a table with a name for the current function, if a reasonable name can be found, and the expression debug.getinfo(print) returns a table with all available information about the print function. 
-
---------------------------------------------------------------------------------
-
-debug.getinfo ([thread,] function [, what])
-返回关于一个函数的带信息的表。
-你可以直接指定函数，或者给定一个代表函数运行于所给线程的调用堆栈的function层的数作为函数的值：
-层0是当前函数（getinfo自身）；层1是调用getinfo的函数；如此类推。
-如果function是一个大于激活函数个数的数，那么getinfo返回nil。
-返回的表可能包含所有lua_getinfo所返回的域，根据描述要填充哪些域的字符串what。
-what缺省是获取所有可用信息，除了合法行的表以外。
-如果存在，选项'f'添加一个值为function自身的名叫func的域。
-如果存在，选项'L'添加值为包含合法行的表的名叫acivelines的域。
-例如，表达式debug.getinfo(1,"n").name返回一个当前函数的带有name名称（？）的一个表，如果一个合理的名称可以被找到，则表达式debug.getinfo(print)会返回一个带有关于print函数的所有可用信息的表
-
---------------------------------------------------------------------------------
-
-debug.getlocal ([thread,] level, local)
-This function returns the name and the value of the local variable with index local of the function at level level of the stack. (The first parameter or local variable has index 1, and so on, until the last active local variable.) The function returns nil if there is no local variable with the given index, and raises an error when called with a level out of range. (You can call debug.getinfo to check whether the level is valid.) 
-
-Variable names starting with '(' (open parentheses) represent internal variables (loop control variables, temporaries, and C function locals). 
-
---------------------------------------------------------------------------------
-
-debug.getlocal ([thread,] level, local)
-这个函数返回名称以及带索引local的在堆栈level层的局部变量的值。
-（第一个参数或局部变量索引为1，如此类推，直到最后激活的局部变量）
-如果参数索引处没有局部变量，这个函数返回空，并且在一层范围以外调用时引生一个错误。
-（你可以调用debug.getinfo去检查level是否合法。）
-变量名以'('（左括号）开始表示内部变量（循环控制变量，临时变量，和C函数局部变量）
-
---------------------------------------------------------------------------------
-
-debug.getmetatable (object)
-Returns the metatable of the given object or nil if it does not have a metatable. 
-
---------------------------------------------------------------------------------
-
-debug.getmetatable (object)
-返回参数对象的元表，如果没有元表则返回空。 
-
---------------------------------------------------------------------------------
-
-debug.getregistry ()
-Returns the registry table (see §3.5). 
-
---------------------------------------------------------------------------------
-
-debug.getregistry ()
-返回注册表(参考§3.5). 
-
---------------------------------------------------------------------------------
-
-debug.getupvalue (func, up)
-
-This function returns the name and the value of the upvalue with index up of the function func. The function returns nil if there is no upvalue with the given index. 
-
---------------------------------------------------------------------------------
-
-debug.getupvalue (func, up)
-这个函数返回名称以及函数func的上的带索引upvalue的值。
-如果指定的索引没有upvalue的话，这个函数返回空值。
-
---------------------------------------------------------------------------------
-debug.setfenv (object, table)
-
-Sets the environment of the given object to the given table. Returns object. 
-
---------------------------------------------------------------------------------
-
-debug.setfenv (对象, 表)
-
-设置所给对象的环境到给定的表中。
-返回对象. 
-
---------------------------------------------------------------------------------
-
-debug.sethook ([thread,] hook, mask [, count])
-Sets the given function as a hook. The string mask and the number count describe when the hook will be called. The string mask may have the following characters, with the given meaning: 
-
-"c": the hook is called every time Lua calls a function; 
-"r": the hook is called every time Lua returns from a function; 
-"l": the hook is called every time Lua enters a new line of code. 
-With a count different from zero, the hook is called after every count instructions. 
-
-When called without arguments, debug.sethook turns off the hook. 
-
-When the hook is called, its first parameter is a string describing the event that has triggered its call: "call", "return" (or "tail return", when simulating a return from a tail call), "line", and "count". For line events, the hook also gets the new line number as its second parameter. Inside a hook, you can call getinfo with level 2 to get more information about the running function (level 0 is the getinfo function, and level 1 is the hook function), unless the event is "tail return". In this case, Lua is only simulating the return, and a call to getinfo will return invalid data. 
-
---------------------------------------------------------------------------------
-
-debug.sethook ([thread,] hook, mask [, count])
-把所给函数设置为钩子。
-字符串mask和数count描述钩子何时被调用。
-字符串mask可以拥有以下字符，带有所给出的意思：
-
-"c": 钩子在每次Lua调用一个函数时调用； 
-"r": 钩子在每次Lua从一个函数返回时调用； 
-"l": 钩子在每次Lua进入新的一行代码时调用。
-当count不等于0时，钩子在每次count到达（？）时被调用。 
-当不带参数调用时，debug.sethook关闭钩子。
-当钩子被调用时，它第一个参数是一个描述触发这次调用的事件的字符串："call","return"(或"tail return"，当模拟一次从尾调用产生的返回），"line"，以及"count"。
-对于行事件，钩子还可以获得新的行数作为其第二参数。
-在钩子内部，你可以调用带层2的getinfo去获得更多关于运行中函数的信息（0层是getinfo函数，1层是钩子函数），除非事件是“尾返回”。
-在这种情况下，Lua只是模拟返回，而调用getinfo将返回非法的数据。
+string.char (···)
+接受0获多个整数。返回一个字符串，其长度等于参数个数，其中的每个字符的内部数字代码等于相应的参数。 
+注意数字代码不一定是跨平台可移植的。 
 
 
 --------------------------------------------------------------------------------
 
-debug.setlocal ([thread,] level, local, value)
-This function assigns the value value to the local variable with index local of the function at level level of the stack. The function returns nil if there is no local variable with the given index, and raises an error when called with a level out of range. (You can call getinfo to check whether the level is valid.) Otherwise, it returns the name of the local variable. 
+string.dump (function)
+Returns a string containing a binary representation of the given function, so that a later loadstring on this string returns a copy of the function. function must be a Lua function without upvalues. 
 
 --------------------------------------------------------------------------------
+（注：TODO）
 
-debug.setlocal ([thread,] level, local, value)
-这个函数把值value赋给在索引local处的局部变量给堆栈中处于level层的函数。
-如果所给的索引处没有局部变量，则函数返回nil，并且当调用超出范围的一个层时引发一个错误。
-（你可以调用getinfo去检查level是否合法。）
-否则，它返回局部变量的名称。
-
-
---------------------------------------------------------------------------------
-
-debug.setmetatable (object, table)
-Sets the metatable for the given object to the given table (which can be nil). 
-
---------------------------------------------------------------------------------
-
-debug.setmetatable (object, table)
-设置所给对象的元表为所给的表（可以为nil）。 
-
---------------------------------------------------------------------------------
-
-debug.setupvalue (func, up, value)
-This function assigns the value value to the upvalue with index up of the function func. The function returns nil if there is no upvalue with the given index. Otherwise, it returns the name of the upvalue. 
-
---------------------------------------------------------------------------------
-
-debug.setupvalue (func, up, value)
-这个函数把值value赋给函数func以上带索引up的upvalue。
-如果所给索引上没有upvalue则这个函数返回nil。
-否则，返回upvalue的名称。
+string.dump (function)
+返回给定函数的二进制表示的字符串，之后在其上应用loadstring返回函数的拷贝。function必须是不带upvalueLua函数。 
 
 
 --------------------------------------------------------------------------------
 
-debug.traceback ([thread,] [message] [, level])
-Returns a string with a traceback of the call stack. An optional message string is appended at the beginning of the traceback. An optional level number tells at which level to start the traceback (default is 1, the function calling traceback). 
+string.find (s, pattern [, init [, plain]])
+Looks for the first match of pattern in the string s. If it finds a match, then find returns the indices of s where this occurrence starts and ends; otherwise, it returns nil. A third, optional numerical argument init specifies where to start the search; its default value is 1 and can be negative. A value of true as a fourth, optional argument plain turns off the pattern matching facilities, so the function does a plain "find substring" operation, with no characters in pattern being considered "magic". Note that if plain is given, then init must be given as well. 
+If the pattern has captures, then in a successful match the captured values are also returned, after the two indices. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.find (s, pattern [, init [, plain]])
+在字符串s中查找pattern的第一个匹配。如果找到则返回它开始和结束处在s中的索引；否则，返回nil。可选的第三参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负数。如果真值作为可选的第四参数plain，则关闭模式匹配设备，所以函数执行无格式的“查找子串”操作，pattern中的字符并不被认为是“魔术的（magic）”。注意，如果给出了plain，则init也必须给出。 
+如果模式具有捕获（capture），则在成功的匹配中被捕获的值也在两个索引后面返回。 
+
 
 --------------------------------------------------------------------------------
 
-debug.traceback ([thread,] [message] [, level])
-返回一个带有调用堆栈的traceback信息的字符串。
-一个可选的message字符串追加在traceback信息的开头。
-一个可选的level数指明从哪一层开始traceback
-（默认是1，该函数调用的traceback）
+string.format (formatstring, ···)
+Returns a formatted version of its variable number of arguments following the description given in its first argument (which must be a string). The format string follows the same rules as the printf family of standard C functions. The only differences are that the options/modifiers *, l, L, n, p, and h are not supported and that there is an extra option, q. The q option formats a string in a form suitable to be safely read back by the Lua interpreter: the string is written between double quotes, and all double quotes, newlines, embedded zeros, and backslashes in the string are correctly escaped when written. For instance, the call 
+     string.format('%q', 'a string with "quotes" and \n new line')
+
+will produce the string: 
+
+     "a string with \"quotes\" and \
+      new line"
+
+The options c, d, E, e, f, g, G, i, o, u, X, and x all expect a number as argument, whereas q and s expect a string. 
+
+This function does not accept string values containing embedded zeros, except as arguments to the q option. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.format (formatstring, ···)
+Returns a formatted version of its variable number of arguments following the description given in its first argument (which must be a string). 格式字符串遵循同printf族标准C函数同样的规则。仅有的区别是不支持*、l、L、n、p和h等选项/修饰符，而且有个额外选项q。q选项以可安全地为Lua解释器读取的适当形式格式化字符串：字符串被写在双引号之间，而且字符串中的所有双引号、换行、内嵌的0和反斜杠被恰当地转义。例如，调用 
+     string.format('%q', 'a string with "quotes" and \n new line')
+
+产生字符串： 
+
+     "a string with \"quotes\" and \
+      new line"
+
+选项c、d、E、e、f, g、G、i、o、u、X和x都预期得到数字作为参数，然而q和s期望得到字符串。 
+
+该函数不接受含有内嵌的0的字符串值，除了作为q选项的参数。 
+
+
+--------------------------------------------------------------------------------
+
+string.gmatch (s, pattern)
+Returns an iterator function that, each time it is called, returns the next captures from pattern over string s. If pattern specifies no captures, then the whole match is produced in each call. 
+As an example, the following loop 
+
+     s = "hello world from Lua"
+     for w in string.gmatch(s, "%a+") do
+       print(w)
+     end
+
+will iterate over all the words from string s, printing one per line. The next example collects all pairs key=value from the given string into a table: 
+
+     t = {}
+     s = "from=world, to=Lua"
+     for k, v in string.gmatch(s, "(%w+)=(%w+)") do
+       t[k] = v
+     end
+
+For this function, a '^' at the start of a pattern does not work as an anchor, as this would prevent the iteration. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.gmatch (s, pattern)
+返回一个迭代器函数，每次调用返回来自pattern的下一个捕获，从字符串s开头直到结尾。如果pattern没指定捕获则每次调用产生整个匹配。 
+作为例子，下面的循环 
+
+     s = "hello world from Lua"
+     for w in string.gmatch(s, "%a+") do
+       print(w)
+     end
+
+将迭代来自字符串s的所有单词，每行打印一个。下一个例子从给定的字符串收集所有的键=值对放在表中： 
+
+     t = {}
+     s = "from=world, to=Lua"
+     for k, v in string.gmatch(s, "^(%w+)=(%w+)") do
+       t[k] = v
+     end
+
+对于该函数，模式起始处的‘^’不能作为锚点，因为这会阻止迭代。 
+
+
+
+
+--------------------------------------------------------------------------------
+
+string.gsub (s, pattern, repl [, n])
+Returns a copy of s in which all (or the first n, if given) occurrences of the pattern have been replaced by a replacement string specified by repl, which can be a string, a table, or a function. gsub also returns, as its second value, the total number of matches that occurred. 
+If repl is a string, then its value is used for replacement. The character % works as an escape character: any sequence in repl of the form %n, with n between 1 and 9, stands for the value of the n-th captured substring (see below). The sequence %0 stands for the whole match. The sequence %% stands for a single %. 
+
+If repl is a table, then the table is queried for every match, using the first capture as the key; if the pattern specifies no captures, then the whole match is used as the key. 
+
+If repl is a function, then this function is called every time a match occurs, with all captured substrings passed as arguments, in order; if the pattern specifies no captures, then the whole match is passed as a sole argument. 
+
+If the value returned by the table query or by the function call is a string or a number, then it is used as the replacement string; otherwise, if it is false or nil, then there is no replacement (that is, the original match is kept in the string). 
+
+Here are some examples: 
+
+     x = string.gsub("hello world", "(%w+)", "%1 %1")
+     --> x="hello hello world world"
+     
+     x = string.gsub("hello world", "%w+", "%0 %0", 1)
+     --> x="hello hello world"
+     
+     x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
+     --> x="world hello Lua from"
+     
+     x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
+     --> x="home = /home/roberto, user = roberto"
+     
+     x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
+           return loadstring(s)()
+         end)
+     --> x="4+5 = 9"
+     
+     local t = {name="lua", version="5.1"}
+     x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
+     --> x="lua-5.1.tar.gz"
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.gsub (s, pattern, repl [, n])
+返回s的拷贝，其中出现的所有（或前n个，如果指定）pattern被替换为repl——可以是字符串、表或函数，指定的替换串。gsub也返回出现的匹配的总数作为第二个值。 
+如果repl是字符串，它的值被用作替换式。字符%用作转义字符：repl中的任何形如%n的序列代表第n个捕获的子串（见下面），其中n在1和9之间。序列%0代表整个匹配。序列%%代表单个%。 
+
+如果repl是表，则对于每个匹配，用第一个捕获作为键查询表；如果模式未指定捕获，则整个匹配被用作键。 
+
+如果repl是函数，则每次匹配发生时都按顺序传入所有捕获的子串作为参数调用该函数；如果模式没指定捕获，则整个匹配作为单个参数传入。 
+
+如果表查询或函数调用返回的结果是个字符串或数字，则被用作替换串；否则，如果是false或nil，则不发生替换（即原始匹配被保持在字符串中）。 
+
+这里有一些例子： 
+
+     x = string.gsub("hello world", "(%w+)", "%1 %1")
+     --> x="hello hello world world"
+     
+     x = string.gsub("hello world", "%w+", "%0 %0", 1)
+     --> x="hello hello world"
+     
+     x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
+     --> x="world hello Lua from"
+     
+     x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
+     --> x="home = /home/roberto, user = roberto"
+     
+     x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
+           return loadstring(s)()
+         end)
+     --> x="4+5 = 9"
+     
+     local t = {name="lua", version="5.1"}
+     x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
+     --> x="lua-5.1.tar.gz"
+
+
+
+--------------------------------------------------------------------------------
+
+string.len (s)
+Receives a string and returns its length. The empty string "" has length 0. Embedded zeros are counted, so "a\000bc\000" has length 5. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.len (s)
+接受字符串并返回其长度。空串""长度为0。内嵌的0被计算在内，所以"a\000bc\000"长度为5。 
+
+--------------------------------------------------------------------------------
+
+string.lower (s)
+Receives a string and returns a copy of this string with all uppercase letters changed to lowercase. All other characters are left unchanged. The definition of what an uppercase letter is depends on the current locale. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.lower (s)
+接受字符串并返回其所有大写字母变为小写的拷贝。所有其他字符不变。大写字母的定义依赖于当前locale。 
+
+
+--------------------------------------------------------------------------------
+
+string.match (s, pattern [, init])
+Looks for the first match of pattern in the string s. If it finds one, then match returns the captures from the pattern; otherwise it returns nil. If pattern specifies no captures, then the whole match is returned. A third, optional numerical argument init specifies where to start the search; its default value is 1 and can be negative. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.match (s, pattern [, init])
+在字符串s中查找pattern的首次匹配。如果找到一个，则返回来自模式的捕获；否则返回nil。如果pattern未指定捕获则返回整个匹配。可选的第三个参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负。 
+
+
+
+--------------------------------------------------------------------------------
+
+string.rep (s, n)
+Returns a string that is the concatenation of n copies of the string s. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.rep (s, n)
+返回字符串s的n个拷贝拼接字符串。 
+
+
+--------------------------------------------------------------------------------
+
+string.reverse (s)
+Returns a string that is the string s reversed. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.reverse (s)
+返回字符串s的颠倒的字符串。 
+
+
+--------------------------------------------------------------------------------
+
+string.sub (s, i [, j])
+Returns the substring of s that starts at i and continues until j; i and j can be negative. If j is absent, then it is assumed to be equal to -1 (which is the same as the string length). In particular, the call string.sub(s,1,j) returns a prefix of s with length j, and string.sub(s, -i) returns a suffix of s with length i. 
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.sub (s, i [, j])
+返回s的子串，它起始于i并延续到j；i和j可为负数。如果省略j，则它被假定为-1（同字符串长度一样）。特别地，调用string.sub(s,1,j)返回s长为j的前缀，而且string.sub(s, -i)返回s长为i的后缀。 
+
+
+--------------------------------------------------------------------------------
+
+string.upper (s)
+Receives a string and returns a copy of this string with all lowercase letters changed to uppercase. All other characters are left unchanged. The definition of what a lowercase letter is depends on the current locale. 
+
+
+--------------------------------------------------------------------------------
+（注：TODO）
+
+string.upper (s)
+接受字符串并返回其所有小写字母变为大写的拷贝。所有其他字符不变。小写字母的定义依赖于当前locale。 
 
 
 
 
 
 
+5.4.1 - Patterns
+Character Class:
+A character class is used to represent a set of characters. The following combinations are allowed in describing a character class: 
+
+x: (where x is not one of the magic characters ^$()%.[]*+-?) represents the character x itself. 
+.: (a dot) represents all characters. 
+%a: represents all letters. 
+%c: represents all control characters. 
+%d: represents all digits. 
+%l: represents all lowercase letters. 
+%p: represents all punctuation characters. 
+%s: represents all space characters. 
+%u: represents all uppercase letters. 
+%w: represents all alphanumeric characters. 
+%x: represents all hexadecimal digits. 
+%z: represents the character with representation 0. 
+%x: (where x is any non-alphanumeric character) represents the character x. This is the standard way to escape the magic characters. Any punctuation character (even the non magic) can be preceded by a '%' when used to represent itself in a pattern. 
+[set]: represents the class which is the union of all characters in set. A range of characters can be specified by separating the end characters of the range with a '-'. All classes %x described above can also be used as components in set. All other characters in set represent themselves. For example, [%w_] (or [_%w]) represents all alphanumeric characters plus the underscore, [0-7] represents the octal digits, and [0-7%l%-] represents the octal digits plus the lowercase letters plus the '-' character. 
+The interaction between ranges and classes is not defined. Therefore, patterns like [%a-z] or [a-%%] have no meaning. 
+
+[^set]: represents the complement of set, where set is interpreted as above. 
+For all classes represented by single letters (%a, %c, etc.), the corresponding uppercase letter represents the complement of the class. For instance, %S represents all non-space characters. 
+
+The definitions of letter, space, and other character groups depend on the current locale. In particular, the class [a-z] may not be equivalent to %l. 
+
+Pattern Item:
+A pattern item can be 
+
+a single character class, which matches any single character in the class; 
+a single character class followed by '*', which matches 0 or more repetitions of characters in the class. These repetition items will always match the longest possible sequence; 
+a single character class followed by '+', which matches 1 or more repetitions of characters in the class. These repetition items will always match the longest possible sequence; 
+a single character class followed by '-', which also matches 0 or more repetitions of characters in the class. Unlike '*', these repetition items will always match the shortest possible sequence; 
+a single character class followed by '?', which matches 0 or 1 occurrence of a character in the class; 
+%n, for n between 1 and 9; such item matches a substring equal to the n-th captured string (see below); 
+%bxy, where x and y are two distinct characters; such item matches strings that start with x, end with y, and where the x and y are balanced. This means that, if one reads the string from left to right, counting +1 for an x and -1 for a y, the ending y is the first y where the count reaches 0. For instance, the item %b() matches expressions with balanced parentheses. 
+Pattern:
+A pattern is a sequence of pattern items. A '^' at the beginning of a pattern anchors the match at the beginning of the subject string. A '$' at the end of a pattern anchors the match at the end of the subject string. At other positions, '^' and '$' have no special meaning and represent themselves. 
+
+Captures:
+A pattern can contain sub-patterns enclosed in parentheses; they describe captures. When a match succeeds, the substrings of the subject string that match captures are stored (captured) for future use. Captures are numbered according to their left parentheses. For instance, in the pattern "(a*(.)%w(%s*))", the part of the string matching "a*(.)%w(%s*)" is stored as the first capture (and therefore has number 1); the character matching "." is captured with number 2, and the part matching "%s*" has number 3. 
+
+As a special case, the empty capture () captures the current string position (a number). For instance, if we apply the pattern "()aa()" on the string "flaaap", there will be two captures: 3 and 5. 
+
+A pattern cannot contain embedded zeros. Use %z instead. 
 
 
 
+（注：TODO）
 
+5.4.1 - 模式
+字符类（Character Class）：
+一个字符类被用于表示一组字符。允许用下面的组合描述字符类： 
 
+x: （此处x不是魔术字符^$()%.[]*+-?中的一个）表示字符x本身。 
+.: （一个点）表示所有字符。 
+%a: 表示所有字母。 
+%c: 表示所有控制字符。 
+%d: 表示所有十进制数字。 
+%l: 表示所有小写字母。 
+%p: 表示所有标点符号。 
+%s: 表示所有空白字符。 
+%u: 表示所有大写字母。 
+%w: 表示所有字母数字字符。 
+%x: 表示所有十六进制数字。 
+%z: 表示0值字符。 
+%x: （此处x是任何非字母数字字符）表示字符x。这是转义魔术字符的标准方式。当被用于在模式中表示自身时，任何标点符号（甚至非魔术的）都能前缀一个‘%’。 
+[set]: 表示set中的所有字符的联合构成的分类。通过用‘-’分隔截止字符可以指定某个范围的字符。上面描述的所有种类的%x都可用作set的部件。set中的所有其他字符表示它们自身。例如[%w_]（或[_%w]）表示所有字母数字字符和下划线，[0-7]表示八进制数字，[0-7%l%-]表示八进制数字和小写字母以及‘-’字符。 
+字符范围和字符类之间的相互作用是未定义的。因此类似[%a-z]或[a-%%]的模式没有意义。 
 
+[^set]: 表示set的补集，其中的set在上面解释了。 
+所有单字母表示的字符类（%a、%c，等等），相应的大写字母表示该字符类的补集。例如，%S表示所有非空白符。 
 
+字母、空白和其他字符组合的定义依赖于当前locale。特别地，字符类[a-z]可能不等于%l。 
 
+模式项（Pattern Item）:
+模式项可为 
 
+单个字符类，它匹配该类中的任意单个字符； 
+后跟‘*’的单个字符类，它匹配该类中的0或多个字符。这些重复项将总是匹配最长的可能序列； 
+后跟‘+’的单个字符类，它匹配该类中的1或多个字符。这些重复项将总是匹配最长的可能序列； 
+后跟‘-’的单个字符类，它也匹配该类中的0或多个字符。与‘*’不同，这些重复项将总是匹配最短的可能序列； 
+后跟‘?’的单个字符类，它匹配出现0或1次该类中的字符； 
+%n，其中n在1和9之间；这种项匹配一个等价于捕获的字符串的第n个子串（见下面）； 
+%bxy其中x和y是两个不同的字符；这种项匹配始于x终于y的字符串，并且x和y是对称的。这表示，如果一个人从左到右读字符串，对x计数为+1，对y计数为-1，结尾的y是第一个遇到计数为0的y 。例如，项%b()匹配带有平衡的圆括号的表达式。 
+模式（Pattern）:
+模式是一系列的模式项。在模式开头的‘^’将匹配固定在源串的开头。 在模式结尾的‘$’将匹配固定在源串的结尾。在其他位置上，‘^’和‘$’没有特殊含义，表示它们自身。 
 
+捕获（Captures）:
+模式可以含有括在圆括号内的子模式；它们描述捕获。当成功进行一个匹配，源串中匹配捕获的子串被存储（捕获）以便将来使用。捕获根据它们的左圆括号进行编号。例如，在模式"(a*(.)%w(%s*))"中，字符串的匹配"a*(.)%w(%s*)"的部分作为第一个捕获被存储（因此被编号为1）；匹配“.”的字符被捕获并编号为2，匹配“%s*”的部分被编号为3。 
 
+作为一种特殊情况，空捕获()捕获当前字符串位置（一个数字）。例如，如果我们把模式"()aa()"用于字符串"flaaap"，将有两个捕获：3和5。 
 
-
-6 - Lua Stand-alone
-Although Lua has been designed as an extension language, to be embedded in a host C program, it is also frequently used as a stand-alone language. An interpreter for Lua as a stand-alone language, called simply lua, is provided with the standard distribution. The stand-alone interpreter includes all standard libraries, including the debug library. Its usage is: 
-
-     lua [options] [script [args]]
-
-The options are: 
-
--e stat: executes string stat; 
--l mod: "requires" mod; 
--i: enters interactive mode after running script; 
--v: prints version information; 
---: stops handling options; 
--: executes stdin as a file and stops handling options. 
-After handling its options, lua runs the given script, passing to it the given args as string arguments. When called without arguments, lua behaves as lua -v -i when the standard input (stdin) is a terminal, and as lua - otherwise. 
-
-Before running any argument, the interpreter checks for an environment variable LUA_INIT. If its format is @filename, then lua executes the file. Otherwise, lua executes the string itself. 
-
-All options are handled in order, except -i. For instance, an invocation like 
-
-     $ lua -e'a=1' -e 'print(a)' script.lua
-
-will first set a to 1, then print the value of a (which is '1'), and finally run the file script.lua with no arguments. (Here $ is the shell prompt. Your prompt may be different.) 
-
-Before starting to run the script, lua collects all arguments in the command line in a global table called arg. The script name is stored at index 0, the first argument after the script name goes to index 1, and so on. Any arguments before the script name (that is, the interpreter name plus the options) go to negative indices. For instance, in the call 
-
-     $ lua -la b.lua t1 t2
-
-the interpreter first runs the file a.lua, then creates a table 
-
-     arg = { [-2] = "lua", [-1] = "-la",
-             [0] = "b.lua",
-             [1] = "t1", [2] = "t2" }
-
-and finally runs the file b.lua. The script is called with arg[1], arg[2], ··· as arguments; it can also access these arguments with the vararg expression '...'. 
-
-In interactive mode, if you write an incomplete statement, the interpreter waits for its completion by issuing a different prompt. 
-
-If the global variable _PROMPT contains a string, then its value is used as the prompt. Similarly, if the global variable _PROMPT2 contains a string, its value is used as the secondary prompt (issued during incomplete statements). Therefore, both prompts can be changed directly on the command line or in any Lua programs by assigning to _PROMPT. See the next example: 
-
-     $ lua -e"_PROMPT='myprompt> '" -i
-
-(The outer pair of quotes is for the shell, the inner pair is for Lua.) Note the use of -i to enter interactive mode; otherwise, the program would just end silently right after the assignment to _PROMPT. 
-
-To allow the use of Lua as a script interpreter in Unix systems, the stand-alone interpreter skips the first line of a chunk if it starts with #. Therefore, Lua scripts can be made into executable programs by using chmod +x and the #! form, as in 
-
-     #!/usr/local/bin/lua
-
-(Of course, the location of the Lua interpreter may be different in your machine. If lua is in your PATH, then 
-
-     #!/usr/bin/env lua
-
-is a more portable solution.) 
-
-
-
-6 - Lua的独立程序
- 虽然Lua被设计为一种嵌入C宿主程序的扩展语言，但它还常常被当作一种独立运行的语言来使用。
-Lua解释器作为一种可独立运行的语言，简称lua，作为标准发布的一部分提供。
-独立运行的解释器包含所有标准库，包含调试库。
-它的用法是
-lua [options] [script [args]]
-其中options选项包括
--e stat: 执行字符串stat； 
--l mod: 包含库mod； 
--i: 在执行脚本后进入交互模式； 
--v: 打印版本信息； 
---: 停止处理选项； 
--: 把stdin作为文件来执行，并且停止处理选项。
-在处理选项后，lua运行所给的脚本，传递所给的args作为它的字符串参数。
-当不带参数调用时，如果标准输入（stdin）是一个终端则lua的行为如lua -v -i那样，否则如lua -那样。
-在执行任何参数前，解释器会检查环境变量LUA_INIT。
-如果它的格式是@文件名，那么lua执行该文件。否则，lua执行字符串本身。
-所有选项都是按顺序处理，除了-i以外。
-例如，像这样的调用
-$ lua -e'a=1' -e 'print(a)' script.lua
-首先把a设置为1，然后打印a的值（即'1'），最后不带参数地运行文件script.lua。
-（这里$是shell命令提示符。你的提示可能会不同。）
-在开始运行脚本前，Lua把命令行中的所有参数收集到一个叫arg的全局表中。
-脚本名存储在索引0，脚本名后的第一个参数为索引1，如此类推。
-任何在脚本名前的参数（即解释器名和选项参数）以负索引排列。
-例如在如下调用中：
-$ lua -la b.lua t1 t2
-解析器首先运行文件a.lua，然后创建一个表
-arg = { [-2] = "lua", [-1] = "-la",
-	 [0] = "b.lua",
-	 [1] = "t1", [2] = "t2" }
-最后运行文件b.lua。该脚本以arg[1]，arg[2]，···作为参数来调用；
-它也可以通过变长参数表达式'...'访问这些参数。
-在交互模式下，如果你写了一个不完整的语句，解释器通过发出不同的提示符等待它的完成。
-如果全局变量_PROMPT包含一个字符串，那么它的值用作提示符。
-同样，如果全局变量_PROMPT2包含一个字符串，那么它的值是用作第二提示符（在出现不完整语句时发出）。
-因此，可以通过给_PROMPT赋值而直接在命令行中或者任何Lua程序中改变这两个提示符。
-看下面的例子：
-$ lua -e"_PROMPT='myprompt> '" -i
-（外引号对用于shell，内引号对用于lua。）
-注意使用-i进入交互模式；否则程序在赋值给_PROMPT后就安静地结束。
-为了让Lua在Unix系统中作为脚本解释器来使用，如果以#开始，独立运行解释器会跳过chunk块的第一行。
-因此，Lua脚本可以通过使用chmod +x和#!形式变成可执行程序，例如
-#!/usr/local/bin/lua
-（当然，Lua解释器的位置可能和你机器的不同。如果lua在你的PATH中，那么
-#!/usr/bin/env lua
-是一种更方便的解决方案。） 
+模式不能含有内嵌的0。使用%z代替。 
 
 

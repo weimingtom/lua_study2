@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-10)标准库的基础函数(5.1)  
+﻿## 【翻译】(LRM5.1-7)函数和类型(3.7)(lua_Reader - lua_yield)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html  
@@ -6,408 +6,391 @@ http://www.lua.org/manual/5.1/manual.html
 原文见
 http://www.lua.org/manual/5.1/manual.html  
 
------------------------------------------
+-----------------------------------------  
 
-Lua 5.1 Reference Manual 
+## Lua 5.1 Reference Manual   
 
-Lua 5.1参考手册
+## Lua 5.1参考手册  
 
-by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes 
+by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes   
 
-作者：Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
+作者：Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes  
 
-Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license. 
+Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the Lua license.   
 
-版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地（注：免费）可用
+版权所有 (c) 2006-2008 Lua.org, PUC-Rio. 根据Lua许可证自由地**（注：免费）**可用  
 
------------------------------------------
+-----------------------------------------  
 
-5 - Standard Libraries
+lua_Reader  
+typedef const char * (*lua_Reader) (lua_State *L,  
+                                    void *data,  
+                                    size_t *size);  
 
-5 - 标准库
+The reader function used by lua_load. Every time it needs another piece of the chunk, lua_load calls the reader, passing along its data parameter. The reader must return a pointer to a block of memory with a new piece of the chunk and set size to the block size. The block must exist until the reader function is called again. To signal the end of the chunk, the reader must return NULL or set size to zero. The reader function may return pieces of any size greater than zero.   
 
-The standard Lua libraries provide useful functions that are implemented directly through the C API. Some of these functions provide essential services to the language (e.g., type and getmetatable); others provide access to "outside" services (e.g., I/O); and others could be implemented in Lua itself, but are quite useful or have critical performance requirements that deserve an implementation in C (e.g., table.sort). 
+被lua_load使用的读取器函数。每当它需要另一块数据块时，lua_load调用读取器，传入它的data参数。读取器必须返回一个指向一块带有新数据块的内存的指针并且设置大小到块大小。块必须存在直至读取器函数被再次调用。为了通知数据块的结束，读取器必须返回NULL或设置大小为0。读取器函数可能返回比0大的任意大小的块。  
 
-标准Lua库提供直接通过C API实现的一些有用函数。这些函数中有一些提供对语言的必要（注：本质）服务（例如，type和getmetatable）；其它则提供对“外部”服务的访问（例如，输入输出）；还有一些可以用Lua自身来实现，但非常有用或者有重要的性能要求值得用C来实现（例如，table.sort）。 
+--------------------------------------------------------------------------------  
 
-All libraries are implemented through the official C API and are provided as separate C modules. Currently, Lua has the following standard libraries: 
+lua_register  
+[-0, +0, e]   
 
-所有库通过官方C API实现，并被提供作为独立的C模块。当前，Lua拥有以下标准库： 
+void lua_register (lua_State *L,  
+                   const char *name,  
+                   lua_CFunction f);  
 
-basic library, which includes the coroutine sub-library; 
+Sets the C function f as the new value of global name. It is defined as a macro:   
 
-基础库，它包括协程子库；
+设置C函数f为全局变量name的新值。它被定义为一个宏：   
 
-package library; 
+     #define lua_register(L,n,f) \  
+            (lua_pushcfunction(L, f), lua_setglobal(L, n))  
 
-包库；
+--------------------------------------------------------------------------------  
 
-string manipulation; 
+lua_remove  
+[-1, +0, -]   
 
-字符串操纵；
+void lua_remove (lua_State *L, int index);  
 
-table manipulation; 
+Removes the element at the given valid index, shifting down the elements above this index to fill the gap. Cannot be called with a pseudo-index, because a pseudo-index is not an actual stack position.   
 
-表操纵；
+移除给定可用索引上的元素，并下移这个索引上方的元素以填充空白。不能用伪索引调用它，因为伪索引不是一个实际栈位置。   
 
-mathematical functions (sin, log, etc.); 
+--------------------------------------------------------------------------------  
 
-数学函数（sin，log，等等）；
+lua_replace  
+[-1, +0, -]   
 
-input and output; 
+void lua_replace (lua_State *L, int index);  
 
-输入和输出；
+Moves the top element into the given position (and pops it), without shifting any element (therefore replacing the value at the given position).   
 
-operating system facilities; 
+移动栈顶元素进给定位置中（并弹出它），不平移任意元素（因此替换给定位置上的值）。   
 
-操作系统工具；
+--------------------------------------------------------------------------------  
 
-debug facilities. 
+lua_resume  
+[-?, +?, -]   
 
-调试工具。
+int lua_resume (lua_State *L, int narg);  
 
-Except for the basic and package libraries, each library provides all its functions as fields of a global table or as methods of its objects. 
+Starts and resumes a coroutine in a given thread.   
 
-除了基础库和包库以外，每个库提供它的所有函数作为一个全局表的域或它的对象的方法。
+启动并恢复一个给定线程中的一个协程。  
 
-To have access to these libraries, the C host program should call the luaL_openlibs function, which opens all standard libraries. Alternatively, it can open them individually by calling luaopen_base (for the basic library), luaopen_package (for the package library), luaopen_string (for the string library), luaopen_table (for the table library), luaopen_math (for the mathematical library), luaopen_io (for the I/O library), luaopen_os (for the Operating System library), and luaopen_debug (for the debug library). These functions are declared in lualib.h and should not be called directly: you must call them like any other Lua C function, e.g., by using lua_call. 
+To start a coroutine, you first create a new thread (see lua_newthread); then you push onto its stack the main function plus any arguments; then you call lua_resume, with narg being the number of arguments. This call returns when the coroutine suspends or finishes its execution. When it returns, the stack contains all values passed to lua_yield, or all values returned by the body function. lua_resume returns LUA_YIELD if the coroutine yields, 0 if the coroutine finishes its execution without errors, or an error code in case of errors (see lua_pcall). In case of errors, the stack is not unwound, so you can use the debug API over it. The error message is on the top of the stack. To restart a coroutine, you put on its stack only the values to be passed as results from yield, and then call lua_resume.   
 
-要想拥有对这些库的访问权，C宿主程序应该调用luaL_openlibs函数，它打开所有标准库。可选地，它可以通过调用luaopen_base（对于基础库），luaopen_package（对于包库），luaopen_string（对于字符串库），luaopen_table（对于表库），luaopen_math（对于数学库），luaopen_io（对于输入输出库），luaopen_os（对于操作系统库），和luaopen_debug（对于调试库），单独地打开它们。这些函数被声明在lualib.h中，并且不应该直接被调用：你必须像其它任意Lua的C函数那样调用它们，例如，通过使用lua_call。
+为了启动一个协程，你首先创建一个新线程（见lua_newthread）；然后你把主函数和任意参数压进它的栈上；然后你调用lua_resume，参数narg为参数的数量。这个调用返回，当协程暂停或完成它的执行。当它返回时，栈包含传给lua_yield的所有值，或者被本体函数返回的所有值。lua_resume返回LUA_YIELD如果协程挂起，返回0如果协程不带错误地完成它的执行，或一个错误码如果有错误发生（见lua_pcall）。在出错的情况下，栈不是展开**（注：unwind有解开的意思）**的，所以你可以在它上面使用调试API）。错误消息位于栈顶。为了重启一个协程，你只把要被传递作为挂起结果的值放在它的栈上，然后调用lua_resume。  
 
-5.1 - Basic Functions
+--------------------------------------------------------------------------------  
 
-5.1 - 基础函数
+lua_setallocf  
+[-0, +0, -]   
 
-The basic library provides some core functions to Lua. If you do not include this library in your application, you should check carefully whether you need to provide implementations for some of its facilities. 
+void lua_setallocf (lua_State *L, lua_Alloc f, void *ud);  
 
-基础库提供一些核心函数给Lua。如果在你的应用程序中你不包含这个库，你应该仔细地检查你是否需要提供它的其中一些工具的实现。
+Changes the allocator function of a given state to f with user data ud.   
 
---------------------------------------------------------------------------------
+改变一个给定状态的分配器函数为f，附带用户数据ud。  
 
-assert (v [, message])
+--------------------------------------------------------------------------------  
 
-Issues an error when the value of its argument v is false (i.e., nil or false); otherwise, returns all its arguments. message is an error message; when absent, it defaults to "assertion failed!" 
+lua_setfenv  
+[-1, +0, -]   
 
-发出一个错误，当它的参数v的值为false（例如，nil或false）时；否则，返回它的所有参数。message是一个错误消息；如果不存在，它默认为“诊断失败！”
+int lua_setfenv (lua_State *L, int index);  
 
---------------------------------------------------------------------------------
+Pops a table from the stack and sets it as the new environment for the value at the given index. If the value at the given index is neither a function nor a thread nor a userdata, lua_setfenv returns 0. Otherwise it returns 1.   
 
-collectgarbage (opt [, arg])
+从栈中弹出一个表并且把设置它为给定索引上的值的新环境。如果给定索引上的值不是一个函数、一个线程或一个用户数据，那么它返回0。否则它返回1。   
 
-This function is a generic interface to the garbage collector. It performs different functions according to its first argument, opt: 
+--------------------------------------------------------------------------------  
 
-这个函数是对于垃圾回收器的一个通用接口。它执行不同的函数，根据它的第一个参数，opt：
+lua_setfield  
+[-1, +0, e]   
 
-"stop": stops the garbage collector. 
+void lua_setfield (lua_State *L, int index, const char *k);  
 
-"stop"：停止垃圾回收器。 
+Does the equivalent to t[k] = v, where t is the value at the given valid index and v is the value at the top of the stack.   
 
-"restart": restarts the garbage collector. 
+执行t[k] = v的等价操作，其中t是给定可用索引上的值，而v是栈顶上的值。   
 
-"restart"：重启垃圾回收器。
+This function pops the value from the stack. As in Lua, this function may trigger a metamethod for the "newindex" event (see §2.8).   
 
-"collect": performs a full garbage-collection cycle. 
+这个函数从栈中弹出值。正如在Lua中那样，此函数可能触发"newindex"事件的元方法（见§2.8）。   
 
-"collect"：执行一个完全垃圾回收周期。 
+--------------------------------------------------------------------------------  
 
-"count": returns the total memory in use by Lua (in Kbytes). 
+lua_setglobal  
+[-1, +0, e]   
 
-"count"：返回正在被Lua使用的总内存（单位千字节）. 
+void lua_setglobal (lua_State *L, const char *name);  
 
-"step": performs a garbage-collection step. The step "size" is controlled by arg (larger values mean more steps) in a non-specified way. If you want to control the step size you must experimentally tune the value of arg. Returns true if the step finished a collection cycle. 
+Pops a value from the stack and sets it as the new value of global name. It is defined as a macro:   
 
-"step"：执行一次垃圾回收步长。步长“大小”以一种非特定的方式被arg控制（较大的值意味着更多步）。如果你想控制步长大小，你必须试验地调节arg的值。返回true，如果该步完成了一次回收周期。
+从栈中弹出一个值并且设置它作为全局变量name的新值。它被定义为一个宏：   
 
-"setpause": sets arg as the new value for the pause of the collector (see §2.10). Returns the previous value for pause. 
+     #define lua_setglobal(L,s)   lua_setfield(L, LUA_GLOBALSINDEX, s)  
 
-"setpause"：设置arg作为回收器新的暂停的值（参考§2.10）。返回用于暂停的前一个值。
+--------------------------------------------------------------------------------  
 
-"setstepmul": sets arg as the new value for the step multiplier of the collector (see §2.10). Returns the previous value for step. 
+lua_setmetatable  
+[-1, +0, -]   
 
-"setstepmul"：设置arg作为回收器步长乘数的新值。返回用于步进的前一个值。
+int lua_setmetatable (lua_State *L, int index);  
 
---------------------------------------------------------------------------------
+Pops a table from the stack and sets it as the new metatable for the value at the given acceptable index.   
 
-dofile (filename)
+从栈中弹出一个表并且设置它为所给可接受索引上的值的新元表。  
 
-Opens the named file and executes its contents as a Lua chunk. When called without arguments, dofile executes the contents of the standard input (stdin). Returns all values returned by the chunk. In case of errors, dofile propagates the error to its caller (that is, dofile does not run in protected mode). 
+--------------------------------------------------------------------------------  
 
-打开具名文件并执行它的内容作为Lua的chunk块。当不带参数地调用它时，dofile执行标准输入（stdin）的内容。返回chunk块返回的所有值。如果出错，dofile传播错误给它的调用方（就是说，dofile不运行在保护模式中）。
+lua_settable  
+[-2, +0, e]   
 
---------------------------------------------------------------------------------
+void lua_settable (lua_State *L, int index);  
 
-error (message [, level])
+Does the equivalent to t[k] = v, where t is the value at the given valid index, v is the value at the top of the stack, and k is the value just below the top.   
 
-Terminates the last protected function called and returns message as the error message. Function error never returns. 
+执行t[k] = v的等价操作，其中t是给定有效索引上的值，v是栈顶的值，而k是栈顶正下方的值。   
 
-终止最后被调用的被保护函数，并返回message作为错误消息。函数error从不返回。
+This function pops both the key and the value from the stack. As in Lua, this function may trigger a metamethod for the "newindex" event (see §2.8).   
 
-Usually, error adds some information about the error position at the beginning of the message. The level argument specifies how to get the error position. With level 1 (the default), the error position is where the error function was called. Level 2 points the error to where the function that called error was called; and so on. Passing a level 0 avoids the addition of error position information to the message. 
+此函数将键和值都弹出栈。正如在Lua中那样，此函数可能触发"newindex"事件的元方法（见§2.8）。   
 
-通常，error添加一些关于错误位置的信息在消息的开头。level参数指定如何获得错误位置。使用级别1（默认），错误位置是error函数被调用的地方。级别2把错误指向调用error的函数被调用的地方；如此类推。传递一个级别0避免添加额外的错误位置信息到message。
+--------------------------------------------------------------------------------  
 
---------------------------------------------------------------------------------
+lua_settop  
+[-?, +?, -]   
 
-_G
+void lua_settop (lua_State *L, int index);  
 
-A global variable (not a function) that holds the global environment (that is, _G._G = _G). Lua itself does not use this variable; changing its value does not affect any environment, nor vice-versa. (Use setfenv to change environments.) 
+Accepts any acceptable index, or 0, and sets the stack top to this index. If the new top is larger than the old one, then the new elements are filled with nil. If index is 0, then all stack elements are removed.   
 
-一个全局变量（不是一个函数），它持有全局环境的（就是说，_G._G = _G）。Lua自身不使用这个变量；改变它的值不影响任何环境，反之亦然。（使用setfenv以改变环境。） 
+接受任意可接受索引，或者0，并且设置栈顶为此索引。如果新栈顶大于旧栈顶，那么新元素被填充为nil。如果索引为0，那么所有栈元素被移除。   
 
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------  
 
-getfenv ([f])
+lua_State  
 
-Returns the current environment in use by the function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling getfenv. If the given function is not a Lua function, or if f is 0, getfenv returns the global environment. The default for f is 1. 
+typedef struct lua_State lua_State;  
 
-返回正在被函数使用的当前环境。f可以是一个Lua函数或一个指定那个栈级别上函数的数字：级别1是调用getfenv的函数。如果给定函数不是一个Lua函数，或者如果f为0，那么getfenv返回全局环境。f的缺省值为1。 
+Opaque structure that keeps the whole state of a Lua interpreter. The Lua library is fully reentrant: it has no global variables. All information about a state is kept in this structure.   
 
---------------------------------------------------------------------------------
+保存整个Lua解析器状态的不透明结构。Lua库是完全可重入的：它没有全局变量。关于一个状态的所有信息被保存在这个结构体中。  
 
-getmetatable (object)
+A pointer to this state must be passed as the first argument to every function in the library, except to lua_newstate, which creates a Lua state from scratch.   
 
-If object does not have a metatable, returns nil. Otherwise, if the object's metatable has a "__metatable" field, returns the associated value. Otherwise, returns the metatable of the given object. 
+指向这个状态的指针必须被传递作为库中每一个函数的第一个参数，除了lua_newstate，最开始它创建一个Lua状态。  
 
-如果object没有一个元表，则返回nil。否则，如果object的元表拥有一个“__metatable”字段，则返回被关联的值。否则，返回给定对象的元表。 
+--------------------------------------------------------------------------------  
 
---------------------------------------------------------------------------------
+lua_status  
+[-0, +0, -]   
 
-ipairs (t)
+int lua_status (lua_State *L);  
 
-Returns three values: an iterator function, the table t, and 0, so that the construction 
+Returns the status of the thread L.   
 
-返回三个值：迭代器函数、表t和0，以致使结构
+返回线程L的状态。  
 
-     for i,v in ipairs(t) do body end
+The status can be 0 for a normal thread, an error code if the thread finished its execution with an error, or LUA_YIELD if the thread is suspended.   
 
-will iterate over the pairs (1,t[1]), (2,t[2]), ···, up to the first integer key absent from the table. 
+状态可能是0表示一个正常线程，可能是一个错误值如果该线程带一个错误地完成它的执行，或者可能是LUA_YIELD如果线程被挂起**（注：暂停）**。  
 
-将迭代键值对(1,t[1]), (2,t[2]), ……，直至不存在于表中的第一个整数键。 
+--------------------------------------------------------------------------------  
 
---------------------------------------------------------------------------------
+lua_toboolean  
+[-0, +0, -]   
 
-load (func [, chunkname])
+int lua_toboolean (lua_State *L, int index);  
 
-Loads a chunk using function func to get its pieces. Each call to func must return a string that concatenates with previous results. A return of an empty string, nil, or no value signals the end of the chunk. 
+Converts the Lua value at the given acceptable index to a C boolean value (0 or 1). Like all tests in Lua, lua_toboolean returns 1 for any Lua value different from false and nil; otherwise it returns 0. It also returns 0 when called with a non-valid index. (If you want to accept only actual boolean values, use lua_isboolean to test the value's type.)   
 
-加载一个chunk块，通过使用函数func以获得它的块。每个对func的调用必须返回一个字符串，它拼接前一个结果。一个空字符串，nil，或没有值的返回通知chunk块的结束。
+把所给可接受索引上的Lua值转换为一个C布尔值（0或1）。就像Lua中的所有测试**（注：这里指比较操作）**那样，返回1，对于任何不是false和nil的值；否则它返回0。它还返回0，当用一个不可用索引调用时。（如果你想只接受实际的布尔值，请使用lua_isboolean来测试该值的类型。）**（注：lua_isboolean用于判断是否为布尔类型）**  
 
-If there are no errors, returns the compiled chunk as a function; otherwise, returns nil plus the error message. The environment of the returned function is the global environment. 
+--------------------------------------------------------------------------------  
 
-如果没有错误，则返回被编译的chunk块作为一个函数；否则，返回nil和错误消息。被返回的函数的环境是全局环境。 
+lua_tocfunction  
+[-0, +0, -]   
 
-chunkname is used as the chunk name for error messages and debug information. When absent, it defaults to "=(load)". 
+lua_CFunction lua_tocfunction (lua_State *L, int index);  
 
-chunkname被用作错误消息和调试信息的chunk块名。当不存在时，它缺省为“=(load)”。 
+Converts a value at the given acceptable index to a C function. That value must be a C function; otherwise, returns NULL.   
 
---------------------------------------------------------------------------------
+转换所给可接受索引上的值为一个C函数。那个值必须是一个C函数；否则，返回NULL。  
 
-loadfile ([filename])
+--------------------------------------------------------------------------------   
 
-Similar to load, but gets the chunk from file filename or from the standard input, if no file name is given. 
+lua_tointeger  
+[-0, +0, -]   
 
-类似于load，但获得chunk块是从文件filename中，或者从标准输入中如果没有给定文件名。
+lua_Integer lua_tointeger (lua_State *L, int index);  
 
---------------------------------------------------------------------------------
+Converts the Lua value at the given acceptable index to the signed integral type lua_Integer. The Lua value must be a number or a string convertible to a number (see §2.2.1); otherwise, lua_tointeger returns 0.   
 
-loadstring (string [, chunkname])
+转换所给可接受索引上的值为带符号整型lua_Integer**（注：一个定义在C中的typedef类型）**。该Lua值必须是一个数或一个可转换为数的字符串（参考§2.2.1）；否则，lua_tointeger返回0。  
 
-Similar to load, but gets the chunk from the given string. 
+If the number is not an integer, it is truncated in some non-specified way.   
 
-类似于load，但从给定字符串中获得chunk块。 
+如果该数不是一个整数，它以一些不特定的方式被截断。  
 
-To load and run a given string, use the idiom 
+--------------------------------------------------------------------------------  
 
-为了加载和运行给定的字符串，请使用惯常用法 
+lua_tolstring  
+[-0, +0, m]   
 
-     assert(loadstring(s))()
+const char *lua_tolstring (lua_State *L, int index, size_t *len);  
 
-When absent, chunkname defaults to the given string. 
+Converts the Lua value at the given acceptable index to a C string. If len is not NULL, it also sets *len with the string length. The Lua value must be a string or a number; otherwise, the function returns NULL. If the value is a number, then lua_tolstring also changes the actual value in the stack to a string. (This change confuses lua_next when lua_tolstring is applied to keys during a table traversal.)   
 
-当不存在时，chunkname缺省为给定的字符串。 
+转换所给可接受索引上的值为一个C字符串。如果参数len不是NULL，它还设置*len为字符串长度。该Lua值必须是一个字符串或一个数；否则，函数返回NULL。如果该值是一个数，那么lua_tolstring还改变栈中的实际值为字符串。（这个改变会搞乱lua_next，当在一次表遍历期间lua_tolstring被应用到键时。）  
 
---------------------------------------------------------------------------------
+lua_tolstring returns a fully aligned pointer to a string inside the Lua state. This string always has a zero ('\0') after its last character (as in C), but can contain other zeros in its body. Because Lua has garbage collection, there is no guarantee that the pointer returned by lua_tolstring will be valid after the corresponding value is removed from the stack.   
 
-next (table [, index])
+lua_tolstring返回一个完全对齐的指向Lua状态内部的字符串的指针。因为Lua有垃圾回收，所以不保证lua_tolstring所返回的指针在相应值从堆栈中删除后仍合法。  
 
-Allows a program to traverse all fields of a table. Its first argument is a table and its second argument is an index in this table. next returns the next index of the table and its associated value. When called with nil as its second argument, next returns an initial index and its associated value. When called with the last index, or with nil in an empty table, next returns nil. If the second argument is absent, then it is interpreted as nil. In particular, you can use next(t) to check whether a table is empty. 
+--------------------------------------------------------------------------------  
 
-允许一个程序遍历一个表的所有域。它的第一参数是一个表，而它的第二参数是这个表中的一个索引。next返回表的下一个索引和它关联的值。当用nil作为它的第二参数调用它时，next返回一个初始索引和它关联的值。当用最后的索引调用它，或在一个空表中用nil调用它时，next返回nil。如果第二参数不存在，那么它被解释作为nil。特别地，你可以使用next(t)来检查一个表是否为空。 
+lua_tonumber  
+[-0, +0, -]   
 
-The order in which the indices are enumerated is not specified, even for numeric indices. (To traverse a table in numeric order, use a numerical for or the ipairs function.) 
+lua_Number lua_tonumber (lua_State *L, int index);  
 
-索引被枚举的次序是非特定的，即使对于数字型索引。（为了用数字顺序来遍历一个表，请使用一个数字型for或ipairs函数。） 
+Converts the Lua value at the given acceptable index to the C type lua_Number (see lua_Number). The Lua value must be a number or a string convertible to a number (see §2.2.1); otherwise, lua_tonumber returns 0.   
 
-The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. You may however modify existing fields. In particular, you may clear existing fields. 
+把所给可接受索引上的值转换为C类型lua_Number（参考lua_Number）**（注：lua_Number是一个typedef，默认为double型）**。Lua值必须为一个数或可以转换为数的字符串（参考§2.2.1）；否则，lua_tonumber返回0。  
 
-next的行为是未定义的，如果，在遍历期间，你赋予任意值给表中一个不存在域。然而你可以修改现存域。特别地，你可以清空现存域。
+--------------------------------------------------------------------------------  
 
---------------------------------------------------------------------------------
+lua_topointer  
+[-0, +0, -]   
 
-pairs (t)
+const void *lua_topointer (lua_State *L, int index);  
 
-Returns three values: the next function, the table t, and nil, so that the construction 
+Converts the value at the given acceptable index to a generic C pointer (void*). The value can be a userdata, a table, a thread, or a function; otherwise, lua_topointer returns NULL. Different objects will give different pointers. There is no way to convert the pointer back to its original value.   
 
-返回三个值：next函数，表t，和nil，以致使结构
+把所给可接受索引上的值转换为通用C指针（void*）。这个值可以是一个用户定义数据，表，线程，或者是函数；否则，lua_topointer返回NULL。不同的对象会给出不同的指针。无法转换指针回它原来的值。  
 
-     for k,v in pairs(t) do body end
+Typically this function is used only for debug information.   
 
-will iterate over all key–value pairs of table t. 
+通常这个函数只用于获取调试信息。  
 
-将一直迭代表t的所有键值对。 
+--------------------------------------------------------------------------------  
 
-See function next for the caveats of modifying the table during its traversal. 
+lua_tostring  
+[-0, +0, m]   
 
-参见函数next以获知在它遍历期间修改表的警告。
+const char *lua_tostring (lua_State *L, int index);  
 
---------------------------------------------------------------------------------
+Equivalent to lua_tolstring with len equal to NULL.   
 
-pcall (f, arg1, ···)
+等效于参数len等于NULL的lua_tolstring。   
 
-Calls function f with the given arguments in protected mode. This means that any error inside f is not propagated; instead, pcall catches the error and returns a status code. Its first result is the status code (a boolean), which is true if the call succeeds without errors. In such case, pcall also returns all results from the call, after this first result. In case of any error, pcall returns false plus the error message. 
+--------------------------------------------------------------------------------  
 
-在保护模式下用给定的参数调用函数f。这意味着f内的任意错误不被传播；相反，pcall捕获错误并返回一个状态码。它的第一结果是状态码（一个boolean），它是true如果调用不带错误地成功。在这种情况下，pcall还返回调用的所有结果，在这个第一结果之后。在出现任意错误的情况下，pcall返回false以及错误消息。 
+lua_tothread  
+[-0, +0, -]   
 
---------------------------------------------------------------------------------
+lua_State *lua_tothread (lua_State *L, int index);  
 
-print (···)
+Converts the value at the given acceptable index to a Lua thread (represented as lua_State*). This value must be a thread; otherwise, the function returns NULL.   
 
-Receives any number of arguments, and prints their values to stdout, using the tostring function to convert them to strings. print is not intended for formatted output, but only as a quick way to show a value, typically for debugging. For formatted output, use string.format. 
+转换给定的可接受索引上的值为一个Lua线程（表示为lua_State*）。这个值必须是一个类型为thread的值；否则，函数返回NULL。  
 
-接受任意数量的参数，并打印它们的值到stdout，通过使用tostring函数转换它们为字符串。print不倾向于用来格式化输出，而只是作为显示一个值的一种快速方式，特别是用于调试。对于被格式化的输出，请使用string.format。 
+--------------------------------------------------------------------------------  
 
---------------------------------------------------------------------------------
+lua_touserdata  
+[-0, +0, -]   
 
-rawequal (v1, v2)
+void *lua_touserdata (lua_State *L, int index);  
 
-Checks whether v1 is equal to v2, without invoking any metamethod. Returns a boolean. 
+If the value at the given acceptable index is a full userdata, returns its block address. If the value is a light userdata, returns its pointer. Otherwise, returns NULL.   
 
-检查v1与v2是否相等，不调用任意元方法。返回一个boolean值。 
+如果给定可接受索引上的值是一个完全用户数据，返回它的块**（注：这里应该是指数据的内存块）**地址。如果该值为轻量级用户数据，返回它的指针。否则，返回NULL。   
 
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------  
 
-rawget (table, index)
+lua_type  
+[-0, +0, -]   
 
-Gets the real value of table[index], without invoking any metamethod. table must be a table; index may be any value. 
+int lua_type (lua_State *L, int index);  
 
-获取table[index]的实际值，不调用任意元方法。table必须是一个表；index可以是任意值。 
+Returns the type of the value in the given acceptable index, or LUA_TNONE for a non-valid index (that is, an index to an "empty" stack position). The types returned by lua_type are coded by the following constants defined in lua.h: LUA_TNIL, LUA_TNUMBER, LUA_TBOOLEAN, LUA_TSTRING, LUA_TTABLE, LUA_TFUNCTION, LUA_TUSERDATA, LUA_TTHREAD, and LUA_TLIGHTUSERDATA.   
 
---------------------------------------------------------------------------------
+返回给定可接受索引上的值的类型，或者LUA_TNONE表示非可用索引（就是说，指向“空的”栈位置的索引）。被lua_type返回的类型被定义在lua.h中的以下常量编码：LUA_TNIL，LUA_TNUMBER，LUA_TBOOLEAN，LUA_TSTRING，LUA_TTABLE，LUA_TFUNCTION，LUA_TUSERDATA，LUA_TTHREAD和LUA_TLIGHTUSERDATA。  
 
-rawset (table, index, value)
+--------------------------------------------------------------------------------  
 
-Sets the real value of table[index] to value, without invoking any metamethod. table must be a table, index any value different from nil, and value any Lua value. 
+lua_typename  
+[-0, +0, -]   
 
-设置table[index]的实际值为value，不调用任何元方法。table必须是一个表，index是不是nil的任意值，而value是任意Lua值。
+const char *lua_typename  (lua_State *L, int tp);  
 
-This function returns table. 
+Returns the name of the type encoded by the value tp, which must be one the values returned by lua_type.   
 
-这个函数返回table。
+返回被值tp编码**（注：这里指把字符串映射为整数）**的类型的名称，它必须是被lua_type返回的值之一。   
 
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------  
 
-select (index, ···)
+lua_Writer  
+typedef int (*lua_Writer) (lua_State *L,  
+                           const void* p,  
+                           size_t sz,  
+                           void* ud);  
 
-If index is a number, returns all arguments after argument number index. Otherwise, index must be the string "#", and select returns the total number of extra arguments it received. 
+The type of the writer function used by lua_dump. Every time it produces another piece of chunk, lua_dump calls the writer, passing along the buffer to be written (p), its size (sz), and the data parameter supplied to lua_dump.   
 
-如果index是一个数，返回参数数量index之后的所有参数。否则index必须是字符串"#"，而select返回它接收的额外参数的总数。
+被lua_dump使用的写入器函数的类型。每当它产生另一块chunk块时，lua_dump调用写入器，传入要被写入的缓冲（p），它的大小（sz），以及提供给lua_dump的数据参数。  
 
---------------------------------------------------------------------------------
+The writer returns an error code: 0 means no errors; any other value means an error and stops lua_dump from calling the writer again.   
 
-setfenv (f, table)
+写入器返回一个错误代码：0意味着无错误；其它任意值意味着一个错误并且阻止lua_dump再次调用写入器。  
 
-Sets the environment to be used by the given function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling setfenv. setfenv returns the given function. 
+--------------------------------------------------------------------------------  
 
-设置要被给定函数使用的环境。f可以是一个Lua函数或一个指定那个栈级别上函数的数：级别1是调用setfenv的函数。setfenv返回给定函数。 
+lua_xmove  
+[-?, +?, -]   
 
-As a special case, when f is 0 setfenv changes the environment of the running thread. In this case, setfenv returns no values. 
+void lua_xmove (lua_State *from, lua_State *to, int n);  
 
-作为一个特殊情况，当f是0时，setfenv改变正在运行的线程的环境。在这种情况下，setfenv不返回值。 
+Exchange values between different threads of the same global state.   
 
---------------------------------------------------------------------------------
+在同一个全局状态的不同线程之间交换值。  
 
-setmetatable (table, metatable)
+This function pops n values from the stack from, and pushes them onto the stack to.   
 
-Sets the metatable for the given table. (You cannot change the metatable of other types from Lua, only from C.) If metatable is nil, removes the metatable of the given table. If the original metatable has a "__metatable" field, raises an error. 
+这个函数从栈from中弹出n个值，并且把它们压到栈to上。  
 
-设置给定表的元表。（你无法修改来自Lua的其它类型的元表，只能修改来自C的。）如果元表是nil，移除给定表的元表。如果原来的元表拥有一个"__metatable"域，则触发一个错误。
+--------------------------------------------------------------------------------  
 
-This function returns table. 
+lua_yield  
+[-?, +?, -]   
 
-这个函数返回table。
+int lua_yield  (lua_State *L, int nresults);  
 
---------------------------------------------------------------------------------
+Yields a coroutine.   
 
-tonumber (e [, base])
+挂起**（注：暂停）**一个协程   
 
-Tries to convert its argument to a number. If the argument is already a number or a string convertible to a number, then tonumber returns this number; otherwise, it returns nil. 
+This function should only be called as the return expression of a C function, as follows:   
 
-尝试转换它的参数为一个数。如果参数已经是一个数或一个可转换为数的字符串，那么tonumber返回这个数；否则，它返回nil。 
+这个函数应该只作为C函数的return表达式被调用**（注：即尾调用）**，如下：  
 
-An optional argument specifies the base to interpret the numeral. The base may be any integer between 2 and 36, inclusive. In bases above 10, the letter 'A' (in either upper or lower case) represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. In base 10 (the default), the number can have a decimal part, as well as an optional exponent part (see §2.1). In other bases, only unsigned integers are accepted. 
+     return lua_yield (L, nresults);  
 
-一个可选参数指定解释该数的基数（注：进制）。基数可能是2和36之间的任意整数，包含2和36在内。在10以上的基的情况下，字母'A'（不管大小写）代表10，'B'代表11，如此类推，直至'Z'代表35。在基数10的情况下，数可以拥有一个小数部分，还有一个可选的指数部分（见§2.1）。在其它基数的情况下，只接受无符号整数。
+When a C function calls lua_yield in that way, the running coroutine suspends its execution, and the call to lua_resume that started this coroutine returns. The parameter nresults is the number of values from the stack that are passed as results to lua_resume.   
 
---------------------------------------------------------------------------------
+当一个C函数以那种方式调用lua_yield时，正在运行的协程暂停它的执行，而启动这个协程的对lua_resume的调用会返回。参数nresults是来自栈的值的数量，它们被传递作为传给lua_resume的结果。  
 
-tostring (e)
-
-Receives an argument of any type and converts it to a string in a reasonable format. For complete control of how numbers are converted, use string.format. 
-
-接收一个任意类型的参数，并以合理的格式转换它为一个字符串。想取得数是如何转换的完全控制，请使用string.format。 
-
-If the metatable of e has a "__tostring" field, then tostring calls the corresponding value with e as argument, and uses the result of the call as its result. 
-
-如果e的元表有"__tostring"字段，那么tostring以e作为参数来调用对应的值，并使用该调用的结果作为它的结果。 
-
---------------------------------------------------------------------------------
-
-type (v)
-
-Returns the type of its only argument, coded as a string. The possible results of this function are "nil" (a string, not the value nil), "number", "string", "boolean", "table", "function", "thread", and "userdata". 
-
-返回它唯一参数的类型，编码成一个字符串。这个函数的可能结果有"nil"（一个字符串，不是值nil），"number"，"string"，"boolean"，"table"，"function"，"thread"，和"userdata"。 
-
---------------------------------------------------------------------------------
-
-unpack (list [, i [, j]])
-
-Returns the elements from the given table. This function is equivalent to 
-
-返回来自给定表的元素。这个函数等价于
-
-     return list[i], list[i+1], ···, list[j]
-
-except that the above code can be written only for a fixed number of elements. By default, i is 1 and j is the length of the list, as defined by the length operator (see §2.5.5). 
-
-除了写上面的代码只能用于一个固定数量的元素。缺省，i是1而j是列表的长度，正如长度操作符（见§2.5.5）定义的那样。
-
-     return list[i], list[i+1], ···, list[j]
-
---------------------------------------------------------------------------------
-
-_VERSION
-
-A global variable (not a function) that holds a string containing the current interpreter version. The current contents of this variable is "Lua 5.1". 
-
-一个全局变量（不是一个函数），它持有包含当前解释器版本的一个字符串。这个变量的当前内容是“Lua 5.1”。 
-
---------------------------------------------------------------------------------
-
-xpcall (f, err)
-
-This function is similar to pcall, except that you can set a new error handler. 
-
-这个函数类似于pcall，除了你可以设置一个新的错误处理器。 
-
-xpcall calls function f in protected mode, using err as the error handler. Any error inside f is not propagated; instead, xpcall catches the error, calls the err function with the original error object, and returns a status code. Its first result is the status code (a boolean), which is true if the call succeeds without errors. In this case, xpcall also returns all results from the call, after this first result. In case of any error, xpcall returns false plus the result from err. 
-
-xpcall以保护模式调用函数f，使用err作为错误处理器。在f中的任意错误不被传播；相反，xpcall捕捉该错误，用原始错误对象调用err函数，并返回一个状态码。它的第一结果是状态码（一个boolean值），它是true如果调用不带错误地成功。在这种情况下，xpcall还返回来自该调用所有结果，在这个第一结果之后。在有任意错误的情况下，xpcall返回false以及来自err的结果。
 
 -----------------------------------------
 
-参考自：
-1. Lua 5.1 参考手册 （云风译）
-http://www.codingnow.com/2000/download/lua_manual.html
-2. hshqcn
+## 参考自：  
+1. Lua 5.1 参考手册 （云风译）  
+http://www.codingnow.com/2000/download/lua_manual.html  
+
+2. hshqcn  
 hshqcn  
