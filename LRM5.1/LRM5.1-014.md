@@ -1,10 +1,10 @@
-﻿【翻译】(LRM5.1-14)协程操纵(5.2)、模块(5.3)
+﻿【翻译】(LRM5.1-14)标准库的基础函数(5.1)  
 
 See also:
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
 
 原文见
-http://www.lua.org/manual/5.1/manual.html
+http://www.lua.org/manual/5.1/manual.html  
 
 -----------------------------------------
 
@@ -22,217 +22,387 @@ Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the 
 
 -----------------------------------------
 
-5.2 - Coroutine Manipulation
+5 - Standard Libraries
 
-5.2 - 协程操纵
+5 - 标准库
 
-The operations related to coroutines comprise a sub-library of the basic library and come inside the table coroutine. See §2.11 for a general description of coroutines. 
+The standard Lua libraries provide useful functions that are implemented directly through the C API. Some of these functions provide essential services to the language (e.g., type and getmetatable); others provide access to "outside" services (e.g., I/O); and others could be implemented in Lua itself, but are quite useful or have critical performance requirements that deserve an implementation in C (e.g., table.sort). 
 
-与协程相关的操作由基础库的一个子库组成且来自表coroutine内。见§2.11获取协程的一般描述。
+标准Lua库提供直接通过C API实现的一些有用函数。这些函数中有一些提供对语言的必要（注：本质）服务（例如，type和getmetatable）；其它则提供对“外部”服务的访问（例如，输入输出）；还有一些可以用Lua自身来实现，但非常有用或者有重要的性能要求值得用C来实现（例如，table.sort）。 
 
---------------------------------------------------------------------------------
+All libraries are implemented through the official C API and are provided as separate C modules. Currently, Lua has the following standard libraries: 
 
-coroutine.create (f)
+所有库通过官方C API实现，并被提供作为独立的C模块。当前，Lua拥有以下标准库： 
 
-Creates a new coroutine, with body f. f must be a Lua function. Returns this new coroutine, an object with type "thread". 
+basic library, which includes the coroutine sub-library; 
 
-一个新协程，带函数体f。f必须是一个Lua函数。返回这个新的协程，一个类型为"thread"的对象。
+基础库，它包括协程子库；
 
---------------------------------------------------------------------------------
+package library; 
 
-coroutine.resume (co [, val1, ···])
+包库；
 
-Starts or continues the execution of coroutine co. The first time you resume a coroutine, it starts running its body. The values val1, ··· are passed as the arguments to the body function. If the coroutine has yielded, resume restarts it; the values val1, ··· are passed as the results from the yield. 
+string manipulation; 
 
-启动或继续协程co的执行。你第一次恢复一个协程时，它开始运行它的函数体。值val1，……被传递作为主体函数的参数。如果协程被挂起，resume重新启动它；值val1，……被传递作为来自yield的结果。 
+字符串操纵；
 
-If the coroutine runs without any errors, resume returns true plus any values passed to yield (if the coroutine yields) or any values returned by the body function (if the coroutine terminates). If there is any error, resume returns false plus the error message. 
+table manipulation; 
 
-如果协程不带任意错误地运行，resume返回true和被传递到yield的任意值（如果协程挂起）或被主体函数返回的任意值（如果协程终结）。如果有任意错误，resume返回false和错误消息。 
+表操纵；
 
---------------------------------------------------------------------------------
+mathematical functions (sin, log, etc.); 
 
-coroutine.running ()
+数学函数（sin，log，等等）；
 
-Returns the running coroutine, or nil when called by the main thread. 
+input and output; 
 
-返回正在运行的协程，或nil当被主线程调用时。
+输入和输出；
 
---------------------------------------------------------------------------------
+operating system facilities; 
 
-coroutine.status (co)
+操作系统工具；
 
-Returns the status of coroutine co, as a string: "running", if the coroutine is running (that is, it called status); "suspended", if the coroutine is suspended in a call to yield, or if it has not started running yet; "normal" if the coroutine is active but not running (that is, it has resumed another coroutine); and "dead" if the coroutine has finished its body function, or if it has stopped with an error. 
+debug facilities. 
 
-返回协程co的状态，作为一个字符串："running"如果该协程正在运行（就是说，它调用了status）；"suspended"，如果该协程被暂停在一个对yield的调用，或者它还没有开始运行；"normal"如果协程是激活的但不是正在运行（就是说，它已经恢复另一个协程）；以及"dead"如果该协程已经完成它的主体函数，或者如果它已经带一个错误地停止。 
+调试工具。
 
---------------------------------------------------------------------------------
+Except for the basic and package libraries, each library provides all its functions as fields of a global table or as methods of its objects. 
 
-coroutine.wrap (f)
+除了基础库和包库以外，每个库提供它的所有函数作为一个全局表的域或它的对象的方法。
 
-Creates a new coroutine, with body f. f must be a Lua function. Returns a function that resumes the coroutine each time it is called. Any arguments passed to the function behave as the extra arguments to resume. Returns the same values returned by resume, except the first boolean. In case of error, propagates the error. 
+To have access to these libraries, the C host program should call the luaL_openlibs function, which opens all standard libraries. Alternatively, it can open them individually by calling luaopen_base (for the basic library), luaopen_package (for the package library), luaopen_string (for the string library), luaopen_table (for the table library), luaopen_math (for the mathematical library), luaopen_io (for the I/O library), luaopen_os (for the Operating System library), and luaopen_debug (for the debug library). These functions are declared in lualib.h and should not be called directly: you must call them like any other Lua C function, e.g., by using lua_call. 
 
-创建一个新的协程，使用一个函数体f。f必须是一个Lua函数。返回一个函数，每当它被调用时它恢复该协程。被传递给该函数的任意参数的行为如同传给resume的额外参数。返回被resume所返回的相同值，除了第一个boolean值。在出错的情况下，传播该错误。 
+要想拥有对这些库的访问权，C宿主程序应该调用luaL_openlibs函数，它打开所有标准库。可选地，它可以通过调用luaopen_base（对于基础库），luaopen_package（对于包库），luaopen_string（对于字符串库），luaopen_table（对于表库），luaopen_math（对于数学库），luaopen_io（对于输入输出库），luaopen_os（对于操作系统库），和luaopen_debug（对于调试库），单独地打开它们。这些函数被声明在lualib.h中，并且不应该直接被调用：你必须像其它任意Lua的C函数那样调用它们，例如，通过使用lua_call。
 
---------------------------------------------------------------------------------
+5.1 - Basic Functions
 
-coroutine.yield (···)
+5.1 - 基础函数
 
-Suspends the execution of the calling coroutine. The coroutine cannot be running a C function, a metamethod, or an iterator. Any arguments to yield are passed as extra results to resume. 
+The basic library provides some core functions to Lua. If you do not include this library in your application, you should check carefully whether you need to provide implementations for some of its facilities. 
 
-暂停调用方协程的执行。协程不能正在运行一个C函数，一个元方法，或一个迭代器。传给yield的任意参数被传递作为给resume的额外结果。 
-
-5.3 - Modules
-
-5.3 - 模块
-
-The package library provides basic facilities for loading and building modules in Lua. It exports two of its functions directly in the global environment: require and module. Everything else is exported in a table package. 
-
-包库提供加载和创建Lua中模块的基础工具。它直接地导出它的其中两个函数在全局环境中：require和module。其它所有东西被导出在一个表package中。 
+基础库提供一些核心函数给Lua。如果在你的应用程序中你不包含这个库，你应该仔细地检查你是否需要提供它的其中一些工具的实现。
 
 --------------------------------------------------------------------------------
 
-module (name [, ···])
+assert (v [, message])
 
-Creates a module. If there is a table in package.loaded[name], this table is the module. Otherwise, if there is a global table t with the given name, this table is the module. Otherwise creates a new table t and sets it as the value of the global name and the value of package.loaded[name]. This function also initializes t._NAME with the given name, t._M with the module (t itself), and t._PACKAGE with the package name (the full module name minus last component; see below). Finally, module sets t as the new environment of the current function and the new value of package.loaded[name], so that require returns t. 
+Issues an error when the value of its argument v is false (i.e., nil or false); otherwise, returns all its arguments. message is an error message; when absent, it defaults to "assertion failed!" 
 
-创建一个模块。如果在package.loaded[name]中存在一个表，那么这个表是该模块。否则，如果存在一个全局表t带有给定的名字，那么这个表是该模块。否则，创建一个新表t并设置它作为全局变量name的值和package.loaded[name]的值。这个函数还用给定名称初始化t._NAME，用该模块（t自身）初始化t._M，且用包名初始化t._PACKAGE（完全模块名减去最后部分；见下）。最后，module设置t作为当前函数的新环境和package.loaded[name]的新值，致使require返回t。 
-
-If name is a compound name (that is, one with components separated by dots), module creates (or reuses, if they already exist) tables for each component. For instance, if name is a.b.c, then module stores the module table in field c of field b of global a. 
-
-如果name是个一个复合名字（就是说，被点号分隔成几个部分的名称），那么module为每个部分创建（或重用，如果它们已经存在）表。例如，如果name是a.b.c，那么module在全局变量a的域b的域c中存储模块表。 
-
-This function can receive optional options after the module name, where each option is a function to be applied over the module. 
-
-这个函数可以在模块名后接收可选的选项，其中每个选项是要被应用在模块上的一个函数。 
+发出一个错误，当它的参数v的值为false（例如，nil或false）时；否则，返回它的所有参数。message是一个错误消息；如果不存在，它默认为“诊断失败！”
 
 --------------------------------------------------------------------------------
 
-require (modname)
+collectgarbage (opt [, arg])
 
-Loads the given module. The function starts by looking into the package.loaded table to determine whether modname is already loaded. If it is, then require returns the value stored at package.loaded[modname]. Otherwise, it tries to find a loader for the module. 
+This function is a generic interface to the garbage collector. It performs different functions according to its first argument, opt: 
 
-加载给定模块。这个函数开始的时候查看package.loaded表的内容以确认modname是否已经被加载。如果是，那么require返回存储在package.loaded[modname]中的值。否则，它尝试为该模块寻找一个加载器。 
+这个函数是对于垃圾回收器的一个通用接口。它执行不同的函数，根据它的第一个参数，opt：
 
-To find a loader, require is guided by the package.loaders array. By changing this array, we can change how require looks for a module. The following explanation is based on the default configuration for package.loaders. 
+"stop": stops the garbage collector. 
 
-为了找到一个加载器，require被package.loaders数组指引。通过改变这个数组，我们可以改变require如何寻找一个模块。以下解释是基于package.loaders的默认配置。 
+"stop"：停止垃圾回收器。 
 
-First require queries package.preload[modname]. If it has a value, this value (which should be a function) is the loader. Otherwise require searches for a Lua loader using the path stored in package.path. If that also fails, it searches for a C loader using the path stored in package.cpath. If that also fails, it tries an all-in-one loader (see package.loaders). 
+"restart": restarts the garbage collector. 
 
-首先require查询package.preload[modname]。如果它拥有一个值，这个值（它应该是一个函数）是该加载器。否则，require搜索一个Lua加载器，通过使用存储在package.path中的路径。如果那也失败了，它搜索一个C加载器，通过使用存储在package.cpath中的路径。如果那也失败了，它尝试一个一体化加载器（见package.loaders）。 
+"restart"：重启垃圾回收器。
 
-Once a loader is found, require calls the loader with a single argument, modname. If the loader returns any value, require assigns the returned value to package.loaded[modname]. If the loader returns no value and has not assigned any value to package.loaded[modname], then require assigns true to this entry. In any case, require returns the final value of package.loaded[modname]. 
+"collect": performs a full garbage-collection cycle. 
 
-一旦一个加载器被找到，require用一个单一参数，modname，调用该加载器。如果该加载器返回任意值，那么require赋予返回的值给package.loaded[modname]。如果该加载器不返回值，且不曾赋任意值给package.loaded[modname]，那么require赋予true给这个记录。在任意情况下，require返回package.loaded[modname]的最终值。
+"collect"：执行一个完全垃圾回收周期。 
 
-If there is any error loading or running the module, or if it cannot find any loader for the module, then require signals an error. 
+"count": returns the total memory in use by Lua (in Kbytes). 
 
-如果加载或运行该模块出现任意错误，或者如果它无法为该模块找到任意加载器，那么require发出一个错误。 
+"count"：返回正在被Lua使用的总内存（单位千字节）. 
 
---------------------------------------------------------------------------------
+"step": performs a garbage-collection step. The step "size" is controlled by arg (larger values mean more steps) in a non-specified way. If you want to control the step size you must experimentally tune the value of arg. Returns true if the step finished a collection cycle. 
 
-package.cpath
+"step"：执行一次垃圾回收步长。步长“大小”以一种非特定的方式被arg控制（较大的值意味着更多步）。如果你想控制步长大小，你必须试验地调节arg的值。返回true，如果该步完成了一次回收周期。
 
-The path used by require to search for a C loader. 
+"setpause": sets arg as the new value for the pause of the collector (see §2.10). Returns the previous value for pause. 
 
-路径，被require用于搜索一个C加载器。 
+"setpause"：设置arg作为回收器新的暂停的值（参考§2.10）。返回用于暂停的前一个值。
 
-Lua initializes the C path package.cpath in the same way it initializes the Lua path package.path, using the environment variable LUA_CPATH or a default path defined in luaconf.h. 
+"setstepmul": sets arg as the new value for the step multiplier of the collector (see §2.10). Returns the previous value for step. 
 
-Lua以它初始化Lua路径package.path的相同方式初始化C路径package.cpath，通过使用环境变量LUA_CPATH或被定义在luaconf.h中的一个默认路径。 
-
---------------------------------------------------------------------------------
-
-package.loaded
-
-A table used by require to control which modules are already loaded. When you require a module modname and package.loaded[modname] is not false, require simply returns the value stored there. 
-
-一个表，被require用于控制哪些模块已经被加载。当你包含一个模块modname而package.loaded[modname]不是false时，require简单地返回存储在那里的值。 
+"setstepmul"：设置arg作为回收器步长乘数的新值。返回用于步进的前一个值。
 
 --------------------------------------------------------------------------------
 
-package.loaders
+dofile (filename)
 
-A table used by require to control how to load modules. 
+Opens the named file and executes its contents as a Lua chunk. When called without arguments, dofile executes the contents of the standard input (stdin). Returns all values returned by the chunk. In case of errors, dofile propagates the error to its caller (that is, dofile does not run in protected mode). 
 
-一个被require用于控制如何加载模块的表。 
-
-Each entry in this table is a searcher function. When looking for a module, require calls each of these searchers in ascending order, with the module name (the argument given to require) as its sole parameter. The function can return another function (the module loader) or a string explaining why it did not find that module (or nil if it has nothing to say). Lua initializes this table with four functions. 
-
-这个表的每一个记录是一个搜索器函数。当查找一个模块时，require以升序调用这些搜索器中的每个，使用模块名（传给require的参数）作为它的唯一参数。该函数可以返回另一个函数（模块加载器）或一个解释它为什么没找到那个模块的字符串（或nil，如果没东西要说）。Lua用四个函数初始化这个表。 
-
-The first searcher simply looks for a loader in the package.preload table. 
-
-第一个搜索器简单地在package.preload表中查找一个加载器。
-
-The second searcher looks for a loader as a Lua library, using the path stored at package.path. A path is a sequence of templates separated by semicolons. For each template, the searcher will change each interrogation mark in the template by filename, which is the module name with each dot replaced by a "directory separator" (such as "/" in Unix); then it will try to open the resulting file name. So, for instance, if the Lua path is the string 
-
-第二个搜索器查找加载器作为一个Lua库，通过使用存储在package.path中的路径。一个路径是被分号分隔的一连串模板。对于每个模板，搜索器将用filename改变模板中的每个问号，它是其每个点号被一个“目录分隔符”（诸如Unix中的"/"）替换的模块名；然后，它将尝试打开结果文件名。因此，例如，如果Lua路径是字符串 
-
-     "./?.lua;./?.lc;/usr/local/?/init.lua"
-
-the search for a Lua file for module foo will try to open the files ./foo.lua, ./foo.lc, and /usr/local/foo/init.lua, in that order. 
-
-那么对模块foo的一个Lua文件的搜索将尝试以那个顺序打开文件./foo.lua，./foo.lc，和/usr/local/foo/init.lua。 
-
-The third searcher looks for a loader as a C library, using the path given by the variable package.cpath. For instance, if the C path is the string 
-
-第三个搜索器查找加载器作为一个C库，通过使用被变量package.cpath给定的路径。例如，如果C路径是字符串 
-
-     "./?.so;./?.dll;/usr/local/?/init.so"
-
-the searcher for module foo will try to open the files ./foo.so, ./foo.dll, and /usr/local/foo/init.so, in that order. Once it finds a C library, this searcher first uses a dynamic link facility to link the application with the library. Then it tries to find a C function inside the library to be used as the loader. The name of this C function is the string "luaopen_" concatenated with a copy of the module name where each dot is replaced by an underscore. Moreover, if the module name has a hyphen, its prefix up to (and including) the first hyphen is removed. For instance, if the module name is a.v1-b.c, the function name will be luaopen_b_c. 
-
-那么模块foo的搜索器将尝试以那个顺序打开文件./foo.so，./foo.dll和/usr/local/foo/init.so。一旦它找到一个C库，这个搜索器首先用一个动态链接工具来链接应用程序和该库。然后它尝试在该库内找到一个C函数以被使用作为加载器。这个C函数的名称是字符串"luaopen_"拼接模块名的副本，其中每个点号被下划线替换。此外，如果模块名有一个连字符，它的直至（且包括）第一个连字符的前缀被移除。例如，如果模块名是a.v1-b.c，那么函数名将是luaopen_b_c。 
-
-The fourth searcher tries an all-in-one loader. It searches the C path for a library for the root name of the given module. For instance, when requiring a.b.c, it will search for a C library for a. If found, it looks into it for an open function for the submodule; in our example, that would be luaopen_a_b_c. With this facility, a package can pack several C submodules into one single library, with each submodule keeping its original open function. 
-
-第四个搜索器尝试一个一体化加载器。它为一个给定模块的根名称的库查找C路径。例如，当包含a.b.c时，它将为a搜索一个C库。如果找到的话，它在其中为子模块查找一个open函数；在我们的例子中，那将是luaopen_a_b_c。使用这个工具，一个包可以打包几个C子模块进一个单一库中，它的每个子模块保持有它原来的open函数。 
+打开具名文件并执行它的内容作为Lua的chunk块。当不带参数地调用它时，dofile执行标准输入（stdin）的内容。返回chunk块返回的所有值。如果出错，dofile传播错误给它的调用方（就是说，dofile不运行在保护模式中）。
 
 --------------------------------------------------------------------------------
 
-package.loadlib (libname, funcname)
+error (message [, level])
 
-Dynamically links the host program with the C library libname. Inside this library, looks for a function funcname and returns this function as a C function. (So, funcname must follow the protocol (see lua_CFunction)). 
+Terminates the last protected function called and returns message as the error message. Function error never returns. 
 
-动态地链接宿主程序与C库libname。在该库内，查找一个函数funcname并返回这个函数作为一个C函数。（所以，funcname必须遵循协议（见lua_CFunction））。 
+终止最后被调用的被保护函数，并返回message作为错误消息。函数error从不返回。
 
-This is a low-level function. It completely bypasses the package and module system. Unlike require, it does not perform any path searching and does not automatically adds extensions. libname must be the complete file name of the C library, including if necessary a path and extension. funcname must be the exact name exported by the C library (which may depend on the C compiler and linker used). 
+Usually, error adds some information about the error position at the beginning of the message. The level argument specifies how to get the error position. With level 1 (the default), the error position is where the error function was called. Level 2 points the error to where the function that called error was called; and so on. Passing a level 0 avoids the addition of error position information to the message. 
 
-这是一个低层次函数。它完全绕过包和模块系统。不像require，它不执行任意路径搜索并且不自动地增加扩展名。libname必须是C库的完整文件名，如果需要的话还包括一个路径和扩展名。funcname必须是被C库导出的精确名称（它可能依赖于所使用的C编译器和链接器）。 
-
-This function is not supported by ANSI C. As such, it is only available on some platforms (Windows, Linux, Mac OS X, Solaris, BSD, plus other Unix systems that support the dlfcn standard). 
-
-这个函数不被ANSI C支持。因此，它只在一些平台上可用（Windows，Linux，Mac OS X，Solaris，BSD，以及支持dlfcn标准的其它Unix系统）。 （注：这里的dlfcn应该是指dlfcn.h，它包含dlopen等函数的声明）
+通常，error添加一些关于错误位置的信息在消息的开头。level参数指定如何获得错误位置。使用级别1（默认），错误位置是error函数被调用的地方。级别2把错误指向调用error的函数被调用的地方；如此类推。传递一个级别0避免添加额外的错误位置信息到message。
 
 --------------------------------------------------------------------------------
 
-package.path
+_G
 
-The path used by require to search for a Lua loader. 
+A global variable (not a function) that holds the global environment (that is, _G._G = _G). Lua itself does not use this variable; changing its value does not affect any environment, nor vice-versa. (Use setfenv to change environments.) 
 
-路径，被require用于搜索一个Lua加载器。 
-
-At start-up, Lua initializes this variable with the value of the environment variable LUA_PATH or with a default path defined in luaconf.h, if the environment variable is not defined. Any ";;" in the value of the environment variable is replaced by the default path. 
-
-在启动时，Lua用环境变量LUA_PATH的值初始化该变量，或者使用定义在luaconf.h中的一个缺省路径，如果该环境变量不被定义。在该环境变量的值中的任意";;"都被默认路径替换。 
+一个全局变量（不是一个函数），它持有全局环境的（就是说，_G._G = _G）。Lua自身不使用这个变量；改变它的值不影响任何环境，反之亦然。（使用setfenv以改变环境。） 
 
 --------------------------------------------------------------------------------
 
-package.preload
+getfenv ([f])
 
-A table to store loaders for specific modules (see require). 
+Returns the current environment in use by the function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling getfenv. If the given function is not a Lua function, or if f is 0, getfenv returns the global environment. The default for f is 1. 
 
-一个表，存储特定模块的加载器（见require）。 
+返回正在被函数使用的当前环境。f可以是一个Lua函数或一个指定那个栈级别上函数的数字：级别1是调用getfenv的函数。如果给定函数不是一个Lua函数，或者如果f为0，那么getfenv返回全局环境。f的缺省值为1。 
 
 --------------------------------------------------------------------------------
 
-package.seeall (module)
+getmetatable (object)
 
-Sets a metatable for module with its __index field referring to the global environment, so that this module inherits values from the global environment. To be used as an option to function module. 
+If object does not have a metatable, returns nil. Otherwise, if the object's metatable has a "__metatable" field, returns the associated value. Otherwise, returns the metatable of the given object. 
 
-为一个模块设置一个元表，它的__index域引用全局环境，致使这个模块继承自全局变量的值。被用于函数module的一个选项。 
+如果object没有一个元表，则返回nil。否则，如果object的元表拥有一个“__metatable”字段，则返回被关联的值。否则，返回给定对象的元表。 
+
+--------------------------------------------------------------------------------
+
+ipairs (t)
+
+Returns three values: an iterator function, the table t, and 0, so that the construction 
+
+返回三个值：迭代器函数、表t和0，以致使结构
+
+     for i,v in ipairs(t) do body end
+
+will iterate over the pairs (1,t[1]), (2,t[2]), ···, up to the first integer key absent from the table. 
+
+将迭代键值对(1,t[1]), (2,t[2]), ……，直至不存在于表中的第一个整数键。 
+
+--------------------------------------------------------------------------------
+
+load (func [, chunkname])
+
+Loads a chunk using function func to get its pieces. Each call to func must return a string that concatenates with previous results. A return of an empty string, nil, or no value signals the end of the chunk. 
+
+加载一个chunk块，通过使用函数func以获得它的块。每个对func的调用必须返回一个字符串，它拼接前一个结果。一个空字符串，nil，或没有值的返回通知chunk块的结束。
+
+If there are no errors, returns the compiled chunk as a function; otherwise, returns nil plus the error message. The environment of the returned function is the global environment. 
+
+如果没有错误，则返回被编译的chunk块作为一个函数；否则，返回nil和错误消息。被返回的函数的环境是全局环境。 
+
+chunkname is used as the chunk name for error messages and debug information. When absent, it defaults to "=(load)". 
+
+chunkname被用作错误消息和调试信息的chunk块名。当不存在时，它缺省为“=(load)”。 
+
+--------------------------------------------------------------------------------
+
+loadfile ([filename])
+
+Similar to load, but gets the chunk from file filename or from the standard input, if no file name is given. 
+
+类似于load，但获得chunk块是从文件filename中，或者从标准输入中如果没有给定文件名。
+
+--------------------------------------------------------------------------------
+
+loadstring (string [, chunkname])
+
+Similar to load, but gets the chunk from the given string. 
+
+类似于load，但从给定字符串中获得chunk块。 
+
+To load and run a given string, use the idiom 
+
+为了加载和运行给定的字符串，请使用惯常用法 
+
+     assert(loadstring(s))()
+
+When absent, chunkname defaults to the given string. 
+
+当不存在时，chunkname缺省为给定的字符串。 
+
+--------------------------------------------------------------------------------
+
+next (table [, index])
+
+Allows a program to traverse all fields of a table. Its first argument is a table and its second argument is an index in this table. next returns the next index of the table and its associated value. When called with nil as its second argument, next returns an initial index and its associated value. When called with the last index, or with nil in an empty table, next returns nil. If the second argument is absent, then it is interpreted as nil. In particular, you can use next(t) to check whether a table is empty. 
+
+允许一个程序遍历一个表的所有域。它的第一参数是一个表，而它的第二参数是这个表中的一个索引。next返回表的下一个索引和它关联的值。当用nil作为它的第二参数调用它时，next返回一个初始索引和它关联的值。当用最后的索引调用它，或在一个空表中用nil调用它时，next返回nil。如果第二参数不存在，那么它被解释作为nil。特别地，你可以使用next(t)来检查一个表是否为空。 
+
+The order in which the indices are enumerated is not specified, even for numeric indices. (To traverse a table in numeric order, use a numerical for or the ipairs function.) 
+
+索引被枚举的次序是非特定的，即使对于数字型索引。（为了用数字顺序来遍历一个表，请使用一个数字型for或ipairs函数。） 
+
+The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. You may however modify existing fields. In particular, you may clear existing fields. 
+
+next的行为是未定义的，如果，在遍历期间，你赋予任意值给表中一个不存在域。然而你可以修改现存域。特别地，你可以清空现存域。
+
+--------------------------------------------------------------------------------
+
+pairs (t)
+
+Returns three values: the next function, the table t, and nil, so that the construction 
+
+返回三个值：next函数，表t，和nil，以致使结构
+
+     for k,v in pairs(t) do body end
+
+will iterate over all key–value pairs of table t. 
+
+将一直迭代表t的所有键值对。 
+
+See function next for the caveats of modifying the table during its traversal. 
+
+参见函数next以获知在它遍历期间修改表的警告。
+
+--------------------------------------------------------------------------------
+
+pcall (f, arg1, ···)
+
+Calls function f with the given arguments in protected mode. This means that any error inside f is not propagated; instead, pcall catches the error and returns a status code. Its first result is the status code (a boolean), which is true if the call succeeds without errors. In such case, pcall also returns all results from the call, after this first result. In case of any error, pcall returns false plus the error message. 
+
+在保护模式下用给定的参数调用函数f。这意味着f内的任意错误不被传播；相反，pcall捕获错误并返回一个状态码。它的第一结果是状态码（一个boolean），它是true如果调用不带错误地成功。在这种情况下，pcall还返回调用的所有结果，在这个第一结果之后。在出现任意错误的情况下，pcall返回false以及错误消息。 
+
+--------------------------------------------------------------------------------
+
+print (···)
+
+Receives any number of arguments, and prints their values to stdout, using the tostring function to convert them to strings. print is not intended for formatted output, but only as a quick way to show a value, typically for debugging. For formatted output, use string.format. 
+
+接受任意数量的参数，并打印它们的值到stdout，通过使用tostring函数转换它们为字符串。print不倾向于用来格式化输出，而只是作为显示一个值的一种快速方式，特别是用于调试。对于被格式化的输出，请使用string.format。 
+
+--------------------------------------------------------------------------------
+
+rawequal (v1, v2)
+
+Checks whether v1 is equal to v2, without invoking any metamethod. Returns a boolean. 
+
+检查v1与v2是否相等，不调用任意元方法。返回一个boolean值。 
+
+--------------------------------------------------------------------------------
+
+rawget (table, index)
+
+Gets the real value of table[index], without invoking any metamethod. table must be a table; index may be any value. 
+
+获取table[index]的实际值，不调用任意元方法。table必须是一个表；index可以是任意值。 
+
+--------------------------------------------------------------------------------
+
+rawset (table, index, value)
+
+Sets the real value of table[index] to value, without invoking any metamethod. table must be a table, index any value different from nil, and value any Lua value. 
+
+设置table[index]的实际值为value，不调用任何元方法。table必须是一个表，index是不是nil的任意值，而value是任意Lua值。
+
+This function returns table. 
+
+这个函数返回table。
+
+--------------------------------------------------------------------------------
+
+select (index, ···)
+
+If index is a number, returns all arguments after argument number index. Otherwise, index must be the string "#", and select returns the total number of extra arguments it received. 
+
+如果index是一个数，返回参数数量index之后的所有参数。否则index必须是字符串"#"，而select返回它接收的额外参数的总数。
+
+--------------------------------------------------------------------------------
+
+setfenv (f, table)
+
+Sets the environment to be used by the given function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling setfenv. setfenv returns the given function. 
+
+设置要被给定函数使用的环境。f可以是一个Lua函数或一个指定那个栈级别上函数的数：级别1是调用setfenv的函数。setfenv返回给定函数。 
+
+As a special case, when f is 0 setfenv changes the environment of the running thread. In this case, setfenv returns no values. 
+
+作为一个特殊情况，当f是0时，setfenv改变正在运行的线程的环境。在这种情况下，setfenv不返回值。 
+
+--------------------------------------------------------------------------------
+
+setmetatable (table, metatable)
+
+Sets the metatable for the given table. (You cannot change the metatable of other types from Lua, only from C.) If metatable is nil, removes the metatable of the given table. If the original metatable has a "__metatable" field, raises an error. 
+
+设置给定表的元表。（你无法修改来自Lua的其它类型的元表，只能修改来自C的。）如果元表是nil，移除给定表的元表。如果原来的元表拥有一个"__metatable"域，则触发一个错误。
+
+This function returns table. 
+
+这个函数返回table。
+
+--------------------------------------------------------------------------------
+
+tonumber (e [, base])
+
+Tries to convert its argument to a number. If the argument is already a number or a string convertible to a number, then tonumber returns this number; otherwise, it returns nil. 
+
+尝试转换它的参数为一个数。如果参数已经是一个数或一个可转换为数的字符串，那么tonumber返回这个数；否则，它返回nil。 
+
+An optional argument specifies the base to interpret the numeral. The base may be any integer between 2 and 36, inclusive. In bases above 10, the letter 'A' (in either upper or lower case) represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. In base 10 (the default), the number can have a decimal part, as well as an optional exponent part (see §2.1). In other bases, only unsigned integers are accepted. 
+
+一个可选参数指定解释该数的基数（注：进制）。基数可能是2和36之间的任意整数，包含2和36在内。在10以上的基的情况下，字母'A'（不管大小写）代表10，'B'代表11，如此类推，直至'Z'代表35。在基数10的情况下，数可以拥有一个小数部分，还有一个可选的指数部分（见§2.1）。在其它基数的情况下，只接受无符号整数。
+
+--------------------------------------------------------------------------------
+
+tostring (e)
+
+Receives an argument of any type and converts it to a string in a reasonable format. For complete control of how numbers are converted, use string.format. 
+
+接收一个任意类型的参数，并以合理的格式转换它为一个字符串。想取得数是如何转换的完全控制，请使用string.format。 
+
+If the metatable of e has a "__tostring" field, then tostring calls the corresponding value with e as argument, and uses the result of the call as its result. 
+
+如果e的元表有"__tostring"字段，那么tostring以e作为参数来调用对应的值，并使用该调用的结果作为它的结果。 
+
+--------------------------------------------------------------------------------
+
+type (v)
+
+Returns the type of its only argument, coded as a string. The possible results of this function are "nil" (a string, not the value nil), "number", "string", "boolean", "table", "function", "thread", and "userdata". 
+
+返回它唯一参数的类型，编码成一个字符串。这个函数的可能结果有"nil"（一个字符串，不是值nil），"number"，"string"，"boolean"，"table"，"function"，"thread"，和"userdata"。 
+
+--------------------------------------------------------------------------------
+
+unpack (list [, i [, j]])
+
+Returns the elements from the given table. This function is equivalent to 
+
+返回来自给定表的元素。这个函数等价于
+
+     return list[i], list[i+1], ···, list[j]
+
+except that the above code can be written only for a fixed number of elements. By default, i is 1 and j is the length of the list, as defined by the length operator (see §2.5.5). 
+
+除了写上面的代码只能用于一个固定数量的元素。缺省，i是1而j是列表的长度，正如长度操作符（见§2.5.5）定义的那样。
+
+     return list[i], list[i+1], ···, list[j]
+
+--------------------------------------------------------------------------------
+
+_VERSION
+
+A global variable (not a function) that holds a string containing the current interpreter version. The current contents of this variable is "Lua 5.1". 
+
+一个全局变量（不是一个函数），它持有包含当前解释器版本的一个字符串。这个变量的当前内容是“Lua 5.1”。 
+
+--------------------------------------------------------------------------------
+
+xpcall (f, err)
+
+This function is similar to pcall, except that you can set a new error handler. 
+
+这个函数类似于pcall，除了你可以设置一个新的错误处理器。 
+
+xpcall calls function f in protected mode, using err as the error handler. Any error inside f is not propagated; instead, xpcall catches the error, calls the err function with the original error object, and returns a status code. Its first result is the status code (a boolean), which is true if the call succeeds without errors. In this case, xpcall also returns all results from the call, after this first result. In case of any error, xpcall returns false plus the result from err. 
+
+xpcall以保护模式调用函数f，使用err作为错误处理器。在f中的任意错误不被传播；相反，xpcall捕捉该错误，用原始错误对象调用err函数，并返回一个状态码。它的第一结果是状态码（一个boolean值），它是true如果调用不带错误地成功。在这种情况下，xpcall还返回来自该调用所有结果，在这个第一结果之后。在有任意错误的情况下，xpcall返回false以及来自err的结果。
 
 -----------------------------------------
 

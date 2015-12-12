@@ -1,4 +1,4 @@
-﻿【翻译】(LRM5.1-15)字符串操纵(5.4)、模式（5.4.1）
+﻿【翻译】(LRM5.1-15)协程操纵(5.2)、模块(5.3)
 
 See also:
 http://www.lua.org/manual/5.1/manual.html
@@ -22,414 +22,222 @@ Copyright ? 2006-2008 Lua.org, PUC-Rio. Freely available under the terms of the 
 
 -----------------------------------------
 
-5.4 - String Manipulation
-This library provides generic functions for string manipulation, such as finding and extracting substrings, and pattern matching. When indexing a string in Lua, the first character is at position 1 (not at 0, as in C). Indices are allowed to be negative and are interpreted as indexing backwards, from the end of the string. Thus, the last character is at position -1, and so on. 
+5.2 - Coroutine Manipulation
 
-The string library provides all its functions inside the table string. It also sets a metatable for strings where the __index field points to the string table. Therefore, you can use the string functions in object-oriented style. For instance, string.byte(s, i) can be written as s:byte(i). 
+5.2 - 协程操纵
 
-The string library assumes one-byte character encodings. 
+The operations related to coroutines comprise a sub-library of the basic library and come inside the table coroutine. See §2.11 for a general description of coroutines. 
 
-
-（注：TODO）
-5.4 - 字符串操作
-该库为字符串操作提供常规函数，例如查找和抽取子串以及模式匹配。在Lua中索引字符串时，第一个字符在位置1（不像C是在0处）。索引允许为负数，被解释为从字符串末尾往回索引。因此，最后一个字符在-1位置，依此类推。 
-
-字符串库在表string内提供所有函数。它也给字符串设置元表，其中的__index字段指向string表。因此，你可以使用面向对象风格的字符串函数。例如，string.byte(s, i)可写为s:byte(i)。 
-
-字符串库采取单字节字符编码方式。 
-
-
-
-
-
+与协程相关的操作由基础库的一个子库组成且来自表coroutine内。见§2.11获取协程的一般描述。
 
 --------------------------------------------------------------------------------
 
-string.byte (s [, i [, j]])
-Returns the internal numerical codes of the characters s[i], s[i+1], ···, s[j]. The default value for i is 1; the default value for j is i. 
-Note that numerical codes are not necessarily portable across platforms. 
+coroutine.create (f)
 
---------------------------------------------------------------------------------
-（注：TODO）
+Creates a new coroutine, with body f. f must be a Lua function. Returns this new coroutine, an object with type "thread". 
 
-string.byte (s [, i [, j]])
-返回字符s[i], s[i+1], ···, s[j]的内部数字代码。i缺省为1；j缺省为i。 
-注意数字代码不一定是跨平台可移植的。 
-
-
+一个新协程，带函数体f。f必须是一个Lua函数。返回这个新的协程，一个类型为"thread"的对象。
 
 --------------------------------------------------------------------------------
 
-string.char (···)
-Receives zero or more integers. Returns a string with length equal to the number of arguments, in which each character has the internal numerical code equal to its corresponding argument. 
-Note that numerical codes are not necessarily portable across platforms. 
+coroutine.resume (co [, val1, ···])
 
---------------------------------------------------------------------------------
-（注：TODO）
+Starts or continues the execution of coroutine co. The first time you resume a coroutine, it starts running its body. The values val1, ··· are passed as the arguments to the body function. If the coroutine has yielded, resume restarts it; the values val1, ··· are passed as the results from the yield. 
 
-string.char (···)
-接受0获多个整数。返回一个字符串，其长度等于参数个数，其中的每个字符的内部数字代码等于相应的参数。 
-注意数字代码不一定是跨平台可移植的。 
+启动或继续协程co的执行。你第一次恢复一个协程时，它开始运行它的函数体。值val1，……被传递作为主体函数的参数。如果协程被挂起，resume重新启动它；值val1，……被传递作为来自yield的结果。 
 
+If the coroutine runs without any errors, resume returns true plus any values passed to yield (if the coroutine yields) or any values returned by the body function (if the coroutine terminates). If there is any error, resume returns false plus the error message. 
 
---------------------------------------------------------------------------------
-
-string.dump (function)
-Returns a string containing a binary representation of the given function, so that a later loadstring on this string returns a copy of the function. function must be a Lua function without upvalues. 
-
---------------------------------------------------------------------------------
-（注：TODO）
-
-string.dump (function)
-返回给定函数的二进制表示的字符串，之后在其上应用loadstring返回函数的拷贝。function必须是不带upvalueLua函数。 
-
+如果协程不带任意错误地运行，resume返回true和被传递到yield的任意值（如果协程挂起）或被主体函数返回的任意值（如果协程终结）。如果有任意错误，resume返回false和错误消息。 
 
 --------------------------------------------------------------------------------
 
-string.find (s, pattern [, init [, plain]])
-Looks for the first match of pattern in the string s. If it finds a match, then find returns the indices of s where this occurrence starts and ends; otherwise, it returns nil. A third, optional numerical argument init specifies where to start the search; its default value is 1 and can be negative. A value of true as a fourth, optional argument plain turns off the pattern matching facilities, so the function does a plain "find substring" operation, with no characters in pattern being considered "magic". Note that if plain is given, then init must be given as well. 
-If the pattern has captures, then in a successful match the captured values are also returned, after the two indices. 
+coroutine.running ()
 
---------------------------------------------------------------------------------
-（注：TODO）
+Returns the running coroutine, or nil when called by the main thread. 
 
-string.find (s, pattern [, init [, plain]])
-在字符串s中查找pattern的第一个匹配。如果找到则返回它开始和结束处在s中的索引；否则，返回nil。可选的第三参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负数。如果真值作为可选的第四参数plain，则关闭模式匹配设备，所以函数执行无格式的“查找子串”操作，pattern中的字符并不被认为是“魔术的（magic）”。注意，如果给出了plain，则init也必须给出。 
-如果模式具有捕获（capture），则在成功的匹配中被捕获的值也在两个索引后面返回。 
-
+返回正在运行的协程，或nil当被主线程调用时。
 
 --------------------------------------------------------------------------------
 
-string.format (formatstring, ···)
-Returns a formatted version of its variable number of arguments following the description given in its first argument (which must be a string). The format string follows the same rules as the printf family of standard C functions. The only differences are that the options/modifiers *, l, L, n, p, and h are not supported and that there is an extra option, q. The q option formats a string in a form suitable to be safely read back by the Lua interpreter: the string is written between double quotes, and all double quotes, newlines, embedded zeros, and backslashes in the string are correctly escaped when written. For instance, the call 
-     string.format('%q', 'a string with "quotes" and \n new line')
+coroutine.status (co)
 
-will produce the string: 
+Returns the status of coroutine co, as a string: "running", if the coroutine is running (that is, it called status); "suspended", if the coroutine is suspended in a call to yield, or if it has not started running yet; "normal" if the coroutine is active but not running (that is, it has resumed another coroutine); and "dead" if the coroutine has finished its body function, or if it has stopped with an error. 
 
-     "a string with \"quotes\" and \
-      new line"
-
-The options c, d, E, e, f, g, G, i, o, u, X, and x all expect a number as argument, whereas q and s expect a string. 
-
-This function does not accept string values containing embedded zeros, except as arguments to the q option. 
-
---------------------------------------------------------------------------------
-（注：TODO）
-
-string.format (formatstring, ···)
-Returns a formatted version of its variable number of arguments following the description given in its first argument (which must be a string). 格式字符串遵循同printf族标准C函数同样的规则。仅有的区别是不支持*、l、L、n、p和h等选项/修饰符，而且有个额外选项q。q选项以可安全地为Lua解释器读取的适当形式格式化字符串：字符串被写在双引号之间，而且字符串中的所有双引号、换行、内嵌的0和反斜杠被恰当地转义。例如，调用 
-     string.format('%q', 'a string with "quotes" and \n new line')
-
-产生字符串： 
-
-     "a string with \"quotes\" and \
-      new line"
-
-选项c、d、E、e、f, g、G、i、o、u、X和x都预期得到数字作为参数，然而q和s期望得到字符串。 
-
-该函数不接受含有内嵌的0的字符串值，除了作为q选项的参数。 
-
+返回协程co的状态，作为一个字符串："running"如果该协程正在运行（就是说，它调用了status）；"suspended"，如果该协程被暂停在一个对yield的调用，或者它还没有开始运行；"normal"如果协程是激活的但不是正在运行（就是说，它已经恢复另一个协程）；以及"dead"如果该协程已经完成它的主体函数，或者如果它已经带一个错误地停止。 
 
 --------------------------------------------------------------------------------
 
-string.gmatch (s, pattern)
-Returns an iterator function that, each time it is called, returns the next captures from pattern over string s. If pattern specifies no captures, then the whole match is produced in each call. 
-As an example, the following loop 
+coroutine.wrap (f)
 
-     s = "hello world from Lua"
-     for w in string.gmatch(s, "%a+") do
-       print(w)
-     end
+Creates a new coroutine, with body f. f must be a Lua function. Returns a function that resumes the coroutine each time it is called. Any arguments passed to the function behave as the extra arguments to resume. Returns the same values returned by resume, except the first boolean. In case of error, propagates the error. 
 
-will iterate over all the words from string s, printing one per line. The next example collects all pairs key=value from the given string into a table: 
-
-     t = {}
-     s = "from=world, to=Lua"
-     for k, v in string.gmatch(s, "(%w+)=(%w+)") do
-       t[k] = v
-     end
-
-For this function, a '^' at the start of a pattern does not work as an anchor, as this would prevent the iteration. 
-
---------------------------------------------------------------------------------
-（注：TODO）
-
-string.gmatch (s, pattern)
-返回一个迭代器函数，每次调用返回来自pattern的下一个捕获，从字符串s开头直到结尾。如果pattern没指定捕获则每次调用产生整个匹配。 
-作为例子，下面的循环 
-
-     s = "hello world from Lua"
-     for w in string.gmatch(s, "%a+") do
-       print(w)
-     end
-
-将迭代来自字符串s的所有单词，每行打印一个。下一个例子从给定的字符串收集所有的键=值对放在表中： 
-
-     t = {}
-     s = "from=world, to=Lua"
-     for k, v in string.gmatch(s, "^(%w+)=(%w+)") do
-       t[k] = v
-     end
-
-对于该函数，模式起始处的‘^’不能作为锚点，因为这会阻止迭代。 
-
-
-
+创建一个新的协程，使用一个函数体f。f必须是一个Lua函数。返回一个函数，每当它被调用时它恢复该协程。被传递给该函数的任意参数的行为如同传给resume的额外参数。返回被resume所返回的相同值，除了第一个boolean值。在出错的情况下，传播该错误。 
 
 --------------------------------------------------------------------------------
 
-string.gsub (s, pattern, repl [, n])
-Returns a copy of s in which all (or the first n, if given) occurrences of the pattern have been replaced by a replacement string specified by repl, which can be a string, a table, or a function. gsub also returns, as its second value, the total number of matches that occurred. 
-If repl is a string, then its value is used for replacement. The character % works as an escape character: any sequence in repl of the form %n, with n between 1 and 9, stands for the value of the n-th captured substring (see below). The sequence %0 stands for the whole match. The sequence %% stands for a single %. 
+coroutine.yield (···)
 
-If repl is a table, then the table is queried for every match, using the first capture as the key; if the pattern specifies no captures, then the whole match is used as the key. 
+Suspends the execution of the calling coroutine. The coroutine cannot be running a C function, a metamethod, or an iterator. Any arguments to yield are passed as extra results to resume. 
 
-If repl is a function, then this function is called every time a match occurs, with all captured substrings passed as arguments, in order; if the pattern specifies no captures, then the whole match is passed as a sole argument. 
+暂停调用方协程的执行。协程不能正在运行一个C函数，一个元方法，或一个迭代器。传给yield的任意参数被传递作为给resume的额外结果。 
 
-If the value returned by the table query or by the function call is a string or a number, then it is used as the replacement string; otherwise, if it is false or nil, then there is no replacement (that is, the original match is kept in the string). 
+5.3 - Modules
 
-Here are some examples: 
+5.3 - 模块
 
-     x = string.gsub("hello world", "(%w+)", "%1 %1")
-     --> x="hello hello world world"
-     
-     x = string.gsub("hello world", "%w+", "%0 %0", 1)
-     --> x="hello hello world"
-     
-     x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
-     --> x="world hello Lua from"
-     
-     x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
-     --> x="home = /home/roberto, user = roberto"
-     
-     x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
-           return loadstring(s)()
-         end)
-     --> x="4+5 = 9"
-     
-     local t = {name="lua", version="5.1"}
-     x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
-     --> x="lua-5.1.tar.gz"
+The package library provides basic facilities for loading and building modules in Lua. It exports two of its functions directly in the global environment: require and module. Everything else is exported in a table package. 
 
---------------------------------------------------------------------------------
-（注：TODO）
-
-string.gsub (s, pattern, repl [, n])
-返回s的拷贝，其中出现的所有（或前n个，如果指定）pattern被替换为repl——可以是字符串、表或函数，指定的替换串。gsub也返回出现的匹配的总数作为第二个值。 
-如果repl是字符串，它的值被用作替换式。字符%用作转义字符：repl中的任何形如%n的序列代表第n个捕获的子串（见下面），其中n在1和9之间。序列%0代表整个匹配。序列%%代表单个%。 
-
-如果repl是表，则对于每个匹配，用第一个捕获作为键查询表；如果模式未指定捕获，则整个匹配被用作键。 
-
-如果repl是函数，则每次匹配发生时都按顺序传入所有捕获的子串作为参数调用该函数；如果模式没指定捕获，则整个匹配作为单个参数传入。 
-
-如果表查询或函数调用返回的结果是个字符串或数字，则被用作替换串；否则，如果是false或nil，则不发生替换（即原始匹配被保持在字符串中）。 
-
-这里有一些例子： 
-
-     x = string.gsub("hello world", "(%w+)", "%1 %1")
-     --> x="hello hello world world"
-     
-     x = string.gsub("hello world", "%w+", "%0 %0", 1)
-     --> x="hello hello world"
-     
-     x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
-     --> x="world hello Lua from"
-     
-     x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
-     --> x="home = /home/roberto, user = roberto"
-     
-     x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
-           return loadstring(s)()
-         end)
-     --> x="4+5 = 9"
-     
-     local t = {name="lua", version="5.1"}
-     x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
-     --> x="lua-5.1.tar.gz"
-
-
+包库提供加载和创建Lua中模块的基础工具。它直接地导出它的其中两个函数在全局环境中：require和module。其它所有东西被导出在一个表package中。 
 
 --------------------------------------------------------------------------------
 
-string.len (s)
-Receives a string and returns its length. The empty string "" has length 0. Embedded zeros are counted, so "a\000bc\000" has length 5. 
+module (name [, ···])
 
---------------------------------------------------------------------------------
-（注：TODO）
+Creates a module. If there is a table in package.loaded[name], this table is the module. Otherwise, if there is a global table t with the given name, this table is the module. Otherwise creates a new table t and sets it as the value of the global name and the value of package.loaded[name]. This function also initializes t._NAME with the given name, t._M with the module (t itself), and t._PACKAGE with the package name (the full module name minus last component; see below). Finally, module sets t as the new environment of the current function and the new value of package.loaded[name], so that require returns t. 
 
-string.len (s)
-接受字符串并返回其长度。空串""长度为0。内嵌的0被计算在内，所以"a\000bc\000"长度为5。 
+创建一个模块。如果在package.loaded[name]中存在一个表，那么这个表是该模块。否则，如果存在一个全局表t带有给定的名字，那么这个表是该模块。否则，创建一个新表t并设置它作为全局变量name的值和package.loaded[name]的值。这个函数还用给定名称初始化t._NAME，用该模块（t自身）初始化t._M，且用包名初始化t._PACKAGE（完全模块名减去最后部分；见下）。最后，module设置t作为当前函数的新环境和package.loaded[name]的新值，致使require返回t。 
 
---------------------------------------------------------------------------------
+If name is a compound name (that is, one with components separated by dots), module creates (or reuses, if they already exist) tables for each component. For instance, if name is a.b.c, then module stores the module table in field c of field b of global a. 
 
-string.lower (s)
-Receives a string and returns a copy of this string with all uppercase letters changed to lowercase. All other characters are left unchanged. The definition of what an uppercase letter is depends on the current locale. 
+如果name是个一个复合名字（就是说，被点号分隔成几个部分的名称），那么module为每个部分创建（或重用，如果它们已经存在）表。例如，如果name是a.b.c，那么module在全局变量a的域b的域c中存储模块表。 
 
---------------------------------------------------------------------------------
-（注：TODO）
+This function can receive optional options after the module name, where each option is a function to be applied over the module. 
 
-string.lower (s)
-接受字符串并返回其所有大写字母变为小写的拷贝。所有其他字符不变。大写字母的定义依赖于当前locale。 
-
+这个函数可以在模块名后接收可选的选项，其中每个选项是要被应用在模块上的一个函数。 
 
 --------------------------------------------------------------------------------
 
-string.match (s, pattern [, init])
-Looks for the first match of pattern in the string s. If it finds one, then match returns the captures from the pattern; otherwise it returns nil. If pattern specifies no captures, then the whole match is returned. A third, optional numerical argument init specifies where to start the search; its default value is 1 and can be negative. 
+require (modname)
 
---------------------------------------------------------------------------------
-（注：TODO）
+Loads the given module. The function starts by looking into the package.loaded table to determine whether modname is already loaded. If it is, then require returns the value stored at package.loaded[modname]. Otherwise, it tries to find a loader for the module. 
 
-string.match (s, pattern [, init])
-在字符串s中查找pattern的首次匹配。如果找到一个，则返回来自模式的捕获；否则返回nil。如果pattern未指定捕获则返回整个匹配。可选的第三个参数init是数字，指定从哪儿开始搜索；其缺省值是1并且可为负。 
+加载给定模块。这个函数开始的时候查看package.loaded表的内容以确认modname是否已经被加载。如果是，那么require返回存储在package.loaded[modname]中的值。否则，它尝试为该模块寻找一个加载器。 
 
+To find a loader, require is guided by the package.loaders array. By changing this array, we can change how require looks for a module. The following explanation is based on the default configuration for package.loaders. 
 
+为了找到一个加载器，require被package.loaders数组指引。通过改变这个数组，我们可以改变require如何寻找一个模块。以下解释是基于package.loaders的默认配置。 
 
---------------------------------------------------------------------------------
+First require queries package.preload[modname]. If it has a value, this value (which should be a function) is the loader. Otherwise require searches for a Lua loader using the path stored in package.path. If that also fails, it searches for a C loader using the path stored in package.cpath. If that also fails, it tries an all-in-one loader (see package.loaders). 
 
-string.rep (s, n)
-Returns a string that is the concatenation of n copies of the string s. 
+首先require查询package.preload[modname]。如果它拥有一个值，这个值（它应该是一个函数）是该加载器。否则，require搜索一个Lua加载器，通过使用存储在package.path中的路径。如果那也失败了，它搜索一个C加载器，通过使用存储在package.cpath中的路径。如果那也失败了，它尝试一个一体化加载器（见package.loaders）。 
 
---------------------------------------------------------------------------------
-（注：TODO）
+Once a loader is found, require calls the loader with a single argument, modname. If the loader returns any value, require assigns the returned value to package.loaded[modname]. If the loader returns no value and has not assigned any value to package.loaded[modname], then require assigns true to this entry. In any case, require returns the final value of package.loaded[modname]. 
 
-string.rep (s, n)
-返回字符串s的n个拷贝拼接字符串。 
+一旦一个加载器被找到，require用一个单一参数，modname，调用该加载器。如果该加载器返回任意值，那么require赋予返回的值给package.loaded[modname]。如果该加载器不返回值，且不曾赋任意值给package.loaded[modname]，那么require赋予true给这个记录。在任意情况下，require返回package.loaded[modname]的最终值。
 
+If there is any error loading or running the module, or if it cannot find any loader for the module, then require signals an error. 
 
---------------------------------------------------------------------------------
-
-string.reverse (s)
-Returns a string that is the string s reversed. 
-
---------------------------------------------------------------------------------
-（注：TODO）
-
-string.reverse (s)
-返回字符串s的颠倒的字符串。 
-
+如果加载或运行该模块出现任意错误，或者如果它无法为该模块找到任意加载器，那么require发出一个错误。 
 
 --------------------------------------------------------------------------------
 
-string.sub (s, i [, j])
-Returns the substring of s that starts at i and continues until j; i and j can be negative. If j is absent, then it is assumed to be equal to -1 (which is the same as the string length). In particular, the call string.sub(s,1,j) returns a prefix of s with length j, and string.sub(s, -i) returns a suffix of s with length i. 
+package.cpath
+
+The path used by require to search for a C loader. 
+
+路径，被require用于搜索一个C加载器。 
+
+Lua initializes the C path package.cpath in the same way it initializes the Lua path package.path, using the environment variable LUA_CPATH or a default path defined in luaconf.h. 
+
+Lua以它初始化Lua路径package.path的相同方式初始化C路径package.cpath，通过使用环境变量LUA_CPATH或被定义在luaconf.h中的一个默认路径。 
 
 --------------------------------------------------------------------------------
-（注：TODO）
 
-string.sub (s, i [, j])
-返回s的子串，它起始于i并延续到j；i和j可为负数。如果省略j，则它被假定为-1（同字符串长度一样）。特别地，调用string.sub(s,1,j)返回s长为j的前缀，而且string.sub(s, -i)返回s长为i的后缀。 
+package.loaded
 
+A table used by require to control which modules are already loaded. When you require a module modname and package.loaded[modname] is not false, require simply returns the value stored there. 
+
+一个表，被require用于控制哪些模块已经被加载。当你包含一个模块modname而package.loaded[modname]不是false时，require简单地返回存储在那里的值。 
+
+--------------------------------------------------------------------------------
+
+package.loaders
+
+A table used by require to control how to load modules. 
+
+一个被require用于控制如何加载模块的表。 
+
+Each entry in this table is a searcher function. When looking for a module, require calls each of these searchers in ascending order, with the module name (the argument given to require) as its sole parameter. The function can return another function (the module loader) or a string explaining why it did not find that module (or nil if it has nothing to say). Lua initializes this table with four functions. 
+
+这个表的每一个记录是一个搜索器函数。当查找一个模块时，require以升序调用这些搜索器中的每个，使用模块名（传给require的参数）作为它的唯一参数。该函数可以返回另一个函数（模块加载器）或一个解释它为什么没找到那个模块的字符串（或nil，如果没东西要说）。Lua用四个函数初始化这个表。 
+
+The first searcher simply looks for a loader in the package.preload table. 
+
+第一个搜索器简单地在package.preload表中查找一个加载器。
+
+The second searcher looks for a loader as a Lua library, using the path stored at package.path. A path is a sequence of templates separated by semicolons. For each template, the searcher will change each interrogation mark in the template by filename, which is the module name with each dot replaced by a "directory separator" (such as "/" in Unix); then it will try to open the resulting file name. So, for instance, if the Lua path is the string 
+
+第二个搜索器查找加载器作为一个Lua库，通过使用存储在package.path中的路径。一个路径是被分号分隔的一连串模板。对于每个模板，搜索器将用filename改变模板中的每个问号，它是其每个点号被一个“目录分隔符”（诸如Unix中的"/"）替换的模块名；然后，它将尝试打开结果文件名。因此，例如，如果Lua路径是字符串 
+
+     "./?.lua;./?.lc;/usr/local/?/init.lua"
+
+the search for a Lua file for module foo will try to open the files ./foo.lua, ./foo.lc, and /usr/local/foo/init.lua, in that order. 
+
+那么对模块foo的一个Lua文件的搜索将尝试以那个顺序打开文件./foo.lua，./foo.lc，和/usr/local/foo/init.lua。 
+
+The third searcher looks for a loader as a C library, using the path given by the variable package.cpath. For instance, if the C path is the string 
+
+第三个搜索器查找加载器作为一个C库，通过使用被变量package.cpath给定的路径。例如，如果C路径是字符串 
+
+     "./?.so;./?.dll;/usr/local/?/init.so"
+
+the searcher for module foo will try to open the files ./foo.so, ./foo.dll, and /usr/local/foo/init.so, in that order. Once it finds a C library, this searcher first uses a dynamic link facility to link the application with the library. Then it tries to find a C function inside the library to be used as the loader. The name of this C function is the string "luaopen_" concatenated with a copy of the module name where each dot is replaced by an underscore. Moreover, if the module name has a hyphen, its prefix up to (and including) the first hyphen is removed. For instance, if the module name is a.v1-b.c, the function name will be luaopen_b_c. 
+
+那么模块foo的搜索器将尝试以那个顺序打开文件./foo.so，./foo.dll和/usr/local/foo/init.so。一旦它找到一个C库，这个搜索器首先用一个动态链接工具来链接应用程序和该库。然后它尝试在该库内找到一个C函数以被使用作为加载器。这个C函数的名称是字符串"luaopen_"拼接模块名的副本，其中每个点号被下划线替换。此外，如果模块名有一个连字符，它的直至（且包括）第一个连字符的前缀被移除。例如，如果模块名是a.v1-b.c，那么函数名将是luaopen_b_c。 
+
+The fourth searcher tries an all-in-one loader. It searches the C path for a library for the root name of the given module. For instance, when requiring a.b.c, it will search for a C library for a. If found, it looks into it for an open function for the submodule; in our example, that would be luaopen_a_b_c. With this facility, a package can pack several C submodules into one single library, with each submodule keeping its original open function. 
+
+第四个搜索器尝试一个一体化加载器。它为一个给定模块的根名称的库查找C路径。例如，当包含a.b.c时，它将为a搜索一个C库。如果找到的话，它在其中为子模块查找一个open函数；在我们的例子中，那将是luaopen_a_b_c。使用这个工具，一个包可以打包几个C子模块进一个单一库中，它的每个子模块保持有它原来的open函数。 
 
 --------------------------------------------------------------------------------
 
-string.upper (s)
-Receives a string and returns a copy of this string with all lowercase letters changed to uppercase. All other characters are left unchanged. The definition of what a lowercase letter is depends on the current locale. 
+package.loadlib (libname, funcname)
 
+Dynamically links the host program with the C library libname. Inside this library, looks for a function funcname and returns this function as a C function. (So, funcname must follow the protocol (see lua_CFunction)). 
+
+动态地链接宿主程序与C库libname。在该库内，查找一个函数funcname并返回这个函数作为一个C函数。（所以，funcname必须遵循协议（见lua_CFunction））。 
+
+This is a low-level function. It completely bypasses the package and module system. Unlike require, it does not perform any path searching and does not automatically adds extensions. libname must be the complete file name of the C library, including if necessary a path and extension. funcname must be the exact name exported by the C library (which may depend on the C compiler and linker used). 
+
+这是一个低层次函数。它完全绕过包和模块系统。不像require，它不执行任意路径搜索并且不自动地增加扩展名。libname必须是C库的完整文件名，如果需要的话还包括一个路径和扩展名。funcname必须是被C库导出的精确名称（它可能依赖于所使用的C编译器和链接器）。 
+
+This function is not supported by ANSI C. As such, it is only available on some platforms (Windows, Linux, Mac OS X, Solaris, BSD, plus other Unix systems that support the dlfcn standard). 
+
+这个函数不被ANSI C支持。因此，它只在一些平台上可用（Windows，Linux，Mac OS X，Solaris，BSD，以及支持dlfcn标准的其它Unix系统）。 （注：这里的dlfcn应该是指dlfcn.h，它包含dlopen等函数的声明）
 
 --------------------------------------------------------------------------------
-（注：TODO）
 
-string.upper (s)
-接受字符串并返回其所有小写字母变为大写的拷贝。所有其他字符不变。小写字母的定义依赖于当前locale。 
+package.path
 
+The path used by require to search for a Lua loader. 
 
+路径，被require用于搜索一个Lua加载器。 
 
+At start-up, Lua initializes this variable with the value of the environment variable LUA_PATH or with a default path defined in luaconf.h, if the environment variable is not defined. Any ";;" in the value of the environment variable is replaced by the default path. 
 
+在启动时，Lua用环境变量LUA_PATH的值初始化该变量，或者使用定义在luaconf.h中的一个缺省路径，如果该环境变量不被定义。在该环境变量的值中的任意";;"都被默认路径替换。 
 
+--------------------------------------------------------------------------------
 
-5.4.1 - Patterns
-Character Class:
-A character class is used to represent a set of characters. The following combinations are allowed in describing a character class: 
+package.preload
 
-x: (where x is not one of the magic characters ^$()%.[]*+-?) represents the character x itself. 
-.: (a dot) represents all characters. 
-%a: represents all letters. 
-%c: represents all control characters. 
-%d: represents all digits. 
-%l: represents all lowercase letters. 
-%p: represents all punctuation characters. 
-%s: represents all space characters. 
-%u: represents all uppercase letters. 
-%w: represents all alphanumeric characters. 
-%x: represents all hexadecimal digits. 
-%z: represents the character with representation 0. 
-%x: (where x is any non-alphanumeric character) represents the character x. This is the standard way to escape the magic characters. Any punctuation character (even the non magic) can be preceded by a '%' when used to represent itself in a pattern. 
-[set]: represents the class which is the union of all characters in set. A range of characters can be specified by separating the end characters of the range with a '-'. All classes %x described above can also be used as components in set. All other characters in set represent themselves. For example, [%w_] (or [_%w]) represents all alphanumeric characters plus the underscore, [0-7] represents the octal digits, and [0-7%l%-] represents the octal digits plus the lowercase letters plus the '-' character. 
-The interaction between ranges and classes is not defined. Therefore, patterns like [%a-z] or [a-%%] have no meaning. 
+A table to store loaders for specific modules (see require). 
 
-[^set]: represents the complement of set, where set is interpreted as above. 
-For all classes represented by single letters (%a, %c, etc.), the corresponding uppercase letter represents the complement of the class. For instance, %S represents all non-space characters. 
+一个表，存储特定模块的加载器（见require）。 
 
-The definitions of letter, space, and other character groups depend on the current locale. In particular, the class [a-z] may not be equivalent to %l. 
+--------------------------------------------------------------------------------
 
-Pattern Item:
-A pattern item can be 
+package.seeall (module)
 
-a single character class, which matches any single character in the class; 
-a single character class followed by '*', which matches 0 or more repetitions of characters in the class. These repetition items will always match the longest possible sequence; 
-a single character class followed by '+', which matches 1 or more repetitions of characters in the class. These repetition items will always match the longest possible sequence; 
-a single character class followed by '-', which also matches 0 or more repetitions of characters in the class. Unlike '*', these repetition items will always match the shortest possible sequence; 
-a single character class followed by '?', which matches 0 or 1 occurrence of a character in the class; 
-%n, for n between 1 and 9; such item matches a substring equal to the n-th captured string (see below); 
-%bxy, where x and y are two distinct characters; such item matches strings that start with x, end with y, and where the x and y are balanced. This means that, if one reads the string from left to right, counting +1 for an x and -1 for a y, the ending y is the first y where the count reaches 0. For instance, the item %b() matches expressions with balanced parentheses. 
-Pattern:
-A pattern is a sequence of pattern items. A '^' at the beginning of a pattern anchors the match at the beginning of the subject string. A '$' at the end of a pattern anchors the match at the end of the subject string. At other positions, '^' and '$' have no special meaning and represent themselves. 
+Sets a metatable for module with its __index field referring to the global environment, so that this module inherits values from the global environment. To be used as an option to function module. 
 
-Captures:
-A pattern can contain sub-patterns enclosed in parentheses; they describe captures. When a match succeeds, the substrings of the subject string that match captures are stored (captured) for future use. Captures are numbered according to their left parentheses. For instance, in the pattern "(a*(.)%w(%s*))", the part of the string matching "a*(.)%w(%s*)" is stored as the first capture (and therefore has number 1); the character matching "." is captured with number 2, and the part matching "%s*" has number 3. 
+为一个模块设置一个元表，它的__index域引用全局环境，致使这个模块继承自全局变量的值。被用于函数module的一个选项。 
 
-As a special case, the empty capture () captures the current string position (a number). For instance, if we apply the pattern "()aa()" on the string "flaaap", there will be two captures: 3 and 5. 
+-----------------------------------------
 
-A pattern cannot contain embedded zeros. Use %z instead. 
-
-
-
-（注：TODO）
-
-5.4.1 - 模式
-字符类（Character Class）：
-一个字符类被用于表示一组字符。允许用下面的组合描述字符类： 
-
-x: （此处x不是魔术字符^$()%.[]*+-?中的一个）表示字符x本身。 
-.: （一个点）表示所有字符。 
-%a: 表示所有字母。 
-%c: 表示所有控制字符。 
-%d: 表示所有十进制数字。 
-%l: 表示所有小写字母。 
-%p: 表示所有标点符号。 
-%s: 表示所有空白字符。 
-%u: 表示所有大写字母。 
-%w: 表示所有字母数字字符。 
-%x: 表示所有十六进制数字。 
-%z: 表示0值字符。 
-%x: （此处x是任何非字母数字字符）表示字符x。这是转义魔术字符的标准方式。当被用于在模式中表示自身时，任何标点符号（甚至非魔术的）都能前缀一个‘%’。 
-[set]: 表示set中的所有字符的联合构成的分类。通过用‘-’分隔截止字符可以指定某个范围的字符。上面描述的所有种类的%x都可用作set的部件。set中的所有其他字符表示它们自身。例如[%w_]（或[_%w]）表示所有字母数字字符和下划线，[0-7]表示八进制数字，[0-7%l%-]表示八进制数字和小写字母以及‘-’字符。 
-字符范围和字符类之间的相互作用是未定义的。因此类似[%a-z]或[a-%%]的模式没有意义。 
-
-[^set]: 表示set的补集，其中的set在上面解释了。 
-所有单字母表示的字符类（%a、%c，等等），相应的大写字母表示该字符类的补集。例如，%S表示所有非空白符。 
-
-字母、空白和其他字符组合的定义依赖于当前locale。特别地，字符类[a-z]可能不等于%l。 
-
-模式项（Pattern Item）:
-模式项可为 
-
-单个字符类，它匹配该类中的任意单个字符； 
-后跟‘*’的单个字符类，它匹配该类中的0或多个字符。这些重复项将总是匹配最长的可能序列； 
-后跟‘+’的单个字符类，它匹配该类中的1或多个字符。这些重复项将总是匹配最长的可能序列； 
-后跟‘-’的单个字符类，它也匹配该类中的0或多个字符。与‘*’不同，这些重复项将总是匹配最短的可能序列； 
-后跟‘?’的单个字符类，它匹配出现0或1次该类中的字符； 
-%n，其中n在1和9之间；这种项匹配一个等价于捕获的字符串的第n个子串（见下面）； 
-%bxy其中x和y是两个不同的字符；这种项匹配始于x终于y的字符串，并且x和y是对称的。这表示，如果一个人从左到右读字符串，对x计数为+1，对y计数为-1，结尾的y是第一个遇到计数为0的y 。例如，项%b()匹配带有平衡的圆括号的表达式。 
-模式（Pattern）:
-模式是一系列的模式项。在模式开头的‘^’将匹配固定在源串的开头。 在模式结尾的‘$’将匹配固定在源串的结尾。在其他位置上，‘^’和‘$’没有特殊含义，表示它们自身。 
-
-捕获（Captures）:
-模式可以含有括在圆括号内的子模式；它们描述捕获。当成功进行一个匹配，源串中匹配捕获的子串被存储（捕获）以便将来使用。捕获根据它们的左圆括号进行编号。例如，在模式"(a*(.)%w(%s*))"中，字符串的匹配"a*(.)%w(%s*)"的部分作为第一个捕获被存储（因此被编号为1）；匹配“.”的字符被捕获并编号为2，匹配“%s*”的部分被编号为3。 
-
-作为一种特殊情况，空捕获()捕获当前字符串位置（一个数字）。例如，如果我们把模式"()aa()"用于字符串"flaaap"，将有两个捕获：3和5。 
-
-模式不能含有内嵌的0。使用%z代替。 
-
-
+参考自：
+1. Lua 5.1 参考手册 （云风译）
+http://www.codingnow.com/2000/download/lua_manual.html
+2. hshqcn
+hshqcn  
