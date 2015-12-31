@@ -38,7 +38,7 @@ Being an extension language, Lua has no notion of a "main" program: it only work
 
 作为一种扩展语言，Lua没有“主”程序的概念：它只是嵌入在被称为嵌入式程序或简单说是宿主的宿主客户端中工作。宿主程序可以调用函数去执行一段Lua代码，可以读写Lua变量，还可以注册C函数供Lua代码调用。虽然使用了C函数，Lua可以被扩充，以应付广泛范围的不同领域，从而创建共享一个语法框架的定制编程语言。Lua发布版包含一个称为lua的示例宿主程序，它使用Lua库去提供一个完整、单独运行的Lua解析器。 
 
-Lua is free software, and is provided as usual with no guarantees, as stated in its license. The implementation described in this manual is available at Lua's official web site, www.lua.org.
+Lua is free software, and is provided as usual with no guarantees, as stated in its license. The implementation described in this manual is available at Lua's official web site, www.lua.org.  
 
 Lua是自由（免费）软件，并且一般不作保证地提供，正如它的许可证所述。在这个手册中所描述的实现可以在Lua的官方网站www.lua.org中找到。  
 
@@ -60,11 +60,11 @@ This section describes the basic concepts of the language.
 
 Lua is a dynamically typed language. This means that variables do not have types; only values do. There are no type definitions in the language. All values carry their own type.  
 
-Lua是一种动态类型语言。这意味着变量没有类型；但值有类型。语言中没有类型定义。所有值携带它们自己的类型。
+Lua是一种动态类型语言。这意味着变量没有类型；但值有类型。语言中没有类型定义。所有值携带它们自己的类型。  
 
 All values in Lua are first-class values. This means that all values can be stored in variables, passed as arguments to other functions, and returned as results.  
 
-Lua中所有值都是第一类**（注：一等公民）**值。这意味着所有的值都可以被存储在变量中，作为参数传递给其他函数，以及作为结果返回。
+Lua中所有值都是第一类**（注：一等公民）**值。这意味着所有的值都可以被存储在变量中，作为参数传递给其他函数，以及作为结果返回。  
 
 There are eight basic types in Lua: nil, boolean, number, string, function, userdata, thread, and table. Nil is the type of the value nil, whose main property is to be different from any other value; it usually represents the absence of a useful value. Boolean is the type of the values false and true. Both nil and false make a condition false; any other value makes it true. Number represents real (double-precision floating-point) numbers. Operations on numbers follow the same rules of the underlying C implementation, which, in turn, usually follows the IEEE 754 standard. (It is easy to build Lua interpreters that use other internal representations for numbers, such as single-precision floats or long integers; see file luaconf.h.) String represents immutable sequences of bytes. Lua is 8-bit clean: strings can contain any 8-bit value, including embedded zeros ('\0').  
 
@@ -88,9 +88,9 @@ The type table implements associative arrays, that is, arrays that can be indexe
 
 Tables are the sole data structuring mechanism in Lua; they can be used to represent ordinary arrays, sequences, symbol tables, sets, records, graphs, trees, etc. To represent records, Lua uses the field name as an index. The language supports this representation by providing a.name as syntactic sugar for a["name"]. There are several convenient ways to create tables in Lua (see §3.4.8).  
 
-表在Lua中是唯一的数据结构机制；它们可以被用于表示一般数组、序列、符号表、集合、记录、图、树，等等。为了表示记录，Lua使用字段名称作为索引。语言支持这种表示，通过提供a.name作为a["name"]的语法糖。在Lua中有几种便利方式创建表。  
+表在Lua中是唯一的数据结构机制；它们可以被用于表示一般数组、序列、符号表、集合、记录、图、树，等等。为了表示记录，Lua使用字段名称作为索引。语言支持这种表示，通过提供a.name作为a["name"]的语法糖。在Lua中有几种便利方式创建表（见§3.4.8）。  
 
-We use the term sequence to denote a table where the set of all positive numeric keys is equal to {1..n} for some integer n, which is called the length of the sequence (see §3.4.6).
+We use the term sequence to denote a table where the set of all positive numeric keys is equal to {1..n} for some integer n, which is called the length of the sequence (see §3.4.6).  
 
 我们使用术语序列以表示一个表，在那里所有正数键的集合等于{1..n}，关于一些整数n，它被称为序列的长度（见§3.4.6）。  
 
@@ -142,11 +142,11 @@ If you change the global environment in the registry (through C code or the debu
 
 2.3 - 错误处理  
 
-Because Lua is an embedded extension language, all Lua actions start from C code in the host program calling a function from the Lua library (see lua_pcall). Whenever an error occurs during the compilation or execution of a Lua chunk, control returns to the host, which can take appropriate measures (such as printing an error message).
+Because Lua is an embedded extension language, all Lua actions start from C code in the host program calling a function from the Lua library (see lua_pcall). Whenever an error occurs during the compilation or execution of a Lua chunk, control returns to the host, which can take appropriate measures (such as printing an error message).  
 
 因为Lua是一种嵌入扩展语言，所以Lua的动作开始于宿主程序中C代码，它调用一个来自Lua库的函数（见lua_pcall）。不论一个错误何时发生，在编译期还是在Lua块的执行期，控制权都会返回给宿主，它可以采取适当的措施（如打印一条错误信息）。  
 
-Lua code can explicitly generate an error by calling the error function. If you need to catch errors in Lua, you can use pcall or xpcall to call a given function in protected mode.
+Lua code can explicitly generate an error by calling the error function. If you need to catch errors in Lua, you can use pcall or xpcall to call a given function in protected mode.  
 
 Lua代码可以通过调用error函数显式地生成错误。如果你需要在Lua中捕获错误，你可以使用pcall或xpcall在保护模式下调用一个给定函数。  
 
