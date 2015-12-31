@@ -32,11 +32,11 @@ contents · index
 
 Lua is an extension programming language designed to support general procedural programming with data description facilities. It also offers good support for object-oriented programming, functional programming, and data-driven programming. Lua is intended to be used as a powerful, light-weight scripting language for any program that needs one. Lua is implemented as a library, written in clean C (that is, in the common subset of ANSI C and C++).   
 
-Lua是一种为支持带数据描述功能的泛型过程式编程而设计的扩展编程语言。它还提供对面向对象编程的良好支持，函数式编程，以及数据驱动编程。Lua致力于成为一种强大和轻量级的脚本语言供任何需要它的程序使用。Lua被实现为一个库，用纯C（即ANSI C和C++的公共子集）编写。  
+Lua是一种为支持带数据描述功能的通用过程式编程而设计的扩展编程语言。它还提供对面向对象编程、函数式编程，以及数据驱动编程的良好支持。Lua致力于成为一种强大和轻量级的脚本语言供任何需要它的程序使用。Lua被实现为一个库，用纯C（即ANSI C和C++的公共子集）编写。  
 
 Being an extension language, Lua has no notion of a "main" program: it only works embedded in a host client, called the embedding program or simply the host. This host program can invoke functions to execute a piece of Lua code, can write and read Lua variables, and can register C functions to be called by Lua code. Through the use of C functions, Lua can be augmented to cope with a wide range of different domains, thus creating customized programming languages sharing a syntactical framework. The Lua distribution includes a sample host program called lua, which uses the Lua library to offer a complete, stand-alone Lua interpreter.   
 
-作为一种扩展语言，Lua没有“主”程序的概念：它只是嵌入在称为嵌入式语言或者简称为宿主的宿主客户端中工作。这个宿主程序可以调用函数去执行一段Lua代码，可以读写Lua变量，还可以注册C函数供Lua代码调用。虽然使用了C函数，Lua可以被扩充，以应付广泛的不同领域，从而创建共享一个语法框架的可定制编程语言。Lua发布版包含一个称为lua的示例宿主程序,使用Lua库去提供一个完整、可单独运行的Lua解析器。  
+作为一种扩展语言，Lua没有“主”程序的概念：它只是嵌入在称为嵌入式程序或简单说是宿主的宿主客户端中工作。宿主程序可以调用函数去执行一段Lua代码，可以读写Lua变量，还可以注册C函数供Lua代码调用。虽然使用了C函数，Lua可以被扩充，以应付广泛范围的不同领域，从而创建共享一个语法框架的定制编程语言。Lua发布版包含一个称为lua的示例宿主程序，它使用Lua库去提供一个完整、单独运行的Lua解析器。  
 
 Lua is free software, and is provided as usual with no guarantees, as stated in its license. The implementation described in this manual is available at Lua's official web site, www.lua.org.   
 
@@ -44,7 +44,7 @@ Lua是自由（免费）软件，并且一般不作保证地提供，正如它�
 
 Like any other reference manual, this document is dry in places. For a discussion of the decisions behind the design of Lua, see the technical papers available at Lua's web site. For a detailed introduction to programming in Lua, see Roberto's book, Programming in Lua (Second Edition).   
 
-像其它参考手册那样，这个文档很多地方都很枯燥。关于Lua设计背后的决策的讨论，请参考Lua官网上的技术文档。关于Lua编程的详细介绍，参考Roberto的书，《Lua程序设计（第二版）》。  
+像其他参考手册那样，这个文档很多地方都很枯燥。关于Lua设计背后的决策的讨论，请参考Lua网站上的技术文档。关于Lua编程的详细介绍，参考Roberto的书，《Lua程序设计（第二版）》。  
 
 ## 2 - The Language  
 

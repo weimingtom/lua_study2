@@ -1,25 +1,62 @@
-﻿Lua 5.2 Reference Manual
+﻿## 【翻译】(LRM5.2-1)
+
+See also:  
+http://www.lua.org/manual/5.2/manual.html  
+
+原文见  
+http://www.lua.org/manual/5.2/manual.html  
+
+-----------------------------------------
+
+## Lua 5.2 Reference Manual  
+
+## Lua 5.2参考手册  
 
 by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
+作者：Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes  
+
 Copyright ? 2011–2013 Lua.org, PUC-Rio. Freely available under the terms of the Lua license.
 
-contents · index · other versions · português
-1 – Introduction
+版权所有 (c) 2011-2013 Lua.org, PUC-Rio. 根据Lua许可证自由地**（注：免费）**可用  
 
-Lua is an extension programming language designed to support general procedural programming with data description facilities. It also offers good support for object-oriented programming, functional programming, and data-driven programming. Lua is intended to be used as a powerful, lightweight, embeddable scripting language for any program that needs one. Lua is implemented as a library, written in clean C, the common subset of Standard C and C++.
+-----------------------------------------
 
-Being an extension language, Lua has no notion of a "main" program: it only works embedded in a host client, called the embedding program or simply the host. The host program can invoke functions to execute a piece of Lua code, can write and read Lua variables, and can register C functions to be called by Lua code. Through the use of C functions, Lua can be augmented to cope with a wide range of different domains, thus creating customized programming languages sharing a syntactical framework. The Lua distribution includes a sample host program called lua, which uses the Lua library to offer a complete, standalone Lua interpreter, for interactive or batch use.
+contents · index · other versions · português  
+
+目录 索引 其他版本 葡萄牙语  
+
+## 1 – Introduction  
+
+## 1 - 简介  
+
+Lua is an extension programming language designed to support general procedural programming with data description facilities. It also offers good support for object-oriented programming, functional programming, and data-driven programming. Lua is intended to be used as a powerful, lightweight, embeddable scripting language for any program that needs one. Lua is implemented as a library, written in clean C, the common subset of Standard C and C++.  
+
+Lua是一种为支持带数据描述功能的通用过程式编程而设计的扩展编程语言。它还提供对面向对象编程、函数式编程，以及数据驱动编程的良好支持。Lua致力于成为一种强大的、轻量级的、可嵌入的脚本语言供任何需要它的程序使用。Lua作为一个库被实现，用纯C编写，即标准C和C++的公共子集。 
+
+Being an extension language, Lua has no notion of a "main" program: it only works embedded in a host client, called the embedding program or simply the host. The host program can invoke functions to execute a piece of Lua code, can write and read Lua variables, and can register C functions to be called by Lua code. Through the use of C functions, Lua can be augmented to cope with a wide range of different domains, thus creating customized programming languages sharing a syntactical framework. The Lua distribution includes a sample host program called lua, which uses the Lua library to offer a complete, standalone Lua interpreter, for interactive or batch use.  
+
+作为一种扩展语言，Lua没有“主”程序的概念：它只是嵌入在被称为嵌入式程序或简单说是宿主的宿主客户端中工作。宿主程序可以调用函数去执行一段Lua代码，可以读写Lua变量，还可以注册C函数供Lua代码调用。虽然使用了C函数，Lua可以被扩充，以应付广泛范围的不同领域，从而创建共享一个语法框架的定制编程语言。Lua发布版包含一个称为lua的示例宿主程序，它使用Lua库去提供一个完整、单独运行的Lua解析器。 
 
 Lua is free software, and is provided as usual with no guarantees, as stated in its license. The implementation described in this manual is available at Lua's official web site, www.lua.org.
 
-Like any other reference manual, this document is dry in places. For a discussion of the decisions behind the design of Lua, see the technical papers available at Lua's web site. For a detailed introduction to programming in Lua, see Roberto's book, Programming in Lua.
+Lua是自由（免费）软件，并且一般不作保证地提供，正如它的许可证所述。在这个手册中所描述的实现可以在Lua的官方网站www.lua.org中找到。  
 
-2 – Basic Concepts
+Like any other reference manual, this document is dry in places. For a discussion of the decisions behind the design of Lua, see the technical papers available at Lua's web site. For a detailed introduction to programming in Lua, see Roberto's book, Programming in Lua.  
 
-This section describes the basic concepts of the language.
+像其他参考手册那样，这个文档很多地方都很枯燥。关于Lua设计背后的决策的讨论，请参考Lua网站上的技术文档。关于Lua编程的详细介绍，参考Roberto的书，《Lua程序设计》。  
 
-2.1 – Values and Types
+# 2 – Basic Concepts    
+
+# 2 - 基本概念  
+
+This section describes the basic concepts of the language.  
+
+这个部分描述语言的基本概念。  
+
+2.1 – Values and Types  
+
+2.1 - 值与类型  
 
 Lua is a dynamically typed language. This means that variables do not have types; only values do. There are no type definitions in the language. All values carry their own type.
 
