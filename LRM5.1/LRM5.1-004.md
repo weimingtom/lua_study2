@@ -87,11 +87,11 @@ The loop creates ten closures (that is, ten instances of the anonymous function)
 
 Because Lua is an embedded extension language, all Lua actions start from C code in the host program calling a function from the Lua library (see lua_pcall). Whenever an error occurs during Lua compilation or execution, control returns to C, which can take appropriate measures (such as printing an error message).   
 
-因为Lua是一个嵌入的扩展语言，Lua的所有操作在宿主程序调用Lua库函数（见lua_pcall）的C代码处开始工作。每当在Lua编译或执行期间发生错误，控制将返回到C，进行适当的处理（如打印错误消息）。  
+因为Lua是一种嵌入扩展语言，所以Lua的所有操作在宿主程序调用Lua库函数（见lua_pcall）的C代码处开始工作。不论一个错误何时发生，在编译期还是在Lua块的执行期，控制权都会返回给宿主，它可以采取适当的措施（如打印错误消息）。  
 
 Lua code can explicitly generate an error by calling the error function. If you need to catch errors in Lua, you can use the pcall function.   
 
-Lua代码可以显式地通过调用error函数产生错误。如果你需要在Lua代码中捕获错误，你可以使用pcall函数。  
+Lua代码可以通过调用error函数显式地生成错误。如果你需要在Lua中捕获错误，你可以使用pcall函数。  
 
 ## 2.8 - Metatables  
 

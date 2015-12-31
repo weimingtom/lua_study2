@@ -145,15 +145,15 @@ Lua是一种动态类型的语言。这意味着变量没有类型；但值有�
 
 All values in Lua are first-class values. This means that all values can be stored in variables, passed as arguments to other functions, and returned as results.   
 
-Lua中所有值都是第一类值。这意味着所有的值都可以存储变量中，作为参数传递给其他函数，以及作为结果返回。  
+Lua中所有值都是第一类**（注：一等公民）**值。这意味着所有的值都可以被存储在变量中，作为参数传递给其他函数，以及作为结果返回。  
 
 There are eight basic types in Lua: nil, boolean, number, string, function, userdata, thread, and table. Nil is the type of the value nil, whose main property is to be different from any other value; it usually represents the absence of a useful value. Boolean is the type of the values false and true. Both nil and false make a condition false; any other value makes it true. Number represents real (double-precision floating-point) numbers. (It is easy to build Lua interpreters that use other internal representations for numbers, such as single-precision float or long integers; see file luaconf.h.) String represents arrays of characters. Lua is 8-bit clean: strings can contain any 8-bit character, including embedded zeros ('\0') (see §2.1).   
 
-Lua有八种基本类型：nil，boolean，number，string，function，userdata，thread，和table。类型nil是nil的类型，其主要属性是不同于其它任何值，它通常代表缺少一个有用的值。类型boolean是值false和true的类型。nil和false使条件为假；其他任何值都使条件为真。类型number表示实数（双精度浮点数）。（在构建Lua解释器时很容易为类型number使用其他内部表示，例如单精度浮点数或者长整数。参考文件luaconf.h。）类型string表示字符数组。Lua对8位字符是干净的**（注：纯8位）**：字符串可以包含任何8位字符，包括内嵌零（'\0'）（见§2.1）。  
+Lua有八种基本类型：nil，boolean，number，string，function，userdata，thread，和table。类型nil是nil的类型，其主要属性是不同于其他任何值，它通常代表缺少一个有用的值。类型boolean是值false和true的类型。nil和false使条件为假；其他任何值都使条件为真。类型number表示实数（双精度浮点数）。（在构建Lua解释器时很容易为类型number使用其他内部表示，例如单精度浮点数或者长整数。参考文件luaconf.h。）类型string表示字符数组。Lua对8位字符是干净的**（注：纯8位）**：字符串可以包含任何8位字符，包括内嵌零（'\0'）（见§2.1）。  
 
 Lua can call (and manipulate) functions written in Lua and functions written in C (see §2.5.8).   
 
-Lua中可以调用（和操纵）用lua编写的函数和用C编写的函数（见§2.5.8）。   
+Lua可以调用（和操纵）用lua编写的函数和用C编写的函数（见§2.5.8）。   
 
 The type userdata is provided to allow arbitrary C data to be stored in Lua variables. This type corresponds to a block of raw memory and has no pre-defined operations in Lua, except assignment and identity test. However, by using metatables, the programmer can define operations for userdata values (see §2.8). Userdata values cannot be created or modified in Lua, only through the C API. This guarantees the integrity of data owned by the host program.   
 
@@ -161,7 +161,7 @@ The type userdata is provided to allow arbitrary C data to be stored in Lua vari
 
 The type thread represents independent threads of execution and it is used to implement coroutines (see §2.11). Do not confuse Lua threads with operating-system threads. Lua supports coroutines on all systems, even those that do not support threads.   
 
-类型thread代表可执行的独立线程，它用于实现协程（见§2.11）。不要把Lua的线程和操作系统的线程混淆。Lua在所有系统上支持协程，即使在那些不支持线程的系统上。  
+类型thread表示执行的独立线程，并且用于实现协程（见§2.11）。不要把Lua线程和操作系统线程混淆。Lua在所有系统上支持协程，即使在那些不支持线程的系统上。  
 
 The type table implements associative arrays, that is, arrays that can be indexed not only with numbers, but with any value (except nil). Tables can be heterogeneous; that is, they can contain values of all types (except nil). Tables are the sole data structuring mechanism in Lua; they can be used to represent ordinary arrays, symbol tables, sets, records, graphs, trees, etc. To represent records, Lua uses the field name as an index. The language supports this representation by providing a.name as syntactic sugar for a["name"]. There are several convenient ways to create tables in Lua (see §2.5.7).   
 
@@ -173,7 +173,7 @@ Like indices, the value of a table field can be of any type (except nil). In par
 
 Tables, functions, threads, and (full) userdata values are objects: variables do not actually contain these values, only references to them. Assignment, parameter passing, and function returns always manipulate references to such values; these operations do not imply any kind of copy.   
 
-表，函数，线程和（完全）用户数据的值都是对象：变量实际上并不包含这些值，只是包含他们的引用。赋值，参数传递，函数返回总是对其值的引用的操作，这些操作并不暗示有任何类型的复制**（注：副本）**。  
+表，函数，线程和（完全）用户数据的值都是对象：变量实际上并不包含这些值，只是包含他们的引用。赋值，参数传递，以及函数返回总是操纵这些值的引用；这些操作并不暗示有任何类型的复制**（注：副本）**。  
 
 The library function type returns a string describing the type of a given value.   
 
